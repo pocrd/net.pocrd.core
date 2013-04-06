@@ -2,6 +2,11 @@ package net.pocrd.define;
 
 public enum SecurityType {
     /**
+     * 测试用
+     */
+    Test(-1),
+    
+    /**
      * 无认证
      */
     None(0x00),

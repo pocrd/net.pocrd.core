@@ -198,6 +198,7 @@ public class SparseArray<E> {
      * the value from the <code>index</code>th key-value mapping that this
      * SparseArray stores.  
      */
+    @SuppressWarnings("unchecked")
     public E valueAt(int index) {
         if (mGarbage) {
             gc();

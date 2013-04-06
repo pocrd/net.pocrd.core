@@ -1,6 +1,7 @@
 ﻿package net.pocrd.entity;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import net.pocrd.define.SerializeType;
 
@@ -43,7 +44,7 @@ public class ApiContext {
     /**
      * 用户账号,日志用
      */
-    public String                   userid;
+    public String                   uid;
 
     /**
      * 设备序列号,日志用
@@ -55,12 +56,7 @@ public class ApiContext {
      * 解析过程为：客户端16进制码=>Version(2进制码串)=>2进制码串从左向右按位匹配FilterVersion中枚举的所有功能项(枚举int值代表的是在version码中中从左起对应的位数)
      * 例如：FilterVersion中枚举了{1(普通书),2,3,4,5..8},客户端上传"F1"解析得到的Version(二进制码)11110001,即支持功能1、2、3、4、8
      */
-    public String                   ver;
-
-    /**
-     * 是否是POST请求
-     */
-    public boolean                  isPost;
+    public HashSet<String>          functionFlags;
 
     /**
      * 返回值序列化方式
@@ -98,16 +94,6 @@ public class ApiContext {
     public CallerInfo               caller;
 
     /**
-     * token异常 0为正常，1为过期，2为解析失败
-     */
-    public int                      tokenError   = 0;
-
-    /**
-     * 导致逻辑无法执行的严重错误
-     */
-    public int                      fatalError   = 0;
-
-    /**
      * 返回string格式的信息摘要
      * 
      * @return
@@ -120,7 +106,7 @@ public class ApiContext {
         sb.append("  ");
         sb.append(clientIP);
         sb.append("  ");
-        sb.append(userid);
+        sb.append(uid);
         sb.append("  ");
         sb.append(sn);
         sb.append("  ");
@@ -136,16 +122,13 @@ public class ApiContext {
         this.caller = null;
         this.clientIP = null;
         this.currentCall = null;
-        this.fatalError = 0;
-        this.format = SerializeType.XML;
-        this.isPost = false;
+        this.format = SerializeType.JSON;
         this.location = null;
         this.requestInfo = null;
         this.sn = null;
         this.startTime = 0;
         this.token = null;
-        this.tokenError = 0;
-        this.userid = null;
-        this.ver = null;
+        this.uid = null;
+        this.functionFlags = null;
     }
 }

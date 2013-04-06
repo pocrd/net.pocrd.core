@@ -17,7 +17,7 @@ public class ApiManager {
     }
 
     private static final Logger                             logger          = LogManager.getLogger(ApiManager.class);
-    public static final String                              API_METHOD_NAME = "execute";
+    private static final String                             API_METHOD_NAME = "execute";
     private HashMap<String, HttpApiExecuter>                nameToApi       = new HashMap<String, HttpApiExecuter>();
     private HashMap<String, ApiMethodInfo>                  apiInfos        = new HashMap<String, ApiMethodInfo>();
     private HashMap<String, HashMap<String, ApiMethodInfo>> groupInfos      = new HashMap<String, HashMap<String, ApiMethodInfo>>();
@@ -25,6 +25,21 @@ public class ApiManager {
     public ApiManager(String packageName) {
         // TODO:需要开发一个编译器plugin在编译期判断返回值是否合法(基本类型，特殊类型或者特殊的泛型类型)
         registerAll(packageName);
+    }
+
+    public ApiMethodInfo getApiMethodInfo(String name) {
+        return apiInfos.get(name);
+    }
+
+    /**
+     * 处理Api请求
+     * 
+     * @param name name来标识特定的Api请求
+     * @param parameters Api请求参数
+     * @return
+     */
+    public final Object processRequest(String name, String[] parameters) {
+        return nameToApi.get(name).execute(parameters);
     }
 
     private void registerAll(String packageName) {
@@ -49,7 +64,7 @@ public class ApiManager {
             if (API_METHOD_NAME.equals(mInfo.getName())) {
                 HttpApi api = mInfo.getAnnotation(HttpApi.class);
                 if (api != null) {
-                    
+
                 }
             }
         }

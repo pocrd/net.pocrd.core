@@ -1,7 +1,6 @@
 ﻿package net.pocrd.entity;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
@@ -28,60 +27,50 @@ public class ApiMethodInfo {
     /**
      * 返回值类型
      */
-    public Class<?>                  returnType;
-    
+    public Class<?>                   returnType;
+
     /**
      * 方法名称
      */
-    public String                    methodName;
+    public String                     methodName;
 
     /**
-     * 缓存键名称
+     * 方法调用说明
      */
-    public String cacheName;
-
-    /**
-     * 方法标题
-     */
-    public String description;
+    public String                     description;
 
     /**
      * 返回值类型string表示
      */
-    public String returnTypeString;
+    public String                     returnTypeString;
 
     /**
      * 方法需要的安全级别
      */
-    public SecurityType securityLevel = SecurityType.None;
+    public SecurityType               securityLevel = SecurityType.None;
 
     /**
      * 资源所属组名
      */
-    public String groupName;
-
-    /**
-     * 是否缓存
-     */
-    public boolean isCacheable;
+    public String                     groupName;
 
     /**
      * 方法状态
      */
-    public ApiOpenState state = ApiOpenState.OPEN;
+    public ApiOpenState               state         = ApiOpenState.OPEN;
 
     /**
      * 参数类型
      */
-    public ArrayList<ApiParameterInfo> parameterInfos;
+    public ApiParameterInfo[]         parameterInfos;
 
     /**
      * 该方法可能抛出的业务异常的errorcode集合
      */
-    public int[] errorCodes;
+    public int[]                      errorCodes;
 
     /**
      * 所代理的方法的信息
      */
-    public Method proxyMethodInfo;
+    public Method                     proxyMethodInfo;
 }
