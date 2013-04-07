@@ -18,10 +18,6 @@ package net.pocrd.util;
 
 import java.lang.reflect.Array;
 
-// XXX these should be changed to reflect the actual memory allocator we use.
-// it looks like right now objects want to be powers of 2 minus 8
-// and the array size eats another 4 bytes
-
 /**
  * ArrayUtils contains some methods that you can call to find out the most efficient increments by which to grow arrays.
  */

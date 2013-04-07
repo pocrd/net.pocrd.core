@@ -1,18 +1,24 @@
 package net.pocrd.util;
 
-public class CommonConfig extends FileConfig {
-    public static final CommonConfig Instance = new CommonConfig();
+import javax.xml.bind.annotation.XmlTransient;
+
+public class CommonConfig{
+    public static final CommonConfig Instance;
 
     public static final boolean isDebug = true;
     
     private CommonConfig() {
-        super("Common.config");
     }
 
     static {
-        FileConfig.fillConfig(Instance);
+        Instance = FileConfig.load("Common.config", CommonConfig.class);
+        
+        Instance.tokenHelper = new TokenHelper(Instance.tokenPwd);
     }
     
     public String tokenPwd;
+    
+    @XmlTransient
+    public TokenHelper tokenHelper;
     
 }

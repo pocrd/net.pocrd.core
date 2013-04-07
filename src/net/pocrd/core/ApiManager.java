@@ -8,19 +8,14 @@ import net.pocrd.annotation.HttpApi;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.util.ClassUtil;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
 public class ApiManager {
     public static interface HttpApiExecuter {
         Object execute(String[] parameters);
     }
 
-    private static final Logger                             logger          = LogManager.getLogger(ApiManager.class);
     private static final String                             API_METHOD_NAME = "execute";
     private HashMap<String, HttpApiExecuter>                nameToApi       = new HashMap<String, HttpApiExecuter>();
     private HashMap<String, ApiMethodInfo>                  apiInfos        = new HashMap<String, ApiMethodInfo>();
-    private HashMap<String, HashMap<String, ApiMethodInfo>> groupInfos      = new HashMap<String, HashMap<String, ApiMethodInfo>>();
 
     public ApiManager(String packageName) {
         // TODO:需要开发一个编译器plugin在编译期判断返回值是否合法(基本类型，特殊类型或者特殊的泛型类型)

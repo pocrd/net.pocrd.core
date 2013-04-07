@@ -33,15 +33,15 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 public abstract class BaseServlet extends HttpServlet {
-    private static final long         serialVersionUID = 1L;
-    private static final Logger       logger           = LogManager.getLogger(BaseServlet.class.getName());
-    protected static final Logger     access           = LogManager.getLogger("net.pocrd.api.access");
-    protected static final String     DEBUG_AGENT      = "pocrd.tester";
-    protected static final HMacHelper HMAC             = new HMacHelper("leorendong@gmail.com");
+    private static final long     serialVersionUID = 1L;
+    private static final Logger   logger           = LogManager.getLogger(BaseServlet.class.getName());
+    protected static final Logger access           = LogManager.getLogger("net.pocrd.api.access");
+    protected static final String DEBUG_AGENT      = "pocrd.tester";
+    protected HMacHelper          hmac             = HMacHelper.getInstance();
 
-    private static ObjectMapper       json             = new ObjectMapper();
-    protected static ApiManager       apiManager;
-    private static TokenHelper        tokenHelper      = new TokenHelper(CommonConfig.Instance.tokenPwd);
+    private static ObjectMapper   json             = new ObjectMapper();
+    protected static ApiManager   apiManager;
+    private static TokenHelper    tokenHelper      = new TokenHelper(CommonConfig.Instance.tokenPwd);
 
     static {
         json.setVisibility(PropertyAccessor.SETTER, Visibility.PUBLIC_ONLY);
@@ -196,8 +196,8 @@ public abstract class BaseServlet extends HttpServlet {
 
                     if (context.caller != null) {
                         // TODO:fill device info into caller
-                        context.sn = context.caller.sn;
-                        context.uid = context.caller.uid;
+                        context.sn = Long.toString(context.caller.sn);
+                        context.uid = Long.toString(context.caller.uid);
                     }
                 } catch (RuntimeException e) {
                     logger.error("get device info failed.", e);

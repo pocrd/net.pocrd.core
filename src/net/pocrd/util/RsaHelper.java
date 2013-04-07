@@ -9,8 +9,6 @@ import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 
-import net.pocrd.define.ConstField;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,24 +22,22 @@ public class RsaHelper {
     private PublicKey           publicKey;
     private PrivateKey          privateKey;
 
-    public RsaHelper(String publicKey, String privateKey) {
+    public RsaHelper(byte[] publicKey, byte[] privateKey) {
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 
-            if (publicKey != null && publicKey.length() > 0) {
-                byte[] encodedKey = Base64Util.decode(publicKey);
-                this.publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(encodedKey));
+            if (publicKey != null && publicKey.length > 0) {
+                this.publicKey = keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
             }
-            if (privateKey != null && privateKey.length() > 0) {
-                byte[] encodedKey = Base64Util.decode(privateKey);
-                this.privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(encodedKey));
+            if (privateKey != null && privateKey.length > 0) {
+                this.privateKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKey));
             }
         } catch (Exception e) {
-            logger.error(e);
+            throw new RuntimeException(e);
         }
     }
 
-    public String encrypt(String content) {
+    public byte[] encrypt(byte[] content) {
         if (publicKey == null) {
             throw new RuntimeException("public key is null.");
         }
@@ -49,17 +45,13 @@ public class RsaHelper {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
 
-            byte[] plainBytes = content.getBytes(ConstField.UTF8);
-            byte[] output = cipher.doFinal(plainBytes);
-
-            return Base64Util.encodeToString(output);
+            return cipher.doFinal(content);
         } catch (Exception e) {
-            logger.error(e);
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
-    public String decrypt(String secret) {
+    public byte[] decrypt(byte[] secret) {
         if (publicKey == null) {
             throw new RuntimeException("public key is null.");
         }
@@ -67,33 +59,28 @@ public class RsaHelper {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, publicKey);
 
-            byte[] secretBytes = secret.getBytes(ConstField.UTF8);
-            byte[] output = cipher.doFinal(secretBytes);
-
-            return Base64Util.encodeToString(output);
+            return cipher.doFinal(secret);
         } catch (Exception e) {
             logger.error(e);
         }
         return null;
     }  
     
-    public String sign(String content) {
+    public byte[] sign(byte[] content) {
         if (privateKey == null) {
             throw new RuntimeException("private key is null.");
         }
         try {
             Signature signature = Signature.getInstance(SIGN_ALGORITHMS);
             signature.initSign(privateKey);
-            signature.update(content.getBytes(ConstField.UTF8));
-            byte[] signed = signature.sign();
-            return Base64Util.encodeToString(signed);
+            signature.update(content);
+            return signature.sign();
         } catch (Exception e) {
-            logger.error(e);
+            throw new RuntimeException(e);
         }
-        return null;
     }
 
-    public boolean verify(String sign, String content) {
+    public boolean verify(byte[] sign, byte[] content) {
         if (publicKey == null) {
             throw new RuntimeException("public key is null.");
         }
@@ -101,28 +88,28 @@ public class RsaHelper {
             Signature signature = Signature.getInstance(SIGN_ALGORITHMS);
 
             signature.initVerify(publicKey);
-            signature.update(content.getBytes(ConstField.UTF8));
+            signature.update(content);
 
-            return signature.verify(Base64Util.decode(sign));
+            return signature.verify(sign);
         } catch (Exception e) {
             logger.error(e);
         }
         return false;
     }
     
-    public static String encrypt(String content, String publicKey){
+    public static byte[] encrypt(byte[] content, byte[] publicKey){
         return new RsaHelper(publicKey, null).encrypt(content);
     }
     
-    public static String decrypt(String secret, String privateKey){
+    public static byte[] decrypt(byte[] secret, byte[] privateKey){
         return new RsaHelper(null, privateKey).decrypt(secret);
     }
 
-    public static String sign(String content, String privateKey) {
+    public static byte[] sign(byte[] content, byte[] privateKey) {
         return new RsaHelper(null, privateKey).sign(content);
     }
 
-    public static boolean verify(String sign, String content, String publicKey) {
+    public static boolean verify(byte[] sign, byte[] content, byte[] publicKey) {
         return new RsaHelper(publicKey, null).verify(sign, content);
     }
 }
