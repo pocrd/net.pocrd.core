@@ -27,6 +27,10 @@ public class SingletonProvider {
     }
 
     private static <T> T createSingleton(Class<T> clazz) {
-        return null;
+        try {
+            return clazz.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("创建单例失败。", e);
+        }
     }
 }
