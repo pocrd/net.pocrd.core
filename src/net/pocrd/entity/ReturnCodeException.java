@@ -9,6 +9,11 @@ public class ReturnCodeException extends RuntimeException {
         super("code" + code.getCode());
         this.code = code;
     }
+    
+    public ReturnCodeException(ReturnCode code, Exception e) {
+        super("code" + code.getCode(), e);
+        this.code = code;
+    }
 
     public ReturnCode getCode() {
         return code;

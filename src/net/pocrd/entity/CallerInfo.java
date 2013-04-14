@@ -3,6 +3,11 @@ package net.pocrd.entity;
 import net.pocrd.define.SecurityType;
 import net.pocrd.util.CommonConfig;
 
+/**
+ * 调用者信息，包括设备信息和用户信息(已登录)的一部分
+ * @author rendong
+ *
+ */
 public class CallerInfo {
 
     public static final CallerInfo TESTER = new CallerInfo();
@@ -17,7 +22,7 @@ public class CallerInfo {
         }
     }
 
-    // 设备身份密钥
+    // 设备身份公钥
     public String                  key;
 
     // 设备/用户分组

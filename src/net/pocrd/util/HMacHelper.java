@@ -17,10 +17,10 @@ import org.apache.logging.log4j.Logger;
  * @author rendong
  */
 public class HMacHelper {
-    private static final Logger            logger            = LogManager.getLogger("net.pocrd.util");
-    private static String                  macpwd;
+    private static final Logger            logger      = LogManager.getLogger("net.pocrd.util");
+    private String                         pwd;
     private Mac                            mac;
-    private static ThreadLocal<HMacHelper> threadLocalMacPwd = new ThreadLocal<HMacHelper>();
+    private static ThreadLocal<HMacHelper> localHelper = new ThreadLocal<HMacHelper>();
 
     /**
      * MAC算法可选以下多种算法
@@ -33,36 +33,30 @@ public class HMacHelper {
      * HmacSHA512
      * </pre>
      */
-    private static final String            KEY_MAC           = "HmacMD5";
+    private static final String            KEY_MAC     = "HmacMD5";
 
     private HMacHelper(String key) {
-        SecretKey secretKey = new SecretKeySpec(key.getBytes(ConstField.UTF8), KEY_MAC);
         try {
+            SecretKey secretKey = new SecretKeySpec(key.getBytes(ConstField.UTF8), KEY_MAC);
             mac = Mac.getInstance(secretKey.getAlgorithm());
+            pwd = key;
             mac.init(secretKey);
         } catch (Exception e) {
             logger.error(e);
         }
     }
 
-    public static void setMacPwd(String pwd) {
-        if (pwd == null || pwd.length() == 0) {
-            throw new RuntimeException("invalid mac pwd.");
-        }
-        if (macpwd != null) {
-            if (CommonConfig.isDebug) {
-                throw new RuntimeException("mac pwd has set.");
-            }
-            return;
-        }
-        macpwd = pwd;
-    }
+    public static HMacHelper getThreadLocalInstance(String pwd) {
+        HMacHelper h = localHelper.get();
 
-    public static HMacHelper getInstance() {
-        HMacHelper h = threadLocalMacPwd.get();
         if (h == null) {
-            h = new HMacHelper(macpwd);
-            threadLocalMacPwd.set(h);
+            h = new HMacHelper(pwd);
+            localHelper.set(h);
+        }
+        if (CommonConfig.isDebug) {
+            if(!pwd.equals(h.pwd)){
+                throw new RuntimeException("使用了不同的pwd产生hmac实例。");
+            }
         }
         return h;
     }

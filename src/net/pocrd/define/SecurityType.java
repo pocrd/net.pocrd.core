@@ -32,7 +32,7 @@ public enum SecurityType {
     Integrated(0x08),
 
     /**
-     * 服务端认证
+     * 内部服务端认证
      */
     Server(0x10);
 

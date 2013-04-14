@@ -15,6 +15,12 @@ public @interface CacheMethod {
     boolean enable();
     
     /**
+     * 缓存键
+     * @return
+     */
+    String key();
+    
+    /**
      * 缓存过期时间
      * @return
      */
@@ -25,12 +31,6 @@ public @interface CacheMethod {
      * @return
      */
     int localExpire() default 0;
-    
-    /**
-     * 缓存键
-     * @return
-     */
-    String key();
     
     /**
      * 是否开启自动分页缓存

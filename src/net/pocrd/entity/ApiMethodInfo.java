@@ -2,13 +2,15 @@
 
 import java.lang.reflect.Method;
 
+import javax.xml.bind.annotation.XmlRootElement;
+
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
 
-/** 
- 
- 
-*/
+/**
+ * 接口信息
+ */
+@XmlRootElement
 public class ApiMethodInfo {
     /**
      * 未知资源

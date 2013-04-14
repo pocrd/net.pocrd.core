@@ -14,11 +14,11 @@ import net.pocrd.define.CommonParameter;
 import net.pocrd.define.SerializeType;
 import net.pocrd.entity.ApiContext;
 import net.pocrd.entity.ApiMethodCall;
+import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.CallerInfo;
 import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.util.CommonConfig;
-import net.pocrd.util.HMacHelper;
 import net.pocrd.util.TokenHelper;
 
 import org.apache.logging.log4j.LogManager;
@@ -35,9 +35,8 @@ import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 public abstract class BaseServlet extends HttpServlet {
     private static final long     serialVersionUID = 1L;
     private static final Logger   logger           = LogManager.getLogger(BaseServlet.class.getName());
-    protected static final Logger access           = LogManager.getLogger("net.pocrd.api.access");
+    protected static final Logger access           = CommonConfig.Instance.accessLogger;
     protected static final String DEBUG_AGENT      = "pocrd.tester";
-    protected HMacHelper          hmac             = HMacHelper.getInstance();
 
     private static ObjectMapper   json             = new ObjectMapper();
     protected static ApiManager   apiManager;
@@ -56,6 +55,10 @@ public abstract class BaseServlet extends HttpServlet {
         apiManager = new ApiManager(packageName);
     }
 
+    public static ApiMethodInfo[] getApiInfos() {
+        return apiManager.getApiMethodInfos();
+    }
+
     @JsonFilter("global")
     static interface Mixin1 {
 
@@ -68,14 +71,14 @@ public abstract class BaseServlet extends HttpServlet {
 
     private void processRequest(HttpServletRequest request, HttpServletResponse response) {
         boolean fatalError = false;
-        boolean accessDenied = false;
+        ReturnCode parseResult = null;
         ApiContext apiContext = null;
         try {
             apiContext = ApiContext.getCurrent();
             apiContext.clear();
             apiContext.startTime = System.currentTimeMillis();
             parseParameter(apiContext, request);
-            accessDenied = parseMethodInfo(apiContext, request);
+            parseResult = parseMethodInfo(apiContext, request);
         } catch (Exception e) {
             logger.error("init request failed.", e);
             fatalError = true;
@@ -83,7 +86,7 @@ public abstract class BaseServlet extends HttpServlet {
 
         try {
             // TODO:签名验证失败作为fatal error处理
-            if (fatalError || accessDenied) {
+            if (fatalError || parseResult != ReturnCode.SUCCESS) {
                 access.info(apiContext.getStringInfo());
             } else {
                 for (ApiMethodCall call : apiContext.apiCallInfos) {
@@ -105,10 +108,10 @@ public abstract class BaseServlet extends HttpServlet {
         } finally {
             // TODO:进行流式输出
             apiContext.clear();
-            if (fatalError) {
+            if (fatalError || parseResult == ReturnCode.REQUEST_PARSE_ERROR) {
                 // 错误请求
                 response.setStatus(400);
-            } else if (accessDenied) {
+            } else if (parseResult != ReturnCode.SUCCESS) {
                 // 访问被拒绝
                 response.setStatus(401);
             }
@@ -256,7 +259,7 @@ public abstract class BaseServlet extends HttpServlet {
      * 
      * @param context
      * @param request
-     * @return true if access denied, otherwise false.
+     * @return 0 success, .
      */
-    public abstract boolean parseMethodInfo(ApiContext context, HttpServletRequest request);
+    public abstract ReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request);
 }

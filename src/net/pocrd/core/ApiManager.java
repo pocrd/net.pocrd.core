@@ -1,21 +1,24 @@
 package net.pocrd.core;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
 import net.pocrd.annotation.ApiGroup;
+import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.HttpApi;
 import net.pocrd.entity.ApiMethodInfo;
+import net.pocrd.entity.ApiParameterInfo;
 import net.pocrd.util.ClassUtil;
+import net.pocrd.util.CommonConfig;
+import net.pocrd.util.HttpApiExecuter;
+import net.pocrd.util.HttpApiUtil;
 
 public class ApiManager {
-    public static interface HttpApiExecuter {
-        Object execute(String[] parameters);
-    }
-
-    private static final String                             API_METHOD_NAME = "execute";
-    private HashMap<String, HttpApiExecuter>                nameToApi       = new HashMap<String, HttpApiExecuter>();
-    private HashMap<String, ApiMethodInfo>                  apiInfos        = new HashMap<String, ApiMethodInfo>();
+    private static final String              API_METHOD_NAME = "execute";
+    private static final ApiMethodInfo[]     empty           = new ApiMethodInfo[0];
+    private HashMap<String, HttpApiExecuter> nameToApi       = new HashMap<String, HttpApiExecuter>();
+    private HashMap<String, ApiMethodInfo>   apiInfos        = new HashMap<String, ApiMethodInfo>();
 
     public ApiManager(String packageName) {
         // TODO:需要开发一个编译器plugin在编译期判断返回值是否合法(基本类型，特殊类型或者特殊的泛型类型)
@@ -24,6 +27,10 @@ public class ApiManager {
 
     public ApiMethodInfo getApiMethodInfo(String name) {
         return apiInfos.get(name);
+    }
+
+    public ApiMethodInfo[] getApiMethodInfos() {
+        return (ApiMethodInfo[])apiInfos.values().toArray(empty);
     }
 
     /**
@@ -57,9 +64,64 @@ public class ApiManager {
         boolean found = false;
         for (Method mInfo : clazz.getMethods()) {
             if (API_METHOD_NAME.equals(mInfo.getName())) {
+                found = true;
                 HttpApi api = mInfo.getAnnotation(HttpApi.class);
                 if (api != null) {
-
+                    ApiMethodInfo apiInfo = new ApiMethodInfo();
+                    apiInfo.groupName = groupName;
+                    apiInfo.description = api.desc();
+                    apiInfo.methodName = api.name().toLowerCase();
+                    DesignedErrorCode errors = mInfo.getAnnotation(DesignedErrorCode.class);
+                    if (errors != null) {
+                        apiInfo.errorCodes = errors.value();
+                    }
+                    apiInfo.proxyMethodInfo = mInfo;
+                    Class<?>[] parameterTypes = mInfo.getParameterTypes();
+                    Annotation[][] parameterAnnotations = mInfo.getParameterAnnotations();
+                    ApiParameterInfo[] pInfos = new ApiParameterInfo[parameterTypes.length];
+                    for (int i = 0; i < parameterTypes.length; i++) {
+                        ApiParameterInfo pInfo = new ApiParameterInfo();
+                        Class<?> type = parameterTypes[i];
+                        if (CommonConfig.isDebug) {
+                            if (!type.isPrimitive() && type != String.class) {
+                                throw new RuntimeException("不支持的参数类型");
+                            }
+                        }
+                        Annotation[] a = parameterAnnotations[i];
+                        pInfo.type = type.getName();
+                        if (a == null) {
+                            throw new RuntimeException("api参数未被标记" + clazz.getName() + "   " + mInfo.getName());
+                        }
+                        for (int j = 0; j < a.length;) {
+                            Annotation n = a[j];
+                            if (n.annotationType() == ApiParameter.class) {
+                                ApiParameter p = (ApiParameter)n;
+                                pInfo.defaultValue = p.defaultValue();
+                                pInfo.description = p.desc();
+                                pInfo.isRequired = p.required();
+                                pInfo.name = p.name();
+                                break;
+                            }
+                            j++;
+                            if (j == a.length) {
+                                throw new RuntimeException("api参数未被标记" + clazz.getName() + "   " + mInfo.getName());
+                            }
+                        }
+                        pInfos[i] = pInfo;
+                    }
+                    apiInfo.parameterInfos = pInfos;
+                    apiInfo.returnType = mInfo.getReturnType();
+                    apiInfo.returnTypeString = apiInfo.returnType.getName();
+                    if (CommonConfig.isDebug) {
+                        Class<?> type = apiInfo.returnType;
+                        if (!apiInfo.returnTypeString.startsWith("net.pocrd.api.resp.Api") && type != String.class) {
+                            throw new RuntimeException("不支持的返回值类型");
+                        }
+                    }
+                    apiInfo.securityLevel = apiInfo.securityLevel;
+                    apiInfo.state = apiInfo.state;
+                    apiInfos.put(apiInfo.methodName, apiInfo);
+                    nameToApi.put(apiInfo.methodName, HttpApiUtil.getApiExecuter(apiInfo.methodName, mInfo));
                 }
             }
         }
