@@ -25,7 +25,7 @@ public final class ConfigUtil {
             JAXBContext context = JAXBContext.newInstance(config.getClass());
             Marshaller m = context.createMarshaller();
             m.setProperty("jaxb.formatted.output", true);
-            //m.setProperty("com.sun.xml.bind.xmlDeclaration", false);
+            // m.setProperty("com.sun.xml.bind.xmlDeclaration", false);
             m.marshal(config, new File(path));
         } catch (JAXBException e) {
             throw new RuntimeException(e);
@@ -50,15 +50,23 @@ public final class ConfigUtil {
                 }
             }
             if (!file.exists()) {
-                throw new RuntimeException("cannot file config file : " + name);
+                if (!CommonConfig.isDebug) {
+                    throw new RuntimeException("cannot file config file : " + name);
+                } else {
+                    return null;
+                }
             }
 
             JAXBContext context = JAXBContext.newInstance(clazz);
             Unmarshaller um = context.createUnmarshaller();
             T c = (T)um.unmarshal(file);
-           return c;
+            return c;
         } catch (JAXBException e) {
-            throw new RuntimeException(e);
+            if (!CommonConfig.isDebug) {
+                throw new RuntimeException(e);
+            } else {
+                return null;
+            }
         }
     }
 }

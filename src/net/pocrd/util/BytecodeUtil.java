@@ -4,7 +4,39 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
 public class BytecodeUtil implements Opcodes {
-    public static void loadConstInt(MethodVisitor mv, int i) {
+    public static void loadConst(MethodVisitor mv, long l) {
+        if (l == 0) {
+            mv.visitInsn(LCONST_0);
+        } else if (l == 1) {
+            mv.visitInsn(LCONST_1);
+        } else {
+            mv.visitLdcInsn(new Long(l));
+        }
+    }
+
+    public static void loadConst(MethodVisitor mv, float f) {
+        if (f == 0) {
+            mv.visitInsn(FCONST_0);
+        } else if (f == 1) {
+            mv.visitInsn(FCONST_1);
+        } else if (f == 2) {
+            mv.visitInsn(FCONST_2);
+        } else {
+            mv.visitLdcInsn(new Float(f));
+        }
+    }
+
+    public static void loadConst(MethodVisitor mv, double d) {
+        if (d == 0) {
+            mv.visitInsn(DCONST_0);
+        } else if (d == 1) {
+            mv.visitInsn(DCONST_1);
+        } else {
+            mv.visitLdcInsn(new Double(d));
+        }
+    }
+
+    public static void loadConst(MethodVisitor mv, int i) {
         switch (i) {
             case -1:
                 mv.visitInsn(ICONST_M1);
@@ -38,4 +70,72 @@ public class BytecodeUtil implements Opcodes {
                 break;
         }
     }
+
+    public static void loadConst(MethodVisitor mv, String s) {
+        if (s == null) {
+            mv.visitInsn(ACONST_NULL);
+        } else {
+            mv.visitLdcInsn(s);
+        }
+    }
+
+    public static void loadConst(MethodVisitor mv, String s, Class<?> clazz) {
+        if (s == null) {
+            mv.visitInsn(ACONST_NULL);
+        } else {
+            if (clazz.isPrimitive()) {
+                String pName = clazz.toString();
+                if ("boolean".equals(pName)) {
+                    loadConst(mv, Boolean.parseBoolean(s) ? 1 : 0);
+                } else if ("byte".equals(pName)) {
+                    loadConst(mv, Integer.parseInt(s));
+                } else if ("char".equals(pName)) {
+                    loadConst(mv, Integer.parseInt(s));
+                } else if ("short".equals(pName)) {
+                    loadConst(mv, Integer.parseInt(s));
+                } else if ("int".equals(pName)) {
+                    loadConst(mv, Integer.parseInt(s));
+                } else if ("long".equals(pName)) {
+                    loadConst(mv, Long.parseLong(s));
+                } else if ("float".equals(pName)) {
+                    loadConst(mv, Float.parseFloat(s));
+                } else if ("double".equals(pName)) {
+                    loadConst(mv, Double.parseDouble(s));
+                } else {
+                    throw new RuntimeException("不支持的参数类型" + pName);
+                }
+            } else {
+                if (clazz == Boolean.class) {
+                    loadConst(mv, Boolean.parseBoolean(s) ? 1 : 0);
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
+                } else if (clazz == Byte.class) {
+                    loadConst(mv, Integer.parseInt(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;");
+                } else if (clazz == Character.class) {
+                    loadConst(mv, Integer.parseInt(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;");
+                } else if (clazz == Short.class) {
+                    loadConst(mv, Integer.parseInt(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;");
+                } else if (clazz == Integer.class) {
+                    loadConst(mv, Integer.parseInt(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
+                } else if (clazz == Long.class) {
+                    loadConst(mv, Long.parseLong(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
+                } else if (clazz == Float.class) {
+                    loadConst(mv, Float.parseFloat(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
+                } else if (clazz == Double.class) {
+                    loadConst(mv, Double.parseDouble(s));
+                    mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
+                } else if (clazz == String.class) {
+                    mv.visitLdcInsn(s);
+                } else {
+                    throw new RuntimeException("不支持的参数类型" + clazz.getName());
+                }
+            }
+        }
+    }
+
 }

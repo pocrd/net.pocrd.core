@@ -15,8 +15,16 @@ public class CommonConfig {
     private CommonConfig() {}
 
     static {
-        Instance = ConfigUtil.load("Common.config", CommonConfig.class);
-
+        CommonConfig tmp = ConfigUtil.load("Common.config", CommonConfig.class);
+        // 默认值设置
+        if (tmp == null) {
+            tmp = new CommonConfig();
+            tmp.autogenPath = "E:\\software\\jd\\";
+            tmp.tokenPwd = "KaKS8hro1Ljf7YXIK+iiag5ofiPmaucUqqfBTu7eVVI=";
+            tmp.accessLoggerName = "net.pocrd.api.access";
+            tmp.staticSignPwd = "pocrd@gmail.com";
+        }
+        Instance = tmp;
         Instance.accessLogger = LogManager.getLogger(Instance.accessLoggerName);
         Instance.tokenHelper = new TokenHelper(Instance.tokenPwd);
     }
@@ -24,6 +32,7 @@ public class CommonConfig {
     public String      accessLoggerName;
     public String      tokenPwd;
     public String      staticSignPwd;
+    public String      autogenPath;
 
     @XmlTransient
     public TokenHelper tokenHelper;

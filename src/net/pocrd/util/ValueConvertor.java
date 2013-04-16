@@ -1,5 +1,7 @@
 package net.pocrd.util;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
@@ -136,7 +138,21 @@ public class ValueConvertor implements Opcodes {
                 mv.visitEnd();
             }
             cw.visitEnd();
-
+            if (CommonConfig.isDebug) {
+                FileOutputStream fos = null;
+                try {
+                    File folder = new File(CommonConfig.Instance.autogenPath + "\\ValueConvertor\\");
+                    if (!folder.exists()) {
+                        folder.mkdirs();
+                    }
+                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + "\\ValueConvertor\\" + className + ".class");
+                    fos.write(cw.toByteArray());
+                } finally {
+                    if (fos != null) {
+                        fos.close();
+                    }
+                }
+            }
             return (Evaluater<TLeft, TRight>)new PocClassLoader().defineClass(className, cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(e);

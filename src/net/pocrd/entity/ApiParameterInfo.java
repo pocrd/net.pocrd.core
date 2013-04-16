@@ -2,19 +2,6 @@ package net.pocrd.entity;
 
 public class ApiParameterInfo {
     /**
-     * 参数默认值
-     */
-    private Object rawDefaultValue;
-
-    public void setRawDefaultValue(Object v) {
-        rawDefaultValue = v;
-    }
-
-    public Object getRawDefaultValue() {
-        return rawDefaultValue;
-    }
-
-    /**
      * 参数类型
      */
     private Class<?> rawType;

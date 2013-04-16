@@ -41,7 +41,7 @@ public class ApiManager {
      * @return
      */
     public final Object processRequest(String name, String[] parameters) {
-        return nameToApi.get(name).execute(parameters);
+        return nameToApi.get(name.toLowerCase()).execute(parameters);
     }
 
     private void registerAll(String packageName) {
@@ -51,7 +51,7 @@ public class ApiManager {
                 for (Class<?> clazz : classes) {
                     ApiGroup groupAnnotation = clazz.getAnnotation(ApiGroup.class);
                     if (groupAnnotation != null) {
-                        register(groupAnnotation.name(), clazz);
+                        register(groupAnnotation.value(), clazz);
                     }
                 }
             }
@@ -78,19 +78,25 @@ public class ApiManager {
                     apiInfo.proxyMethodInfo = mInfo;
                     Class<?>[] parameterTypes = mInfo.getParameterTypes();
                     Annotation[][] parameterAnnotations = mInfo.getParameterAnnotations();
+                    if (parameterTypes.length != parameterAnnotations.length) {
+                        throw new RuntimeException("存在未被标记的http api参数" + clazz.getName());
+                    }
                     ApiParameterInfo[] pInfos = new ApiParameterInfo[parameterTypes.length];
                     for (int i = 0; i < parameterTypes.length; i++) {
                         ApiParameterInfo pInfo = new ApiParameterInfo();
                         Class<?> type = parameterTypes[i];
                         if (CommonConfig.isDebug) {
-                            if (!type.isPrimitive() && type != String.class) {
-                                throw new RuntimeException("不支持的参数类型");
+                            if (!type.isPrimitive() && type != String.class && type != Boolean.class && type != Byte.class && type != Character.class
+                                    && type != Short.class && type != Integer.class && type != Long.class && type != Float.class
+                                    && type != Double.class) {
+                                throw new RuntimeException("不支持的参数类型" + clazz.getName() + " " + type.getName());
                             }
                         }
                         Annotation[] a = parameterAnnotations[i];
                         pInfo.type = type.getName();
+                        pInfo.setRawType(type);// pInfo.setRawDefaultValue(v);
                         if (a == null) {
-                            throw new RuntimeException("api参数未被标记" + clazz.getName() + "   " + mInfo.getName());
+                            throw new RuntimeException("api参数未被标记" + clazz.getName());
                         }
                         for (int j = 0; j < a.length;) {
                             Annotation n = a[j];
@@ -104,7 +110,7 @@ public class ApiManager {
                             }
                             j++;
                             if (j == a.length) {
-                                throw new RuntimeException("api参数未被标记" + clazz.getName() + "   " + mInfo.getName());
+                                throw new RuntimeException("api参数未被标记" + clazz.getName());
                             }
                         }
                         pInfos[i] = pInfo;
@@ -115,13 +121,13 @@ public class ApiManager {
                     if (CommonConfig.isDebug) {
                         Class<?> type = apiInfo.returnType;
                         if (!apiInfo.returnTypeString.startsWith("net.pocrd.api.resp.Api") && type != String.class) {
-                            throw new RuntimeException("不支持的返回值类型");
+                            throw new RuntimeException("不支持的返回值类型" + clazz.getName() + " " + type.getName());
                         }
                     }
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;
                     apiInfos.put(apiInfo.methodName, apiInfo);
-                    nameToApi.put(apiInfo.methodName, HttpApiUtil.getApiExecuter(apiInfo.methodName, mInfo));
+                    nameToApi.put(apiInfo.methodName, HttpApiUtil.getApiExecuter(apiInfo.methodName, apiInfo));
                 }
             }
         }
