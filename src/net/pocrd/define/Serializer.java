@@ -6,6 +6,6 @@ import com.google.protobuf.GeneratedMessage;
 
 public interface Serializer<T> {
     void toXml(T instance, OutputStream out, boolean isRoot);
-    void toJson(T instance, OutputStream out);
+    void toJson(T instance, OutputStream out, boolean isRoot);
     void toProtobuf(GeneratedMessage instance, OutputStream out);
 }
