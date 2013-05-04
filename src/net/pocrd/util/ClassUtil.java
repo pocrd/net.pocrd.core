@@ -8,6 +8,11 @@ import java.util.List;
 
 import org.apache.logging.log4j.core.helpers.Loader;
 
+/**
+ * 获取命名空间下的所有类
+ * @author rendong
+ *
+ */
 public class ClassUtil {
     public static Class<?>[] getAllClassesInPackage(String packageName) {
         try {

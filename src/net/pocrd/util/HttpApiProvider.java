@@ -3,6 +3,8 @@ package net.pocrd.util;
 import java.io.File;
 import java.io.FileOutputStream;
 
+import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
 
@@ -18,7 +20,7 @@ import org.objectweb.asm.Type;
  * 
  * @author rendong
  */
-public class HttpApiUtil implements Opcodes {
+public class HttpApiProvider implements Opcodes {
 
     public static HttpApiExecuter getApiExecuter(String name, ApiMethodInfo method) {
         try {
@@ -73,13 +75,13 @@ public class HttpApiUtil implements Opcodes {
             {
                 mv = cw.visitMethod(ACC_PUBLIC, "execute", "([Ljava/lang/String;)Ljava/lang/Object;", null, null);
                 mv.visitCode();
-                Label l0 = new Label();
+                //Label l0 = new Label();
                 Label l1 = new Label();
                 Label l2 = new Label();
                 Label l3 = new Label();
                 Label l4 = new Label();
                 mv.visitTryCatchBlock(l2, l3, l4, "java/lang/Exception");
-                mv.visitLabel(l0);
+                //mv.visitLabel(l0);
                 int notNullCount = 0;
                 for (int i = 0; i < parameterInfos.length; i++) {
                     ApiParameterInfo parameterInfo = parameterInfos[i];
@@ -188,10 +190,9 @@ public class HttpApiUtil implements Opcodes {
                 mv.visitLabel(l3);
                 mv.visitInsn(ARETURN);
                 mv.visitLabel(l4);
-                mv.visitFrame(Opcodes.F_SAME1, 0, null, 1, new Object[] { "java/lang/Exception" });
                 mv.visitVarInsn(ASTORE, 2);
-                Label l5 = new Label();
-                mv.visitLabel(l5);
+                // Label l5 = new Label();
+                // mv.visitLabel(l5);
                 mv.visitTypeInsn(NEW, "net/pocrd/entity/ReturnCodeException");
                 mv.visitInsn(DUP);
                 mv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ReturnCode", "PARAMETER_ERROR", "Lnet/pocrd/entity/ReturnCode;");
@@ -199,11 +200,11 @@ public class HttpApiUtil implements Opcodes {
                 mv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>",
                         "(Lnet/pocrd/entity/ReturnCode;Ljava/lang/Exception;)V");
                 mv.visitInsn(ATHROW);
-                Label l6 = new Label();
-                mv.visitLabel(l6);
-                mv.visitLocalVariable("this", classDesc, null, l0, l6, 0);
-                mv.visitLocalVariable("parameters", "[Ljava/lang/String;", null, l0, l6, 1);
-                mv.visitLocalVariable("e", "Ljava/lang/Exception;", null, l5, l6, 2);
+                // Label l6 = new Label();
+                // mv.visitLabel(l6);
+                // mv.visitLocalVariable("this", classDesc, null, l0, l6, 0);
+                // mv.visitLocalVariable("parameters", "[Ljava/lang/String;", null, l0, l6, 1);
+                // mv.visitLocalVariable("e", "Ljava/lang/Exception;", null, l5, l6, 2);
                 mv.visitMaxs(0, 0);
                 mv.visitEnd();
             }
@@ -223,11 +224,12 @@ public class HttpApiUtil implements Opcodes {
                     }
                 }
             }
-            HttpApiExecuter e = (HttpApiExecuter)new PocClassLoader().defineClass(className.replace('/', '.'), cw.toByteArray()).newInstance();
+            HttpApiExecuter e = (HttpApiExecuter)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(
+                    className.replace('/', '.'), cw.toByteArray()).newInstance();
             e.setInstance(clazz.newInstance());
             return e;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("generate failed. " + name, e);
         }
     }
 }

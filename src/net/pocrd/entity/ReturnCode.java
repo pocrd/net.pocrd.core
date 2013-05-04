@@ -41,6 +41,8 @@ public class ReturnCode {
     @Description("请求解析错误")
     public final static ReturnCode         REQUEST_PARSE_ERROR            = new ReturnCode("REQUEST_PARSE_ERROR", -7);
 
+    public final static ReturnCode         SERIALIZE_FAILED               = new ReturnCode("SERIALIZE_FAILED", -8, UNKNOWN_ERROR);
+
     @Description("成功")
     public final static ReturnCode         SUCCESS                        = new ReturnCode("SUCCESS", 0);
 

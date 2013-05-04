@@ -1,6 +1,6 @@
 package net.pocrd.util;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Create and cache an object, which is a subclass instance of input class,
@@ -11,7 +11,7 @@ import java.util.HashMap;
  * @param <T>
  */
 public class CacheProvider {
-    private static HashMap<Class<?>, Object> cache = new HashMap<Class<?>, Object>();
+    private static ConcurrentHashMap<Class<?>, Object> cache = new ConcurrentHashMap<Class<?>, Object>();
 
     @SuppressWarnings("unchecked")
     public static <T> T getCahceable(Class<T> clazz) {

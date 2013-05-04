@@ -51,6 +51,10 @@ public abstract class BaseServlet extends HttpServlet {
 
     }
 
+    /**
+     * 注册api接口，该函数需要在应用程序启动完成前结束工作
+     * @param packageName
+     */
     public static void registerAll(String packageName) {
         apiManager = new ApiManager(packageName);
     }

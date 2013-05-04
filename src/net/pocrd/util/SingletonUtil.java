@@ -1,6 +1,6 @@
 package net.pocrd.util;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Create and cache an single instance for input class.
@@ -8,8 +8,8 @@ import java.util.HashMap;
  * @author rendong
  * @param <T>
  */
-public class SingletonProvider {
-    private static HashMap<Class<?>, Object> cache = new HashMap<Class<?>, Object>();
+public class SingletonUtil {
+    private static ConcurrentHashMap<Class<?>, Object> cache = new ConcurrentHashMap<Class<?>, Object>();
 
     @SuppressWarnings("unchecked")
     public static <T> T getSingleton(Class<T> clazz) {

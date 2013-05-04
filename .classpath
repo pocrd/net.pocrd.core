@@ -8,7 +8,7 @@
 	<classpathentry kind="lib" path="lib/jackson-databind-2.1.4.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-api-2.0-beta4.jar"/>
 	<classpathentry kind="lib" path="lib/log4j-core-2.0-beta4.jar"/>
-	<classpathentry kind="lib" path="lib/protobuf.jar"/>
+	<classpathentry kind="lib" path="lib/protobuf-java-2.5.0.jar" sourcepath="/net.pocrd.api/third/protobuf/protobuf-2.5.0.zip"/>
 	<classpathentry kind="lib" path="lib/asm-4.1.jar" sourcepath="/net.pocrd.api/third/asm-src.zip"/>
 	<classpathentry kind="lib" path="lib/asm-analysis-4.1.jar"/>
 	<classpathentry kind="lib" path="lib/asm-commons-4.1.jar"/>

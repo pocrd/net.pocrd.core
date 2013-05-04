@@ -5,6 +5,10 @@ import java.io.FileOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
+import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.Evaluater;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -12,18 +16,12 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
-public class ValueConvertor implements Opcodes {
+public class EvaluaterProvider implements Opcodes {
 
-    private static HashMap<String, Evaluater<?, ?>> cache = new HashMap<String, Evaluater<?, ?>>();
-
-    @SuppressWarnings("unchecked")
-    public static <TLeft, TRight> void evaluate(TLeft l, TRight r) {
-        Evaluater<TLeft, TRight> evaluater = (Evaluater<TLeft, TRight>)getConvertor(l.getClass(), r.getClass());
-        evaluater.evaluate(l, r);
-    }
+    private static ConcurrentHashMap<String, Evaluater<?, ?>> cache = new ConcurrentHashMap<String, Evaluater<?, ?>>();
 
     @SuppressWarnings("unchecked")
-    private static <TLeft, TRight> Evaluater<TLeft, TRight> getConvertor(Class<TLeft> leftClass, Class<TRight> rightClass) {
+    public static <TLeft, TRight> Evaluater<TLeft, TRight> getEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
         String key = leftClass.getName() + "_" + rightClass.getName();
         Evaluater<TLeft, TRight> evaluater = (Evaluater<TLeft, TRight>)cache.get(key);
         if (evaluater == null) {
@@ -40,22 +38,20 @@ public class ValueConvertor implements Opcodes {
 
     @SuppressWarnings("unchecked")
     private static <TLeft, TRight> Evaluater<TLeft, TRight> createEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
-
+        ClassWriter cw = new ClassWriter(0);
+        MethodVisitor mv;
+        String l_name = leftClass.getName().replace('.', '/');
+        String r_name = rightClass.getName().replace('.', '/');
+        String className = "net.pocrd.autogen.Evaluator_" + l_name.substring(l_name.lastIndexOf('/') + 1).replace("/", "") + "_"
+                + r_name.substring(r_name.lastIndexOf('/') + 1).replace("/", "");
+        className = className.replace('$', '_');
+        String c_name = className.replace('.', '/');
+        String c_desc = "L" + c_name + ";";
+        String e_name = Evaluater.class.getName().replace('.', '/');
+        String l_desc = Type.getDescriptor(leftClass);
+        String r_desc = Type.getDescriptor(rightClass);
+        String e_desc = Type.getDescriptor(Evaluater.class);
         try {
-            ClassWriter cw = new ClassWriter(0);
-            MethodVisitor mv;
-            String l_name = leftClass.getName().replace('.', '/');
-            String r_name = rightClass.getName().replace('.', '/');
-            String className = "net.pocrd.autogen.Evaluator_" + l_name.substring(l_name.lastIndexOf('/') + 1).replace("/", "") + "_"
-                    + r_name.substring(r_name.lastIndexOf('/') + 1).replace("/", "");
-            className = className.replace('$', '_');
-            String c_name = className.replace('.', '/');
-            String c_desc = "L" + c_name + ";";
-            String e_name = Evaluater.class.getName().replace('.', '/');
-            String l_desc = Type.getDescriptor(leftClass);
-            String r_desc = Type.getDescriptor(rightClass);
-            String e_desc = Type.getDescriptor(Evaluater.class);
-
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name, "Ljava/lang/Object;" + e_desc + "<" + l_desc + r_desc + ">;", "java/lang/Object",
                     new String[] { e_name });
 
@@ -141,11 +137,11 @@ public class ValueConvertor implements Opcodes {
             if (CommonConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
-                    File folder = new File(CommonConfig.Instance.autogenPath + "\\ValueConvertor\\");
+                    File folder = new File(CommonConfig.Instance.autogenPath + "\\Evaluater\\");
                     if (!folder.exists()) {
                         folder.mkdirs();
                     }
-                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + "\\ValueConvertor\\" + className + ".class");
+                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + "\\Evaluater\\" + className + ".class");
                     fos.write(cw.toByteArray());
                 } finally {
                     if (fos != null) {
@@ -153,9 +149,10 @@ public class ValueConvertor implements Opcodes {
                     }
                 }
             }
-            return (Evaluater<TLeft, TRight>)new PocClassLoader().defineClass(className, cw.toByteArray()).newInstance();
+            return (Evaluater<TLeft, TRight>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
+                    cw.toByteArray()).newInstance();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(className, e);
         }
     }
 }

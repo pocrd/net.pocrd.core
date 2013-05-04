@@ -7,12 +7,12 @@ import java.util.HashMap;
 import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.HttpApi;
+import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
 import net.pocrd.util.ClassUtil;
 import net.pocrd.util.CommonConfig;
-import net.pocrd.util.HttpApiExecuter;
-import net.pocrd.util.HttpApiUtil;
+import net.pocrd.util.HttpApiProvider;
 
 public class ApiManager {
     private static final String              API_METHOD_NAME = "execute";
@@ -127,7 +127,7 @@ public class ApiManager {
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;
                     apiInfos.put(apiInfo.methodName, apiInfo);
-                    nameToApi.put(apiInfo.methodName, HttpApiUtil.getApiExecuter(apiInfo.methodName, apiInfo));
+                    nameToApi.put(apiInfo.methodName, HttpApiProvider.getApiExecuter(apiInfo.methodName, apiInfo));
                 }
             }
         }

@@ -1,4 +1,4 @@
-package net.pocrd.util;
+package net.pocrd.define;
 
 public interface HttpApiExecuter {
     void setInstance(Object obj);

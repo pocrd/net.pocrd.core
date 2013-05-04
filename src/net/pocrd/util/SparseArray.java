@@ -38,7 +38,7 @@ public class SparseArray<E> {
      * number of mappings.
      */
     public SparseArray(int initialCapacity) {
-        initialCapacity = ArrayUtils.idealIntArraySize(initialCapacity);
+        initialCapacity = ArrayUtil.idealIntArraySize(initialCapacity);
 
         mKeys = new int[initialCapacity];
         mValues = new Object[initialCapacity];
@@ -143,7 +143,7 @@ public class SparseArray<E> {
             }
 
             if (mSize >= mKeys.length) {
-                int n = ArrayUtils.idealIntArraySize(mSize + 1);
+                int n = ArrayUtil.idealIntArraySize(mSize + 1);
 
                 int[] nkeys = new int[n];
                 Object[] nvalues = new Object[n];
@@ -284,7 +284,7 @@ public class SparseArray<E> {
 
         int pos = mSize;
         if (pos >= mKeys.length) {
-            int n = ArrayUtils.idealIntArraySize(pos + 1);
+            int n = ArrayUtil.idealIntArraySize(pos + 1);
 
             int[] nkeys = new int[n];
             Object[] nvalues = new Object[n];
