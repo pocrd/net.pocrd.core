@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.pocrd.define.CommonParameter;
+import net.pocrd.define.ConstField;
 import net.pocrd.define.SerializeType;
 import net.pocrd.entity.ApiContext;
 import net.pocrd.entity.ApiMethodCall;
@@ -24,35 +25,27 @@ import net.pocrd.util.TokenHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.JsonFilter;
-import com.fasterxml.jackson.annotation.JsonIgnoreType;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
-import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
-
 public abstract class BaseServlet extends HttpServlet {
     private static final long     serialVersionUID = 1L;
     private static final Logger   logger           = LogManager.getLogger(BaseServlet.class.getName());
-    protected static final Logger access           = CommonConfig.Instance.accessLogger;
-    protected static final String DEBUG_AGENT      = "pocrd.tester";
-
-    private static ObjectMapper   json             = new ObjectMapper();
-    protected static ApiManager   apiManager;
     private static TokenHelper    tokenHelper      = new TokenHelper(CommonConfig.Instance.tokenPwd);
 
-    static {
-        json.setVisibility(PropertyAccessor.SETTER, Visibility.PUBLIC_ONLY);
-        json.addMixInAnnotations(com.google.protobuf.GeneratedMessage.class, Mixin1.class);
-        json.addMixInAnnotations(com.google.protobuf.MessageOrBuilder.class, Mixin2.class);
-        json.setFilters(new SimpleFilterProvider().addFilter("global", SimpleBeanPropertyFilter.serializeAllExcept("unknownFields",
-                "defaultInstanceForType", "descriptorForType", "allFields", "serializedSize", "initialized")));
+    protected static final Logger access           = CommonConfig.Instance.accessLogger;
+    protected static final String DEBUG_AGENT      = "pocrd.tester";
+    protected static ApiManager   apiManager;
 
-    }
+    public static final byte[]    XML_START        = "<xml>".getBytes(ConstField.UTF8);
+    public static final byte[]    XML_END          = "</xml>".getBytes(ConstField.UTF8);
+    public static final byte[]    XML_EMPTY          = "<empty/>".getBytes(ConstField.UTF8);
+    public static final byte[]    JSON_STAT        = "{\"stat\":".getBytes(ConstField.UTF8);
+    public static final byte[]    JSON_CONTENT     = ",\"content\":[".getBytes(ConstField.UTF8);
+    public static final byte[]    JSON_SPLIT       = ",".getBytes(ConstField.UTF8);
+    public static final byte[]    JSON_END         = "]}".getBytes(ConstField.UTF8);
+    public static final byte[]    JSON_EMPTY       = "{}".getBytes(ConstField.UTF8);
 
     /**
      * 注册api接口，该函数需要在应用程序启动完成前结束工作
+     * 
      * @param packageName
      */
     public static void registerAll(String packageName) {
@@ -61,16 +54,6 @@ public abstract class BaseServlet extends HttpServlet {
 
     public static ApiMethodInfo[] getApiInfos() {
         return apiManager.getApiMethodInfos();
-    }
-
-    @JsonFilter("global")
-    static interface Mixin1 {
-
-    }
-
-    @JsonIgnoreType()
-    static interface Mixin2 {
-
     }
 
     private void processRequest(HttpServletRequest request, HttpServletResponse response) {
@@ -110,17 +93,24 @@ public abstract class BaseServlet extends HttpServlet {
         } catch (Exception e) {
             logger.error("api execute error.", e);
         } finally {
-            // TODO:进行流式输出
-            apiContext.clear();
             if (fatalError || parseResult == ReturnCode.REQUEST_PARSE_ERROR) {
                 // 错误请求
                 response.setStatus(400);
             } else if (parseResult != ReturnCode.SUCCESS) {
                 // 访问被拒绝
                 response.setStatus(401);
+            } else {
+                try {
+                    output(apiContext, request, response);
+                } catch (Exception e) {
+                    logger.error("output failed.", e);
+                }
             }
+            apiContext.clear();
         }
     }
+
+    abstract protected void output(ApiContext apiContext, HttpServletRequest request, HttpServletResponse response) throws IOException;
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);

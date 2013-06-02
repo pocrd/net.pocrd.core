@@ -8,11 +8,13 @@ import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.HttpApi;
 import net.pocrd.define.HttpApiExecuter;
+import net.pocrd.define.Serializer;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
 import net.pocrd.util.ClassUtil;
 import net.pocrd.util.CommonConfig;
 import net.pocrd.util.HttpApiProvider;
+import net.pocrd.util.SerializerProvider;
 
 public class ApiManager {
     private static final String              API_METHOD_NAME = "execute";
@@ -123,6 +125,17 @@ public class ApiManager {
                         if (!apiInfo.returnTypeString.startsWith("net.pocrd.api.resp.Api") && type != String.class) {
                             throw new RuntimeException("不支持的返回值类型" + clazz.getName() + " " + type.getName());
                         }
+                    }
+                    // 移除命名空间
+                    // if (apiInfo.returnTypeString.contains("$")) {
+                    // apiInfo.returnTypeString = apiInfo.returnTypeString.substring(apiInfo.returnTypeString.lastIndexOf('$') + 1);
+                    // } else if (apiInfo.returnTypeString.contains(".")) {
+                    // apiInfo.returnTypeString = apiInfo.returnTypeString.substring(apiInfo.returnTypeString.lastIndexOf('.') + 1);
+                    // }
+                    if (apiInfo.returnType == String.class) {
+                        apiInfo.serializer = Serializer.stringSerializer;
+                    } else {
+                        apiInfo.serializer = SerializerProvider.getSerializer(apiInfo.returnType);
                     }
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;

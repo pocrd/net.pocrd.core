@@ -3,9 +3,11 @@
 import java.lang.reflect.Method;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import javax.xml.bind.annotation.XmlTransient;
 
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
+import net.pocrd.define.Serializer;
 
 /**
  * 接口信息
@@ -29,7 +31,14 @@ public class ApiMethodInfo {
     /**
      * 返回值类型
      */
+    @XmlTransient
     public Class<?>                   returnType;
+
+    /**
+     * 返回值类型对应的序列化工具
+     */
+    @XmlTransient
+    public Serializer<?>              serializer;
 
     /**
      * 方法名称
@@ -74,5 +83,6 @@ public class ApiMethodInfo {
     /**
      * 所代理的方法的信息
      */
+    @XmlTransient
     public Method                     proxyMethodInfo;
 }
