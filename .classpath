@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="lib" path="lib/asm-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/asm-analysis-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/asm-commons-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/asm-tree-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/asm-util-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/asm-xml-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-annotations-2.1.4.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-core-2.1.4.jar"/>
+	<classpathentry kind="lib" path="lib/jackson-databind-2.1.4.jar"/>
+	<classpathentry kind="lib" path="lib/jaxb-api.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-api-2.0-beta4.jar"/>
+	<classpathentry kind="lib" path="lib/log4j-core-2.0-beta4.jar"/>
+	<classpathentry kind="lib" path="lib/protobuf-java-2.5.0.jar"/>
+	<classpathentry kind="lib" path="lib/servlet-api.jar"/>
+	<classpathentry kind="lib" path="lib/stax2-api-3.1.1.jar"/>
+	<classpathentry kind="lib" path="lib/woodstox-core-lgpl-4.1.5.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
