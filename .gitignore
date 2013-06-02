@@ -9,3 +9,7 @@
 /bin/
 /debug/
 
+
+.classpath
+
+.settings/*
