@@ -6,6 +6,7 @@ import java.util.HashMap;
 
 import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
+import net.pocrd.annotation.DesignedErrorCode;
 import net.pocrd.annotation.HttpApi;
 import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.define.Serializer;
@@ -95,8 +96,7 @@ public class ApiManager {
                             }
                         }
                         Annotation[] a = parameterAnnotations[i];
-                        pInfo.type = type.getName();
-                        pInfo.setRawType(type);// pInfo.setRawDefaultValue(v);
+                        pInfo.type = type;
                         if (a == null) {
                             throw new RuntimeException("api参数未被标记" + clazz.getName());
                         }
@@ -119,10 +119,9 @@ public class ApiManager {
                     }
                     apiInfo.parameterInfos = pInfos;
                     apiInfo.returnType = mInfo.getReturnType();
-                    apiInfo.returnTypeString = apiInfo.returnType.getName();
                     if (CommonConfig.isDebug) {
                         Class<?> type = apiInfo.returnType;
-                        if (!apiInfo.returnTypeString.startsWith("net.pocrd.api.resp.Api") && type != String.class) {
+                        if (!apiInfo.returnType.getName().startsWith("net.pocrd.api.resp.Api") && type != String.class) {
                             throw new RuntimeException("不支持的返回值类型" + clazz.getName() + " " + type.getName());
                         }
                     }
