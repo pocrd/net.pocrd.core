@@ -85,13 +85,13 @@ public class HttpApiProvider implements Opcodes {
                 int notNullCount = 0;
                 for (int i = 0; i < parameterInfos.length; i++) {
                     ApiParameterInfo parameterInfo = parameterInfos[i];
-                    if (parameterInfo.isRequired || (parameterInfo.defaultValue == null && parameterInfo.getRawType().isPrimitive())) {
+                    if (parameterInfo.isRequired || (parameterInfo.defaultValue == null && parameterInfo.type.isPrimitive())) {
                         notNullCount++;
                     }
                 }
                 for (int i = 0; i < parameterInfos.length; i++) {
                     ApiParameterInfo parameterInfo = parameterInfos[i];
-                    if (parameterInfo.isRequired || (parameterInfo.defaultValue == null && parameterInfo.getRawType().isPrimitive())) {
+                    if (parameterInfo.isRequired || (parameterInfo.defaultValue == null && parameterInfo.type.isPrimitive())) {
                         mv.visitVarInsn(ALOAD, 1);
                         BytecodeUtil.loadConst(mv, i);
                         mv.visitInsn(AALOAD);
@@ -115,7 +115,7 @@ public class HttpApiProvider implements Opcodes {
                 mv.visitTypeInsn(CHECKCAST, clazz.getName().replace('.', '/'));
                 for (int i = 0; i < parameterInfos.length; i++) {
                     ApiParameterInfo parameterInfo = parameterInfos[i];
-                    Class<?> parameterType = parameterInfo.getRawType();
+                    Class<?> parameterType = parameterInfo.type;
                     String defaultValueString = null;
                     if (!parameterInfo.isRequired) {
                         defaultValueString = parameterInfo.defaultValue;

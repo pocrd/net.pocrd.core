@@ -2,6 +2,8 @@
 
 import java.lang.reflect.Method;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -31,7 +33,6 @@ public class ApiMethodInfo {
     /**
      * 返回值类型
      */
-    @XmlTransient
     public Class<?>                   returnType;
 
     /**
@@ -51,11 +52,6 @@ public class ApiMethodInfo {
     public String                     description;
 
     /**
-     * 返回值类型string表示
-     */
-    public String                     returnTypeString;
-
-    /**
      * 方法需要的安全级别
      */
     public SecurityType               securityLevel = SecurityType.None;
@@ -73,11 +69,15 @@ public class ApiMethodInfo {
     /**
      * 参数类型
      */
+    @XmlElementWrapper(name = "parameterInfos")
+    @XmlElement(name = "parameterInfo")
     public ApiParameterInfo[]         parameterInfos;
 
     /**
      * 该方法可能抛出的业务异常的errorcode集合
      */
+    @XmlElementWrapper(name = "errorCodes")
+    @XmlElement(name = "apiCode")
     public int[]                      errorCodes;
 
     /**
