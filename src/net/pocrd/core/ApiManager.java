@@ -73,7 +73,7 @@ public class ApiManager {
                     ApiMethodInfo apiInfo = new ApiMethodInfo();
                     apiInfo.groupName = groupName;
                     apiInfo.description = api.desc();
-                    apiInfo.methodName = api.name().toLowerCase();
+                    apiInfo.methodName = api.name();
                     DesignedErrorCode errors = mInfo.getAnnotation(DesignedErrorCode.class);
                     if (errors != null) {
                         apiInfo.errorCodes = errors.value();
@@ -138,8 +138,8 @@ public class ApiManager {
                     }
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;
-                    apiInfos.put(apiInfo.methodName, apiInfo);
-                    nameToApi.put(apiInfo.methodName, HttpApiProvider.getApiExecuter(apiInfo.methodName, apiInfo));
+                    apiInfos.put(apiInfo.methodName.toLowerCase(), apiInfo);
+                    nameToApi.put(apiInfo.methodName.toLowerCase(), HttpApiProvider.getApiExecuter(apiInfo.methodName, apiInfo));
                 }
             }
         }
