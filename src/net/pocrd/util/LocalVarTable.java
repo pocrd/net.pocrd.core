@@ -1,7 +1,7 @@
 package net.pocrd.util;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -23,26 +23,25 @@ public class LocalVarTable implements Opcodes {
 		public int slotPos;
 	}
 
+	private int countOfArgs = 0;
 	private int nextFreeSlotPos = 0;
-	private int nextLocalVarIndex = 0;
-	private HashMap<Integer, VarInfo> localVarInfo = new HashMap<Integer, VarInfo>();
+	private ArrayList<VarInfo> localVarInfo = new ArrayList<VarInfo>();
 
 	public LocalVarTable(Method method) {
 		init(method);
 	}
 
 	/**
-	 * 设置this
+	 * 设置函数入参的加载指令及slotpos
 	 */
 	private void init(Method method) {
-		nextLocalVarIndex = 0;
 		nextFreeSlotPos = 0;
-		localVarInfo.put(0, new VarInfo(0, ALOAD));//this
+		localVarInfo.add(new VarInfo(0, ALOAD));// this
 		nextFreeSlotPos++;
-		nextLocalVarIndex++;
 		Class<?>[] paramTypes = method.getParameterTypes();
+		countOfArgs = 1 + paramTypes.length;
 		if (paramTypes != null) {
-			for (int i=0;i<paramTypes.length;i++) {
+			for (int i = 0; i < paramTypes.length; i++) {
 				if (paramTypes[i].isPrimitive()) {
 					String pName = paramTypes[i].getName();
 					switch (pName) {
@@ -51,45 +50,37 @@ public class LocalVarTable implements Opcodes {
 					case "short":
 					case "byte":
 					case "char":
-						localVarInfo.put(nextLocalVarIndex, new VarInfo(nextFreeSlotPos, ILOAD));
+						localVarInfo.add(new VarInfo(nextFreeSlotPos, ILOAD));
 						break;
 					case "float":
-						localVarInfo.put(nextLocalVarIndex, new VarInfo(nextFreeSlotPos, FLOAD));
+						localVarInfo.add(new VarInfo(nextFreeSlotPos, FLOAD));
 						break;
 					case "double":
-						localVarInfo.put(nextLocalVarIndex, new VarInfo(nextFreeSlotPos,DLOAD));
+						localVarInfo.add(new VarInfo(nextFreeSlotPos, DLOAD));
 						nextFreeSlotPos++;
 						break;
 					case "long":
-						localVarInfo.put(nextLocalVarIndex, new VarInfo(nextFreeSlotPos,LLOAD));
+						localVarInfo.add(new VarInfo(nextFreeSlotPos, LLOAD));
 						nextFreeSlotPos++;
 						break;
 					default:
 						throw new RuntimeException("不支持的类型" + pName);
 					}
 				} else {
-					localVarInfo.put(nextLocalVarIndex, new VarInfo(nextFreeSlotPos,ALOAD));
+					localVarInfo.add(new VarInfo(nextFreeSlotPos, ALOAD));
 				}
 				nextFreeSlotPos++;
-				nextLocalVarIndex++;
 			}
 		}
 	}
-	
 
-	/**
-	 * 下一个局部变量的索引
-	 */
-	public int nextLocalVarIndex(){
-		return nextLocalVarIndex;
-	}
 	/**
 	 * 存放局部变量，修改SlotTop
 	 * 
 	 * @param mv
 	 * @param clazz
 	 */
-	public void storeLocalVar(MethodVisitor mv, Class<?> clazz) {
+	public void setLocal(MethodVisitor mv, Class<?> clazz) {
 		if (clazz.isPrimitive()) {
 			String pName = clazz.getName();
 			switch (pName) {
@@ -99,24 +90,20 @@ public class LocalVarTable implements Opcodes {
 			case "byte":
 			case "char":
 				mv.visitVarInsn(ISTORE, nextFreeSlotPos);
-				localVarInfo.put(nextLocalVarIndex, new VarInfo(
-						nextFreeSlotPos, ILOAD));
+				localVarInfo.add(new VarInfo(nextFreeSlotPos, ILOAD));
 				break;
 			case "float":
 				mv.visitVarInsn(FSTORE, nextFreeSlotPos);
-				localVarInfo.put(nextLocalVarIndex, new VarInfo(
-						nextFreeSlotPos, FLOAD));
+				localVarInfo.add(new VarInfo(nextFreeSlotPos, FLOAD));
 				break;
 			case "double":
 				mv.visitVarInsn(DSTORE, nextFreeSlotPos);// 32位机，double/long占两个slot
-				localVarInfo.put(nextLocalVarIndex, new VarInfo(
-						nextFreeSlotPos, DLOAD));
+				localVarInfo.add(new VarInfo(nextFreeSlotPos, DLOAD));
 				nextFreeSlotPos++;
 				break;
 			case "long":
 				mv.visitVarInsn(LSTORE, nextFreeSlotPos);
-				localVarInfo.put(nextLocalVarIndex, new VarInfo(
-						nextFreeSlotPos, LLOAD));
+				localVarInfo.add(new VarInfo(nextFreeSlotPos, LLOAD));
 				nextFreeSlotPos++;
 				break;
 			default:
@@ -124,25 +111,38 @@ public class LocalVarTable implements Opcodes {
 			}
 		} else {
 			mv.visitVarInsn(ASTORE, nextFreeSlotPos);
-			localVarInfo.put(nextLocalVarIndex, new VarInfo(nextFreeSlotPos,
-					ALOAD));
+			localVarInfo.add(new VarInfo(nextFreeSlotPos, ALOAD));
 		}
 		nextFreeSlotPos++;
-		nextLocalVarIndex++;
 	}
 
 	/**
-	 * 加载临时变量
+	 * 加载局部变量
 	 * 
 	 * @param mv
-	 * @param indexOfVar
+	 * @param indexOfLocal
 	 */
-	public void loadLocalVar(MethodVisitor mv, int indexOfVar) {
-		if (localVarInfo.containsKey(indexOfVar)) {
-			VarInfo vinfo = localVarInfo.get(indexOfVar);
+	public void loadLocal(MethodVisitor mv, int indexOfLocal) {
+		if (localVarInfo.size()>= indexOfLocal + countOfArgs) {
+			VarInfo vinfo = localVarInfo.get(indexOfLocal+countOfArgs);
 			mv.visitVarInsn(vinfo.loadOpcode, vinfo.slotPos);
 		} else {
-			throw new RuntimeException("无法获取尚未设置的局部变量,变量编号:" + indexOfVar);
+			throw new RuntimeException("无法获取尚未设置的局部变量,变量编号:" + indexOfLocal);
+		}
+	}
+
+	/**
+	 * 加载函数入参
+	 * 
+	 * @param mv
+	 * @param indexOfArg
+	 */
+	public void loadArg(MethodVisitor mv, int indexOfArg) {
+		if (countOfArgs >= indexOfArg) {
+			VarInfo vinfo = localVarInfo.get(indexOfArg);
+			mv.visitVarInsn(vinfo.loadOpcode, vinfo.slotPos);
+		} else {
+			throw new RuntimeException("参数索引非法:" + indexOfArg);
 		}
 	}
 }

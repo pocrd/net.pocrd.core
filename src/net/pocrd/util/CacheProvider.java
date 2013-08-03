@@ -21,8 +21,8 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
- * Generate subclass with cache，then create and cache an single instance for
- * input class.
+ * Generate subclass with cacheMethod,then create and cache an single instance
+ * for input class.
  * 
  * @author guankaiqiang
  * @param <T>
@@ -55,12 +55,11 @@ public class CacheProvider implements Opcodes {
 				return SingletonUtil.getSingleton(clazz);
 			}
 		} catch (Exception e) {
-			throw new RuntimeException("创建单例失败", e);
+			throw new RuntimeException("鍗曚緥鍒涘缓澶辫触", e);
 		}
 	}
 
 	/**
-	 * 检测代理类型是否包含需要缓存的方法
 	 * 
 	 * @author guankaiqiang
 	 * @param clazz
@@ -79,7 +78,7 @@ public class CacheProvider implements Opcodes {
 	}
 
 	/**
-	 * 织入缓存代码
+	 * 鐢熸垚缂撳瓨Class
 	 * 
 	 * @author guankaiqiang
 	 * @return
@@ -117,27 +116,25 @@ public class CacheProvider implements Opcodes {
 				CacheMethod cacheAnnotation = m
 						.getAnnotation(CacheMethod.class);
 				if (cacheAnnotation != null && cacheAnnotation.enable()) {
-					// 对于返回void的函数不做处理
-					if ("void".equals(m.getReturnType().getName())) {
+					Class<?> returnType=m.getReturnType();
+					if ("void".equals(returnType.getName())) {
 						continue;
 					}
-					// 引入ReturnType参与key构造，从一定程度上避免复用cacheKey导致转型问题。
-					// 允许不同函数复用同样的缓存，不过这个复用是不安全的，不推荐使用
 					String keyName = CommonConfig.Instance.cacheVersion
 							+ CACHE_SPLITER + cacheAnnotation.key()
 							+ CACHE_SPLITER
-							+ m.getReturnType().getCanonicalName()// 使用全限定名
+							+ returnType.getCanonicalName()
 							+ CACHE_SPLITER;
 					int expire = cacheAnnotation.expire();
 					Label ljump0 = new Label();
 					Label ljump1 = new Label();
 					Label ljump2 = new Label();
-					LocalVarTable varTb = new LocalVarTable(m);// 临时变量表信息
+					LocalVarTable varTb = new LocalVarTable(m);
 					{
 						mv = cw.visitMethod(ACC_PUBLIC, m.getName(),
 								Type.getMethodDescriptor(m), null, null);
 						mv.visitCode();
-						// 1.构造cachekey
+						// 1.generate cachekey
 						{
 							mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
 							mv.visitInsn(DUP);
@@ -153,7 +150,7 @@ public class CacheProvider implements Opcodes {
 								if (CommonConfig.isDebug) {
 									if (paramTypes.length != paramAnnotations.length)
 										throw new RuntimeException(
-												"存在未被CacheParameter标记的函数入参"
+												"瀛樺湪灏氭湭鏍囪CacheParameter鐨勫叆鍙傦紝"
 														+ m.getName());
 								}
 								int indexOfParam = 0;
@@ -166,14 +163,14 @@ public class CacheProvider implements Opcodes {
 												if (paramAnnotation.type() == CacheKeyType.Normal) {
 													Class<?> paramType = paramTypes[indexOfParam];
 													String paramDes = "";
-													varTb.loadLocalVar(mv,
+													varTb.loadArg(mv,
 															indexOfParam + 1);
 													if (paramType.isArray()) {
 														paramDes = StringHelper.descriptorSet
 																.contains(Type
 																		.getDescriptor(paramType)) ? Type
 																.getDescriptor(paramType)
-																: Type.getDescriptor(Object[].class);// 隐式的类型转换
+																: Type.getDescriptor(Object[].class);// 闅愬紡绫诲瀷杞崲
 														mv.visitMethodInsn(
 																INVOKESTATIC,
 																"net/pocrd/util/StringHelper",
@@ -195,7 +192,7 @@ public class CacheProvider implements Opcodes {
 															case "int":
 															case "short":
 															case "byte":
-																paramDes = "I";// 隐式的类型转换
+																paramDes = "I";// 闅愬紡绫诲瀷杞崲
 																break;
 															default:
 																paramDes = Type
@@ -204,7 +201,7 @@ public class CacheProvider implements Opcodes {
 															}
 														} else {
 															paramDes = Type
-																	.getDescriptor(Object.class);// 隐式的类型转换
+																	.getDescriptor(Object.class);// 闅愬紡绫诲瀷杞崲
 														}
 														mv.visitMethodInsn(
 																INVOKEVIRTUAL,
@@ -225,7 +222,9 @@ public class CacheProvider implements Opcodes {
 													// TODO:Support
 													// autopaging/filter
 													throw new RuntimeException(
-															"不识别的CacheKeyType");
+															"涓嶈瘑鍒殑CacheKeyType:"
+																	+ paramAnnotation
+																			.type());
 												}
 											}
 										}
@@ -236,17 +235,16 @@ public class CacheProvider implements Opcodes {
 							mv.visitMethodInsn(INVOKEVIRTUAL,
 									"java/lang/StringBuilder", "toString",
 									"()Ljava/lang/String;");
-							varTb.storeLocalVar(mv, String.class);
+							varTb.setLocal(mv, String.class);
 						}
-						// if (CommonConfig.isDebug) {
-						// // 输出cachekey
-						// mv.visitFieldInsn(GETSTATIC, "java/lang/System",
-						// "out", "Ljava/io/PrintStream;");
-						// varTb.loadLocalVar(mv, varTb.nextFreeSlotPos() - 1);
-						// mv.visitMethodInsn(INVOKEVIRTUAL,
-						// "java/io/PrintStream", "println",
-						// "(Ljava/lang/String;)V");
-						// }
+						if (CommonConfig.isDebug) {
+							mv.visitFieldInsn(GETSTATIC, "java/lang/System",
+									"out", "Ljava/io/PrintStream;");
+							varTb.loadLocal(mv, 0);
+							mv.visitMethodInsn(INVOKEVIRTUAL,
+									"java/io/PrintStream", "println",
+									"(Ljava/lang/String;)V");
+						}
 						{
 							// 2.ICacheManager localCacheManager4Redis =
 							// CacheManager4Redis.getSingleton();
@@ -256,116 +254,103 @@ public class CacheProvider implements Opcodes {
 										"net/pocrd/util/CacheManager4Redis",
 										"getSingleton",
 										"()Lnet/pocrd/util/CacheManager4Redis;");
-								varTb.storeLocalVar(mv,
-										CacheManager4Redis.class);
+								varTb.setLocal(mv, CacheManager4Redis.class);
 							} else {
 								// TODO:Support memcache
-								throw new RuntimeException("不识别的CacheDBType");
+								throw new RuntimeException("涓嶆敮鎸佺殑CacheDBType");
 							}
 						}
 						{
 							// 3.Object obj = cacheManager.get(cachekey);
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 1);
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 2);
+							varTb.loadLocal(mv, 1);
+							varTb.loadLocal(mv, 0);
 							mv.visitMethodInsn(INVOKEINTERFACE,
 									"net/pocrd/util/ICacheManager", "get",
 									"(Ljava/lang/String;)Ljava/lang/Object;");
-							varTb.storeLocalVar(mv, ICacheManager.class);
+							varTb.setLocal(mv, ICacheManager.class);
 						}
 						{
 							// 4.if(obj==null)
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 1);
+							varTb.loadLocal(mv, 2);
 							mv.visitJumpInsn(IFNONNULL, ljump0);
 						}
 						{
 							// 5.DemoEntity demo=super.getDemoEntity();
 							for (int i = 0; i <= m.getParameterTypes().length; i++) {
 								// start from this
-								varTb.loadLocalVar(mv, i);
+								varTb.loadArg(mv, i);
 							}
 							mv.visitMethodInsn(INVOKESPECIAL, superClassName,
 									m.getName(), Type.getMethodDescriptor(m));
-							varTb.storeLocalVar(mv, m.getReturnType());
+							varTb.setLocal(mv, returnType);
 						}
 						{
 							// 6.if(demo!=null)
-							if (!m.getReturnType().isPrimitive()) {
-								varTb.loadLocalVar(mv,
-										varTb.nextLocalVarIndex() - 1);
+							if (!returnType.isPrimitive()) {
+								varTb.loadLocal(mv, 3);
 								mv.visitJumpInsn(IFNULL, ljump1);
 							}
 						}
 						{
 							// 7.localCacheManager4Redis.set(cachekey,demoEntity,expire);
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 3);
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 4);
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 1);
-							// inbox所有值类型都缓存
-							if (m.getReturnType().isPrimitive())
-								BytecodeUtil.inbox(mv, m.getReturnType());
+							varTb.loadLocal(mv, 1);
+							varTb.loadLocal(mv, 0);
+							varTb.loadLocal(mv, 3);
+							// inbox
+							if (returnType.isPrimitive())
+								BytecodeUtil.inbox(mv, returnType);
 							mv.visitIntInsn(BIPUSH, expire);
 							mv.visitMethodInsn(INVOKEINTERFACE,
 									"net/pocrd/util/ICacheManager", "set",
 									"(Ljava/lang/String;Ljava/lang/Object;I)Z");
 							mv.visitInsn(POP);
-							varTb.loadLocalVar(mv,
-									varTb.nextLocalVarIndex() - 1);
-							BytecodeUtil.doReturn(mv, m.getReturnType());
+							varTb.loadLocal(mv, 3);
+							BytecodeUtil.doReturn(mv, returnType);
 						}
 						{
 							// 8.return null;
-							if (!m.getReturnType().isPrimitive()) {
+							if (!returnType.isPrimitive()) {
 								mv.visitLabel(ljump1);
 								mv.visitInsn(ACONST_NULL);
-								BytecodeUtil.doReturn(mv, m.getReturnType());
+								BytecodeUtil.doReturn(mv, returnType);
 							}
 						}
 						{
 							// if (obj instanceof Integer)
 							// return ((Integer) obj).intValue();
 							{
-								 mv.visitLabel(ljump0);
-								 varTb.loadLocalVar(mv,
-								 varTb.nextLocalVarIndex() - 2);
-								 BytecodeUtil
-								 .doInstanceof(mv, m.getReturnType());
-								 mv.visitJumpInsn(IFEQ, ljump2);
-								 varTb.loadLocalVar(mv,
-								 varTb.nextLocalVarIndex() - 2);
-								 BytecodeUtil.doCast(mv, m.getReturnType());
-								 BytecodeUtil.doReturn(mv, m.getReturnType());
+								mv.visitLabel(ljump0);
+								varTb.loadLocal(mv, 2);
+								BytecodeUtil
+										.doInstanceof(mv, returnType);
+								mv.visitJumpInsn(IFEQ, ljump2);
+								varTb.loadLocal(mv, 2);
+								BytecodeUtil.doCast(mv, returnType);
+								BytecodeUtil.doReturn(mv, returnType);
 							}
 							{
 								// else throw new RuntimeException(...);
-								 mv.visitLabel(ljump2);
-								 mv.visitTypeInsn(NEW,
-								 "java/lang/RuntimeException");
-								 mv.visitInsn(DUP);
-								 mv.visitTypeInsn(NEW,
-								 "java/lang/StringBuilder");
-								 mv.visitInsn(DUP);
-								 mv.visitLdcInsn("Cache object conflict,key:");
-								 mv.visitMethodInsn(INVOKESPECIAL,
-								 "java/lang/StringBuilder", "<init>",
-								 "(Ljava/lang/String;)V");
-								 varTb.loadLocalVar(mv,
-								 varTb.nextLocalVarIndex() - 4);
-								 mv.visitMethodInsn(INVOKEVIRTUAL,
-								 "java/lang/StringBuilder", "append",
-								 "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-								 mv.visitMethodInsn(INVOKEVIRTUAL,
-								 "java/lang/StringBuilder", "toString",
-								 "()Ljava/lang/String;");
-								 mv.visitMethodInsn(INVOKESPECIAL,
-								 "java/lang/RuntimeException", "<init>",
-								 "(Ljava/lang/String;)V");
-								 mv.visitInsn(ATHROW);
+								mv.visitLabel(ljump2);
+								mv.visitTypeInsn(NEW,
+										"java/lang/RuntimeException");
+								mv.visitInsn(DUP);
+								mv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+								mv.visitInsn(DUP);
+								mv.visitLdcInsn("Cache object conflict,key:");
+								mv.visitMethodInsn(INVOKESPECIAL,
+										"java/lang/StringBuilder", "<init>",
+										"(Ljava/lang/String;)V");
+								varTb.loadLocal(mv, 0);
+								mv.visitMethodInsn(INVOKEVIRTUAL,
+										"java/lang/StringBuilder", "append",
+										"(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+								mv.visitMethodInsn(INVOKEVIRTUAL,
+										"java/lang/StringBuilder", "toString",
+										"()Ljava/lang/String;");
+								mv.visitMethodInsn(INVOKESPECIAL,
+										"java/lang/RuntimeException", "<init>",
+										"(Ljava/lang/String;)V");
+								mv.visitInsn(ATHROW);
 							}
 						}
 						mv.visitMaxs(0, 0);
