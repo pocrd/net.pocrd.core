@@ -75,7 +75,7 @@ public class LocalVarTable implements Opcodes {
 	}
 
 	/**
-	 * 存放局部变量，修改SlotTop
+	 * 存放局部变量，修改nextFreeSlotPos
 	 * 
 	 * @param mv
 	 * @param clazz

@@ -2,8 +2,6 @@ package net.pocrd.util;
 
 import java.util.HashSet;
 
-import net.pocrd.demo.DemoEntity;
-
 import org.objectweb.asm.Type;
 
 /**
@@ -320,10 +318,5 @@ public class StringHelper {
 		}else{
 			return Type.getDescriptor(clazz);
 		}
-	}
-
-	public static void main(String[] args) {
-		DemoEntity[] d = new DemoEntity[2];
-		System.out.println(toString(d));
 	}
 }

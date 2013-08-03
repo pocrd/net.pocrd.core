@@ -3,8 +3,6 @@ package net.pocrd.util;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
-import net.pocrd.demo.DemoDao;
-
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -357,15 +355,5 @@ public class BytecodeUtil implements Opcodes {
 			type=clazz.getName().replace('.', '/');
 		}
 		mv.visitTypeInsn(INSTANCEOF, type);
-	}
-
-	public static void main(String[] args) {
-		Method[] ms = DemoDao.class.getMethods();
-		for (Method m : ms) {
-			System.out.println(m.getName() + ":");
-			for (Class<?> ptype : m.getParameterTypes()) {
-				System.out.print(ptype.getName() + "  ");
-			}
-		}
 	}
 }
