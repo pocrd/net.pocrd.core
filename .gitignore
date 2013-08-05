@@ -5,7 +5,7 @@
 *.exe
 *.log
 .metadata
+.settings
 /build/
 /bin/
 /debug/
-/.settings/org.eclipse.core.runtime.prefs
