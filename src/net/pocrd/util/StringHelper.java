@@ -5,7 +5,6 @@ import java.util.HashSet;
 import org.objectweb.asm.Type;
 
 /**
- * 统一语义,null返回空字符串,避免与字符串"null"混淆
  * 
  * @author guankaiqiang
  * 
@@ -307,16 +306,5 @@ public class StringHelper {
 		descriptorSet.add(BooleanArrayDescriptor);
 		descriptorSet.add(StringArrayDescriptor);
 		descriptorSet.add(ObjectArrayDescriptor);
-	}
-	public static String getDescriptor(Class<?> clazz){
-		if(clazz.isArray()){
-			if(descriptorSet.contains(Type.getDescriptor(clazz))){
-				return Type.getDescriptor(clazz);
-			}else{
-				return Type.getDescriptor(Object.class);//隐式的类型转换
-			}
-		}else{
-			return Type.getDescriptor(clazz);
-		}
 	}
 }
