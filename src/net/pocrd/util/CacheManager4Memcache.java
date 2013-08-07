@@ -2,9 +2,9 @@ package net.pocrd.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CacheManager4Redis implements ICacheManager{
-	private static ICacheManager instatnce=new CacheManager4Redis();
-	private CacheManager4Redis(){
+public class CacheManager4Memcache implements ICacheManager{
+	private static ICacheManager instatnce=new CacheManager4Memcache();
+	private CacheManager4Memcache(){
 	}
 	
 	public static ICacheManager getSingleton(){
