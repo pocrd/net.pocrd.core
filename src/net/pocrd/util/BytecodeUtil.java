@@ -177,7 +177,12 @@ public class BytecodeUtil implements Opcodes {
         }
         cw.visitInnerClass(clazz.getName().replace('.', '/'), dc.getName().replace('.', '/'), clazz.getSimpleName(), flag);
     }
-
+    
+    /**
+     * 类型转换
+     * @param mv
+     * @param clazz
+     */
     public static void doCast(MethodVisitor mv, Class<?> clazz) {
         if (clazz.isPrimitive()) {
             String className = clazz.getName();
@@ -210,7 +215,12 @@ public class BytecodeUtil implements Opcodes {
             mv.visitTypeInsn(CHECKCAST, clazz.getName().replace('.', '/'));
         }
     }
-
+    
+    /**
+     * 值类型装箱
+     * @param mv
+     * @param clazz
+     */
     public static void inbox(MethodVisitor mv, Class<?> clazz) {
         if (clazz.isPrimitive()) {
             String className = clazz.getName();
@@ -259,6 +269,7 @@ public class BytecodeUtil implements Opcodes {
     }
 
     /**
+     * 
      * @param mv
      * @param clazz
      */
@@ -288,4 +299,5 @@ public class BytecodeUtil implements Opcodes {
         }
         mv.visitTypeInsn(INSTANCEOF, type);
     }
+    
 }
