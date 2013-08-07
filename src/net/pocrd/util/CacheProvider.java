@@ -13,11 +13,9 @@ import net.pocrd.annotation.CacheMethod;
 import net.pocrd.annotation.CacheParameter;
 import net.pocrd.annotation.CacheParameter.CacheKeyType;
 import net.pocrd.core.PocClassLoader;
-import net.pocrd.util.CommonConfig.CacheDBType;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
@@ -74,19 +72,6 @@ public class CacheProvider implements Opcodes {
     }
 
     /**
-     * 根据配置实例化不同的缓存
-     * 
-     * @param mv
-     */
-    private static void getCacheManagerInstance(MethodVisitor mv) {
-        if (CommonConfig.Instance.cacheType.equals(CacheDBType.Redis)) {
-            mv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheManager4Redis", "getSingleton", "()Lnet/pocrd/util/ICacheManager;");
-        } else if (CommonConfig.Instance.cacheType.equals(CacheDBType.Memcache)) {
-            mv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheManager4Memcache", "getSingleton", "()Lnet/pocrd/util/ICacheManager;");
-        } else throw new RuntimeException("不支持的CacheDBType");
-    }
-
-    /**
      * 检测方法是符合被代理的条件
      * 
      * @param method
@@ -121,24 +106,24 @@ public class CacheProvider implements Opcodes {
             String className = "net/pocrd/autogen/Cache_" + clazz.getSimpleName();
             String superClassName = clazz.getName().replace('.', '/');
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-            MethodVisitorHelper mvHelper;
+            MethodVisitorWrapper mvWrapper;
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, superClassName, null);
             cw.visitSource("Cache_" + clazz.getSimpleName() + ".java", null);
             {
                 // init
-                mvHelper = new MethodVisitorHelper(ASM4, cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null));
-                mvHelper.declareArgs(false, null);
-                mvHelper.visitCode();
+                mvWrapper = new MethodVisitorWrapper(ASM4, cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null));
+                mvWrapper.declareArgs(false, null);
+                mvWrapper.visitCode();
                 Label l0 = new Label();
-                mvHelper.visitLabel(l0);
-                mvHelper.loadArg(0);
-                mvHelper.visitMethodInsn(INVOKESPECIAL, superClassName, "<init>", "()V");
-                mvHelper.visitInsn(RETURN);
+                mvWrapper.visitLabel(l0);
+                mvWrapper.loadArg(0);
+                mvWrapper.visitMethodInsn(INVOKESPECIAL, superClassName, "<init>", "()V");
+                mvWrapper.visitInsn(RETURN);
                 Label l1 = new Label();
-                mvHelper.visitLabel(l1);
-                mvHelper.visitLocalVariable("this", "L"+className+";", null, l0, l1, 0);
-                mvHelper.visitMaxs(1, 1);
-                mvHelper.visitEnd();
+                mvWrapper.visitLabel(l1);
+                mvWrapper.visitLocalVariable("this", "L" + className + ";", null, l0, l1, 0);
+                mvWrapper.visitMaxs(1, 1);
+                mvWrapper.visitEnd();
             }
             Method[] methods = clazz.getMethods();
             for (Method m : methods) {
@@ -150,22 +135,22 @@ public class CacheProvider implements Opcodes {
                             + returnType.getCanonicalName() + CACHE_SPLITER;
                     int expire = cacheAnnotation.expire();
                     Class<?>[] paramTypes = m.getParameterTypes();
-                    mvHelper = new MethodVisitorHelper(ASM4, cw.visitMethod(ACC_PUBLIC, m.getName(), Type.getMethodDescriptor(m), null, null));
-                    mvHelper.declareArgs(Modifier.isStatic(m.getModifiers()), paramTypes);
-                    LocalBuilder cacheManagerBuilder = mvHelper.declareLocal(ICacheManager.class);
-                    LocalBuilder returnTypeBuilder = mvHelper.declareLocal(returnType);
-                    LocalBuilder cacheKeyBuilder = mvHelper.declareLocal(String.class);
-                    LocalBuilder cacheObjectBuilder = mvHelper.declareLocal(Object.class);
+                    mvWrapper = new MethodVisitorWrapper(ASM4, cw.visitMethod(ACC_PUBLIC, m.getName(), Type.getMethodDescriptor(m), null, null));
+                    mvWrapper.declareArgs(Modifier.isStatic(m.getModifiers()), paramTypes);
+                    LocalBuilder cacheManagerBuilder = mvWrapper.declareLocal(CacheManager.class);
+                    LocalBuilder returnTypeBuilder = mvWrapper.declareLocal(returnType);
+                    LocalBuilder cacheKeyBuilder = mvWrapper.declareLocal(String.class);
+                    LocalBuilder cacheObjectBuilder = mvWrapper.declareLocal(Object.class);
                     Label ljump0 = new Label();
                     Label ljump1 = new Label();
                     Label ljump2 = new Label();
-                    mvHelper.visitCode();
+                    mvWrapper.visitCode();
                     // 1.generate cachekey
                     {
-                        mvHelper.visitTypeInsn(NEW, "java/lang/StringBuilder");
-                        mvHelper.visitInsn(DUP);
-                        mvHelper.visitLdcInsn(keyName);
-                        mvHelper.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+                        mvWrapper.visitTypeInsn(NEW, "java/lang/StringBuilder");
+                        mvWrapper.visitInsn(DUP);
+                        mvWrapper.visitLdcInsn(keyName);
+                        mvWrapper.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
                         Annotation[][] paramAnnotations = m.getParameterAnnotations();
                         if (paramAnnotations != null && paramAnnotations.length != 0) {
                             if (CommonConfig.isDebug) {
@@ -181,13 +166,13 @@ public class CacheProvider implements Opcodes {
                                             if (paramAnnotation.type() == CacheKeyType.Normal) {
                                                 Class<?> paramType = paramTypes[indexOfParam];
                                                 String paramDes = "";
-                                                mvHelper.loadArg(indexOfParam + 1);
+                                                mvWrapper.loadArg(indexOfParam + 1);
                                                 if (paramType.isArray()) {
                                                     paramDes = StringHelper.checkCast(Type.getDescriptor(paramType)) ? Type.getDescriptor(paramType)
                                                             : Type.getDescriptor(Object[].class);// 隐式类型转换
-                                                    mvHelper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/StringHelper", "toString", "(" + paramDes
+                                                    mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/StringHelper", "toString", "(" + paramDes
                                                             + ")" + Type.getDescriptor(String.class));
-                                                    mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                                                    mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
                                                             "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
                                                 } else {
                                                     if (paramType.isPrimitive()) {
@@ -198,11 +183,11 @@ public class CacheProvider implements Opcodes {
                                                     } else {
                                                         paramDes = Type.getDescriptor(Object.class);// 隐式类型转换
                                                     }
-                                                    mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + paramDes + ")"
-                                                            + Type.getDescriptor(StringBuilder.class));
+                                                    mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + paramDes
+                                                            + ")" + Type.getDescriptor(StringBuilder.class));
                                                 }
-                                                mvHelper.visitLdcInsn(CACHE_SPLITER);
-                                                mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                                                mvWrapper.visitLdcInsn(CACHE_SPLITER);
+                                                mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
                                                         "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
                                             } else {
                                                 // TODO:Support
@@ -215,97 +200,97 @@ public class CacheProvider implements Opcodes {
                                 }
                             }
                         }
-                        mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-                        mvHelper.setLocal(cacheKeyBuilder);
+                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+                        mvWrapper.setLocal(cacheKeyBuilder);
                     }
                     if (CommonConfig.isDebug) {
-                        mvHelper.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
-                        mvHelper.loadLocal(cacheKeyBuilder);
-                        mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
+                        mvWrapper.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                        mvWrapper.loadLocal(cacheKeyBuilder);
+                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
                     }
                     {
-                        // 2.ICacheManager cacheManager = CacheManager4Redis.getSingleton();
-                        getCacheManagerInstance(mvHelper);
-                        mvHelper.setLocal(cacheManagerBuilder);
+                        // 2.CacheManager cacheManager = CacheManager.getSingleton();
+                        mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheManager", "getSingleton", "()Lnet/pocrd/util/CacheManager;");
+                        mvWrapper.setLocal(cacheManagerBuilder);
                     }
                     {
                         // 3.Object obj = cacheManager.get(cachekey);
-                        mvHelper.loadLocal(cacheManagerBuilder);
-                        mvHelper.loadLocal(cacheKeyBuilder);
-                        mvHelper.visitMethodInsn(INVOKEINTERFACE, "net/pocrd/util/ICacheManager", "get", "(Ljava/lang/String;)Ljava/lang/Object;");
-                        mvHelper.setLocal(cacheObjectBuilder);
+                        mvWrapper.loadLocal(cacheManagerBuilder);
+                        mvWrapper.loadLocal(cacheKeyBuilder);
+                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "net/pocrd/util/CacheManager", "get", "(Ljava/lang/String;)Ljava/lang/Object;");
+                        mvWrapper.setLocal(cacheObjectBuilder);
                     }
                     {
                         // 4.if(obj==null)
-                        mvHelper.loadLocal(cacheObjectBuilder);
-                        mvHelper.visitJumpInsn(IFNONNULL, ljump0);
+                        mvWrapper.loadLocal(cacheObjectBuilder);
+                        mvWrapper.visitJumpInsn(IFNONNULL, ljump0);
                     }
                     {
                         // 5.DemoEntity demo=super.getDemoEntity();
                         for (int i = 0; i <= m.getParameterTypes().length; i++) {
-                            mvHelper.loadArg(i);// start from this
+                            mvWrapper.loadArg(i);// start from this
                         }
-                        mvHelper.visitMethodInsn(INVOKESPECIAL, superClassName, m.getName(), Type.getMethodDescriptor(m));
-                        mvHelper.setLocal(returnTypeBuilder);
+                        mvWrapper.visitMethodInsn(INVOKESPECIAL, superClassName, m.getName(), Type.getMethodDescriptor(m));
+                        mvWrapper.setLocal(returnTypeBuilder);
                     }
                     {
                         // 6.if(demo!=null)
                         if (!returnType.isPrimitive()) {
-                            mvHelper.loadLocal(returnTypeBuilder);
-                            mvHelper.visitJumpInsn(IFNULL, ljump1);
+                            mvWrapper.loadLocal(returnTypeBuilder);
+                            mvWrapper.visitJumpInsn(IFNULL, ljump1);
                         }
                     }
                     {
                         // 7.cacheManager.set(cachekey,demoEntity,expire);
-                        mvHelper.loadLocal(cacheManagerBuilder);
-                        mvHelper.loadLocal(cacheKeyBuilder);
-                        mvHelper.loadLocal(returnTypeBuilder);
-                        if (returnType.isPrimitive()) BytecodeUtil.inbox(mvHelper, returnType);// inbox
-                        mvHelper.visitIntInsn(BIPUSH, expire);
-                        mvHelper.visitMethodInsn(INVOKEINTERFACE, "net/pocrd/util/ICacheManager", "set", "(Ljava/lang/String;Ljava/lang/Object;I)Z");
-                        mvHelper.visitInsn(POP);
-                        mvHelper.loadLocal(returnTypeBuilder);
-                        BytecodeUtil.doReturn(mvHelper, returnType);
+                        mvWrapper.loadLocal(cacheManagerBuilder);
+                        mvWrapper.loadLocal(cacheKeyBuilder);
+                        mvWrapper.loadLocal(returnTypeBuilder);
+                        if (returnType.isPrimitive()) mvWrapper.doInbox(returnType);// inbox
+                        mvWrapper.visitIntInsn(BIPUSH, expire);
+                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "net/pocrd/util/CacheManager", "set", "(Ljava/lang/String;Ljava/lang/Object;I)Z");
+                        mvWrapper.visitInsn(POP);
+                        mvWrapper.loadLocal(returnTypeBuilder);
+                        mvWrapper.doReturn(returnType);
                     }
                     {
                         // 8.return null;
                         if (!returnType.isPrimitive()) {
-                            mvHelper.visitLabel(ljump1);
-                            mvHelper.visitInsn(ACONST_NULL);
-                            BytecodeUtil.doReturn(mvHelper, returnType);
+                            mvWrapper.visitLabel(ljump1);
+                            mvWrapper.visitInsn(ACONST_NULL);
+                            mvWrapper.doReturn(returnType);
                         }
                     }
                     {
                         // if (obj instanceof Integer)
                         // return ((Integer) obj).intValue();
                         {
-                            mvHelper.visitLabel(ljump0);
-                            mvHelper.loadLocal(cacheObjectBuilder);
-                            BytecodeUtil.doInstanceof(mvHelper, returnType);
-                            mvHelper.visitJumpInsn(IFEQ, ljump2);
-                            mvHelper.loadLocal(cacheObjectBuilder);
-                            BytecodeUtil.doCast(mvHelper, returnType);
-                            BytecodeUtil.doReturn(mvHelper, returnType);
+                            mvWrapper.visitLabel(ljump0);
+                            mvWrapper.loadLocal(cacheObjectBuilder);
+                            mvWrapper.doInstanceof(returnType);
+                            mvWrapper.visitJumpInsn(IFEQ, ljump2);
+                            mvWrapper.loadLocal(cacheObjectBuilder);
+                            mvWrapper.doCast(returnType);
+                            mvWrapper.doReturn(returnType);
                         }
                         {
                             // else throw new RuntimeException(...);
-                            mvHelper.visitLabel(ljump2);
-                            mvHelper.visitTypeInsn(NEW, "java/lang/RuntimeException");
-                            mvHelper.visitInsn(DUP);
-                            mvHelper.visitTypeInsn(NEW, "java/lang/StringBuilder");
-                            mvHelper.visitInsn(DUP);
-                            mvHelper.visitLdcInsn("Cache object conflict,key:");
-                            mvHelper.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
-                            mvHelper.loadLocal(cacheKeyBuilder);
-                            mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                            mvWrapper.visitLabel(ljump2);
+                            mvWrapper.visitTypeInsn(NEW, "java/lang/RuntimeException");
+                            mvWrapper.visitInsn(DUP);
+                            mvWrapper.visitTypeInsn(NEW, "java/lang/StringBuilder");
+                            mvWrapper.visitInsn(DUP);
+                            mvWrapper.visitLdcInsn("Cache object conflict,key:");
+                            mvWrapper.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+                            mvWrapper.loadLocal(cacheKeyBuilder);
+                            mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
                                     "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-                            mvHelper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
-                            mvHelper.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
-                            mvHelper.visitInsn(ATHROW);
+                            mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+                            mvWrapper.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
+                            mvWrapper.visitInsn(ATHROW);
                         }
                     }
-                    mvHelper.visitMaxs(0, 0);
-                    mvHelper.visitEnd();
+                    mvWrapper.visitMaxs(0, 0);
+                    mvWrapper.visitEnd();
                 }
             }
             cw.visitEnd();
