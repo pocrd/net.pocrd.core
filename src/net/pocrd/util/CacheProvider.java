@@ -13,6 +13,7 @@ import net.pocrd.annotation.CacheMethod;
 import net.pocrd.annotation.CacheParameter;
 import net.pocrd.annotation.CacheParameter.CacheKeyType;
 import net.pocrd.core.PocClassLoader;
+import net.pocrd.util.CommonConfig.CacheDBType;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -20,7 +21,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
 /**
- * Generate subclass with cacheMethod,then create and cache an single instance for input class.
+ * Generate subclass with cacheMethod,then create and cache an single instance for input class. 延迟注册，只要需要代理的时候才会生成
  * 
  * @author guankaiqiang
  * @param <T>
@@ -95,7 +96,39 @@ public class CacheProvider implements Opcodes {
     }
 
     /**
-     * 生成缓存Instatnce
+     * cacheType TODO：更好的实现，提供使用者自定义的方式
+     * 
+     * @return
+     */
+    public static ICacheManager getCacheManager() {
+        CacheDBType cacheType = CommonConfig.Instance.cacheType;
+        if (CacheDBType.Redis.equals(cacheType)) {
+            return (ICacheManager)SingletonUtil.getSingleton(CacheManager4Redis.class);
+        } else if (CacheDBType.Memcache.equals(cacheType)) {
+            return (ICacheManager)SingletonUtil.getSingleton(CacheManager4Memcache.class);
+        } else {
+            throw new RuntimeException("不支持的缓存实现机制：" + cacheType);
+        }
+    }
+
+    private final static Type stringType        = Type.getType(String.class);
+    private final static Type stringBuilderType = Type.getType(StringBuilder.class);
+
+    private final static CacheParameter getCacheParameterAnnotation(Annotation[] annotationsOfParam) {
+        if (annotationsOfParam != null && annotationsOfParam.length != 0) {
+            for (Annotation annotation : annotationsOfParam) {
+                if (annotation.annotationType() == CacheParameter.class) {
+                    return (CacheParameter)annotation;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 为何使用 cachekey而非使用classname+methoddescriptor做为cachekey： 1.这样做便于缓存管理；
+     * 2.当发现使用了重复的cachekey时，能让开发人员发现已经存在了这样一个缓存实现，以便开发者去决定修改这个函数或者是复用这个函数；TODO:这个更倾向于编译期检查warning 生成缓存Instatnce 避免缓存数据序列化异常解决方案：
+     * 1.返回值类型进行了属性修改，系统新发布时cacheDB中缓存数据未失效，如果cache命中会导致序列化异常， 通过使用cacheVersion，避免命中无效cache数据，来规避属性修改导致序列化异常； 2.约束缓存键名的使用管理； 3.instanceof做类型检测，支持多态
      * 
      * @author guankaiqiang
      * @return
@@ -111,8 +144,7 @@ public class CacheProvider implements Opcodes {
             cw.visitSource("Cache_" + clazz.getSimpleName() + ".java", null);
             {
                 // init
-                mvWrapper = new MethodVisitorWrapper(ASM4, cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null));
-                mvWrapper.declareArgs(false, null);
+                mvWrapper = new MethodVisitorWrapper(cw, ACC_PUBLIC, "<init>", "()V", null, null);// Init函数
                 mvWrapper.visitCode();
                 Label l0 = new Label();
                 mvWrapper.visitLabel(l0);
@@ -126,21 +158,26 @@ public class CacheProvider implements Opcodes {
                 mvWrapper.visitEnd();
             }
             Method[] methods = clazz.getMethods();
+            Class<?> returnType = null;
+            Class<?>[] paramTypes = null;
+            CacheMethod cacheAnnotation = null;
+            Annotation[][] paramsAnnotations = null;
             for (Method m : methods) {
-                CacheMethod cacheAnnotation = m.getAnnotation(CacheMethod.class);
+                cacheAnnotation = m.getAnnotation(CacheMethod.class);
                 if (cacheAnnotation != null && cacheAnnotation.enable()) {
-                    Class<?> returnType = m.getReturnType();
-                    if ("void".equals(returnType.getName())) continue;
-                    String keyName = CommonConfig.Instance.cacheVersion + CACHE_SPLITER + cacheAnnotation.key() + CACHE_SPLITER
-                            + returnType.getCanonicalName() + CACHE_SPLITER;
+                    returnType = m.getReturnType();
+                    if ("void".equals(returnType.getName())) {
+                        continue;
+                    }
+                    String keyName = CommonConfig.Instance.cacheVersion + CACHE_SPLITER + cacheAnnotation.key() + CACHE_SPLITER;
+                    // + returnType.getCanonicalName() + CACHE_SPLITER;// returnType不参与签名，给返回结果多态提供可能
                     int expire = cacheAnnotation.expire();
-                    Class<?>[] paramTypes = m.getParameterTypes();
-                    mvWrapper = new MethodVisitorWrapper(ASM4, cw.visitMethod(ACC_PUBLIC, m.getName(), Type.getMethodDescriptor(m), null, null));
-                    mvWrapper.declareArgs(Modifier.isStatic(m.getModifiers()), paramTypes);
-                    LocalBuilder cacheManagerBuilder = mvWrapper.declareLocal(CacheManager.class);
-                    LocalBuilder returnTypeBuilder = mvWrapper.declareLocal(returnType);
+                    paramTypes = m.getParameterTypes();
+                    mvWrapper = new MethodVisitorWrapper(cw, m);
                     LocalBuilder cacheKeyBuilder = mvWrapper.declareLocal(String.class);
+                    LocalBuilder cacheManagerBuilder = mvWrapper.declareLocal(ICacheManager.class);
                     LocalBuilder cacheObjectBuilder = mvWrapper.declareLocal(Object.class);
+                    LocalBuilder returnTypeBuilder = mvWrapper.declareLocal(returnType);
                     Label ljump0 = new Label();
                     Label ljump1 = new Label();
                     Label ljump2 = new Label();
@@ -151,53 +188,41 @@ public class CacheProvider implements Opcodes {
                         mvWrapper.visitInsn(DUP);
                         mvWrapper.visitLdcInsn(keyName);
                         mvWrapper.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
-                        Annotation[][] paramAnnotations = m.getParameterAnnotations();
-                        if (paramAnnotations != null && paramAnnotations.length != 0) {
-                            if (CommonConfig.isDebug) {
-                                if (paramTypes.length != paramAnnotations.length)
-                                    throw new RuntimeException("存在尚未标记CacheParameter的入参，" + m.getName());
+                        paramsAnnotations = m.getParameterAnnotations();
+                        if (paramsAnnotations != null && paramsAnnotations.length != 0) {
+                            if (paramTypes.length != paramsAnnotations.length) {
+                                throw new RuntimeException("存在尚未标记CacheParameter的入参，" + m.getName());
                             }
                             int indexOfParam = 0;
-                            for (Annotation[] annotations : paramAnnotations) {
-                                if (annotations != null && annotations.length != 0) {
-                                    for (Annotation annotation : annotations) {
-                                        if (annotation.annotationType() == CacheParameter.class) {
-                                            CacheParameter paramAnnotation = (CacheParameter)annotation;
-                                            if (paramAnnotation.type() == CacheKeyType.Normal) {
-                                                Class<?> paramType = paramTypes[indexOfParam];
-                                                String paramDes = "";
-                                                mvWrapper.loadArg(indexOfParam + 1);
-                                                if (paramType.isArray()) {
-                                                    paramDes = StringHelper.checkCast(Type.getDescriptor(paramType)) ? Type.getDescriptor(paramType)
-                                                            : Type.getDescriptor(Object[].class);// 隐式类型转换
-                                                    mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/StringHelper", "toString", "(" + paramDes
-                                                            + ")" + Type.getDescriptor(String.class));
-                                                    mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
-                                                            "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-                                                } else {
-                                                    if (paramType.isPrimitive()) {
-                                                        String ptype = paramType.getName();
-                                                        if ("int".equals(ptype) || "short".equals(ptype) || "byte".equals(ptype))
-                                                            paramDes = "I";// 隐式类型转换
-                                                        else paramDes = Type.getDescriptor(paramType);
-                                                    } else {
-                                                        paramDes = Type.getDescriptor(Object.class);// 隐式类型转换
-                                                    }
-                                                    mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(" + paramDes
-                                                            + ")" + Type.getDescriptor(StringBuilder.class));
-                                                }
-                                                mvWrapper.visitLdcInsn(CACHE_SPLITER);
-                                                mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
-                                                        "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
-                                            } else {
-                                                // TODO:Support
-                                                // autopaging/filter
-                                                throw new RuntimeException("不识别的CacheKeyType:" + paramAnnotation.type());
-                                            }
+                            for (Annotation[] annotations : paramsAnnotations) {
+                                CacheParameter paramAnnotation = getCacheParameterAnnotation(annotations);
+                                if (paramAnnotation.type() == CacheKeyType.Normal) {
+                                    Class<?> paramType = paramTypes[indexOfParam];
+                                    mvWrapper.loadArg(indexOfParam + 1);
+                                    if (paramType.isArray()) {
+                                        paramType = StringHelper.getCorrectType(paramType);// TODO
+                                        mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/StringHelper", "toString",
+                                                Type.getMethodDescriptor(stringType, Type.getType(paramType)));
+                                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                                                "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                                    } else {
+                                        if (paramType.isPrimitive()) {
+                                            if (int.class.equals(paramType) || short.class.equals(paramType) || byte.class.equals(paramType))
+                                                paramType = int.class;
+                                        } else {
+                                            paramType = Object.class;
                                         }
+                                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                                                Type.getMethodDescriptor(stringBuilderType, Type.getType(paramType)));
                                     }
-                                    indexOfParam++;
+                                    mvWrapper.visitLdcInsn(CACHE_SPLITER);
+                                    mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
+                                            "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                                } else {
+                                    // TODO:Support autopaging/filter
+                                    throw new RuntimeException("不识别的CacheKeyType:" + paramAnnotation.type());
                                 }
+                                indexOfParam++;
                             }
                         }
                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
@@ -209,15 +234,16 @@ public class CacheProvider implements Opcodes {
                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
                     }
                     {
-                        // 2.CacheManager cacheManager = CacheManager.getSingleton();
-                        mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheManager", "getSingleton", "()Lnet/pocrd/util/CacheManager;");
+                        // 2.ICacheManager cacheManager = CacheProvider.getCacheManager();
+                        mvWrapper
+                                .visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheProvider", "getCacheManager", "()Lnet/pocrd/util/ICacheManager;");
                         mvWrapper.setLocal(cacheManagerBuilder);
                     }
                     {
                         // 3.Object obj = cacheManager.get(cachekey);
                         mvWrapper.loadLocal(cacheManagerBuilder);
                         mvWrapper.loadLocal(cacheKeyBuilder);
-                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "net/pocrd/util/CacheManager", "get", "(Ljava/lang/String;)Ljava/lang/Object;");
+                        mvWrapper.visitMethodInsn(INVOKEINTERFACE, "net/pocrd/util/ICacheManager", "get", "(Ljava/lang/String;)Ljava/lang/Object;");
                         mvWrapper.setLocal(cacheObjectBuilder);
                     }
                     {
@@ -245,9 +271,11 @@ public class CacheProvider implements Opcodes {
                         mvWrapper.loadLocal(cacheManagerBuilder);
                         mvWrapper.loadLocal(cacheKeyBuilder);
                         mvWrapper.loadLocal(returnTypeBuilder);
-                        if (returnType.isPrimitive()) mvWrapper.doInbox(returnType);// inbox
+                        if (returnType.isPrimitive()) {
+                            mvWrapper.doInbox(returnType);// inbox
+                        }
                         mvWrapper.visitIntInsn(BIPUSH, expire);
-                        mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "net/pocrd/util/CacheManager", "set", "(Ljava/lang/String;Ljava/lang/Object;I)Z");
+                        mvWrapper.visitMethodInsn(INVOKEINTERFACE, "net/pocrd/util/ICacheManager", "set", "(Ljava/lang/String;Ljava/lang/Object;I)Z");
                         mvWrapper.visitInsn(POP);
                         mvWrapper.loadLocal(returnTypeBuilder);
                         mvWrapper.doReturn(returnType);

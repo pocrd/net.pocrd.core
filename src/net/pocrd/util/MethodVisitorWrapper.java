@@ -1,38 +1,86 @@
 package net.pocrd.util;
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
     private int                     countOfArgs     = 0;
     private int                     nextFreeSlotPos = 0;
     private ArrayList<LocalBuilder> localVarInfo    = new ArrayList<LocalBuilder>();
 
-    public MethodVisitorWrapper(int api, MethodVisitor mv) {
-        super(api, mv);
+    /**
+     * @param cw
+     * @param access
+     * @param name
+     * @param desc
+     * @param signature
+     * @param exceptions
+     */
+    public MethodVisitorWrapper(final ClassWriter cw, final int access, final String name, final String desc, final String signature,
+            final String[] exceptions) {
+        super(ASM4);
+        mv = cw.visitMethod(access, name, desc, signature, exceptions);
+        declareArgs(access, desc);
     }
 
     /**
-     * 声明所有函数入参
-     * 
-     * @param isStatic
-     * @param paramTypes
+     * 根据method模板复制方法信息
+     * @param cw
+     * @param method
      */
-    public void declareArgs(boolean isStatic, Class<?>[] paramTypes) {
-        nextFreeSlotPos = 0;
-        countOfArgs = paramTypes != null ? paramTypes.length : 0;
-        if (!isStatic) {// this
-            declareLocal(Object.class);
-            countOfArgs++;
+    public MethodVisitorWrapper(final ClassWriter cw, final Method method) {
+        super(ASM4);
+        int mod = method.getModifiers();
+        String desc = Type.getMethodDescriptor(method);
+        Class<?>[] exceptionTypes = method.getExceptionTypes();
+        String[] exceptions = null;
+        if (exceptionTypes != null && exceptionTypes.length != 0) {
+            exceptions = new String[exceptionTypes.length];
+            for (int i = 0; i < exceptionTypes.length; i++)
+                exceptions[i] = exceptionTypes[i].getName().replace('.', '/');
         }
-        if (paramTypes != null) {
-            for (int i = 0; i < paramTypes.length; i++) {
-                declareLocal(paramTypes[i]);
+        mv = cw.visitMethod(mod, method.getName(), desc, null, exceptions);
+        declareArgs(mod, desc);
+    }
+
+    //TODO
+    private void declareArgs(final int access, final String desc) {
+        nextFreeSlotPos = 0;
+        Type[] argTypes = Type.getArgumentTypes(desc);
+        countOfArgs = argTypes != null ? argTypes.length : 0;
+        if ((access & ACC_STATIC) != access) {// this
+            countOfArgs++;
+            localVarInfo.add(new LocalBuilder(nextFreeSlotPos, ALOAD, ASTORE));
+            nextFreeSlotPos++;
+        }
+        if (argTypes != null) {
+            for (int i = 0; i < argTypes.length; i++) {
+                String argClassName = argTypes[i].getClassName();
+                if ("int".equals(argClassName) || "boolean".equals(argClassName) || "short".equals(argClassName) || "byte".equals(argClassName)
+                        || "char".equals(argClassName)) {
+                    localVarInfo.add(new LocalBuilder(nextFreeSlotPos, ILOAD, ISTORE));
+                } else if ("float".equals(argClassName)) {
+                    localVarInfo.add(new LocalBuilder(nextFreeSlotPos, FLOAD, FSTORE));
+                } else if ("double".equals(argClassName)) {
+                    // 32位机，double/long占两个slot
+                    localVarInfo.add(new LocalBuilder(nextFreeSlotPos, DLOAD, DSTORE));
+                    nextFreeSlotPos++;
+                } else if ("long".equals(argClassName)) {
+                    localVarInfo.add(new LocalBuilder(nextFreeSlotPos, LLOAD, LSTORE));
+                    nextFreeSlotPos++;
+                } else {
+                    localVarInfo.add(new LocalBuilder(nextFreeSlotPos, ALOAD, ASTORE));
+                }
+                nextFreeSlotPos++;
             }
         }
     }
+
 
     /**
      * 修改函数入参的值
@@ -383,5 +431,4 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
             }
         }
     }
-
 }

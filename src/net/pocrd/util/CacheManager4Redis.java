@@ -2,14 +2,14 @@ package net.pocrd.util;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CacheManager {
-    private static CacheManager instatnce = new CacheManager();
-
-    private CacheManager() {}
-
-    public static CacheManager getSingleton() {
-        return instatnce;
-    }
+class CacheManager4Redis implements ICacheManager {
+//    private static ICacheManager instance = new CacheManager4Redis();
+//
+//    private CacheManager4Redis() {}
+//
+//    public static ICacheManager getSingleton() {
+//        return instance;
+//    }
 
     /**
      * 模拟cache
@@ -29,4 +29,5 @@ public class CacheManager {
         redis.remove(key);
         return true;
     }
+
 }
