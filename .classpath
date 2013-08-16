@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="lib/asm-4.1.jar"/>
+	<classpathentry kind="lib" path="lib/asm-4.1.jar" sourcepath="E:/jar4programe/asm-4.1/src.zip">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/E:/jar4programe/asm-4.1/doc/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="lib/asm-analysis-4.1.jar"/>
 	<classpathentry kind="lib" path="lib/asm-commons-4.1.jar"/>
 	<classpathentry kind="lib" path="lib/asm-tree-4.1.jar"/>

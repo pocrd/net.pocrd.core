@@ -2,14 +2,12 @@ package net.pocrd.util;
 
 import java.util.HashSet;
 
-import org.objectweb.asm.Type;
-
 /**
  * 
  * @author guankaiqiang
  * 
  */
-public class StringHelper {
+public class StringHelper{
 	/**
 	 * @param array
 	 * @return
@@ -272,47 +270,47 @@ public class StringHelper {
 		return sb.toString();
 	}
 
-	private final static String intArrayDescriptor=Type.getDescriptor(int[].class);
-	private final static String IntegerArrayDescriptor=Type.getDescriptor(Integer[].class);
-	private final static String shortArrayDescriptor=Type.getDescriptor(short[].class);
-	private final static String ShortArrayDescriptor=Type.getDescriptor(Short[].class);
-	private final static String byteArrayDescriptor=Type.getDescriptor(byte[].class);
-	private final static String ByteArrayDescriptor=Type.getDescriptor(Byte[].class);
-	private final static String floatArrayDescriptor=Type.getDescriptor(float[].class);
-	private final static String FloatArrayDescriptor=Type.getDescriptor(Float[].class);
-	private final static String longArrayDescriptor=Type.getDescriptor(long[].class);
-	private final static String LongArrayDescriptor=Type.getDescriptor(Long[].class);
-	private final static String doubleArrayDescriptor=Type.getDescriptor(double[].class);
-	private final static String DoubleArrayDescriptor=Type.getDescriptor(Double[].class);
-	private final static String booleanArrayDescriptor=Type.getDescriptor(boolean[].class);
-	private final static String BooleanArrayDescriptor=Type.getDescriptor(Boolean[].class);
-	private final static String StringArrayDescriptor=Type.getDescriptor(String[].class);
-	private final static String ObjectArrayDescriptor=Type.getDescriptor(Object[].class);
-	private static HashSet<String> descriptorSet=new HashSet<String>();
+	private final static Class<?> intArrayClass=int[].class;
+	private final static Class<?> IntegerArrayClass=Integer[].class;
+	private final static Class<?> shortArrayClass=short[].class;
+	private final static Class<?> ShortArrayClass=Short[].class;
+	private final static Class<?> byteArrayClass=byte[].class;
+	private final static Class<?> ByteArrayClass=Byte[].class;
+	private final static Class<?> floatArrayClass=float[].class;
+	private final static Class<?> FloatArrayClass=Float[].class;
+	private final static Class<?> longArrayClass=long[].class;
+	private final static Class<?> LongArrayClass=Long[].class;
+	private final static Class<?> doubleArrayClass=double[].class;
+	private final static Class<?> DoubleArrayClass=Double[].class;
+	private final static Class<?> booleanArrayClass=boolean[].class;
+	private final static Class<?> BooleanArrayClass=Boolean[].class;
+	private final static Class<?> StringArrayClass=String[].class;
+	private final static Class<?> ObjectArrayClass=Object[].class;
+	private static HashSet<Class<?>> classSet=new HashSet<Class<?>>();
 	static{
-		descriptorSet.add(intArrayDescriptor);
-		descriptorSet.add(IntegerArrayDescriptor);
-		descriptorSet.add(shortArrayDescriptor);
-		descriptorSet.add(ShortArrayDescriptor);
-		descriptorSet.add(byteArrayDescriptor);
-		descriptorSet.add(ByteArrayDescriptor);
-		descriptorSet.add(floatArrayDescriptor);
-		descriptorSet.add(FloatArrayDescriptor);
-		descriptorSet.add(longArrayDescriptor);
-		descriptorSet.add(LongArrayDescriptor);
-		descriptorSet.add(doubleArrayDescriptor);
-		descriptorSet.add(DoubleArrayDescriptor);
-		descriptorSet.add(booleanArrayDescriptor);
-		descriptorSet.add(BooleanArrayDescriptor);
-		descriptorSet.add(StringArrayDescriptor);
-		descriptorSet.add(ObjectArrayDescriptor);
+	    classSet.add(intArrayClass);
+	    classSet.add(IntegerArrayClass);
+	    classSet.add(shortArrayClass);
+	    classSet.add(ShortArrayClass);
+	    classSet.add(byteArrayClass);
+	    classSet.add(ByteArrayClass);
+	    classSet.add(floatArrayClass);
+	    classSet.add(FloatArrayClass);
+	    classSet.add(longArrayClass);
+	    classSet.add(LongArrayClass);
+	    classSet.add(doubleArrayClass);
+		classSet.add(DoubleArrayClass);
+		classSet.add(booleanArrayClass);
+		classSet.add(BooleanArrayClass);
+		classSet.add(StringArrayClass);
+		classSet.add(ObjectArrayClass);
 	}
 	/**
 	 * 是否需要类型转换
 	 * @param descriptor
 	 * @return
 	 */
-	static boolean checkCast(String descriptor){
-	    return descriptorSet.contains(descriptor);
+	static Class<?> getCorrectType(Class<?> clazz){
+	    return classSet.contains(clazz)?clazz:Object[].class;
 	}
 }
