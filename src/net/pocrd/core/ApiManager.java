@@ -44,7 +44,7 @@ public class ApiManager {
      * @return
      */
     public final Object processRequest(String name, String[] parameters) {
-        return nameToApi.get(name.toLowerCase()).execute(parameters);
+        return nameToApi.get(name).execute(parameters);
     }
 
     private void registerAll(String packageName) {
@@ -138,8 +138,8 @@ public class ApiManager {
                     }
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;
-                    apiInfos.put(apiInfo.methodName.toLowerCase(), apiInfo);
-                    nameToApi.put(apiInfo.methodName.toLowerCase(), HttpApiProvider.getApiExecuter(apiInfo.methodName, apiInfo));
+                    apiInfos.put(apiInfo.methodName, apiInfo);
+                    nameToApi.put(apiInfo.methodName, HttpApiProvider.getApiExecuter(apiInfo.methodName, apiInfo));
                 }
             }
         }

@@ -161,7 +161,6 @@ public abstract class BaseServlet extends HttpServlet {
         {
             String format = request.getParameter(CommonParameter.ft.toString());
             if (format != null && format.length() > 0) {
-                format = format.toLowerCase();
                 if (format.equals("xml")) {
                     context.format = SerializeType.XML;
                 } else if (format.equals("protobuf")) {
