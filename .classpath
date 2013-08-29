@@ -32,15 +32,5 @@
 			<attribute name="owner.project.facets" value="java"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/c3p0-0.9.2.1.jar" sourcepath="/net.pocrd.api/third/c3p0-0.9.2.1/src/c3p0-0.9.2.1-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/D:/workspace/net.pocrd.api/third/c3p0-0.9.2.1/doc/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="lib/mchange-commons-java-0.2.3.4.jar" sourcepath="/net.pocrd.api/third/c3p0-0.9.2.1/src/mchange-commons-java-0.2.3.4-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="file:/D:/workspace/net.pocrd.api/third/c3p0-0.9.2.1/doc/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

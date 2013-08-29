@@ -25,12 +25,19 @@ public class CommonConfig {
             tmp.staticSignPwd = "pocrd@gmail.com";
             tmp.cacheVersion = "v1.0";
             tmp.cacheType = CacheDBType.Redis;
-            tmp.connectString = "jdbc:mysql://112.124.17.212:3306/test?useUnicode=true;characterset=utf-8&user=gkq&password=gkq1990";
-            if(isDebug){
-                tmp.c3p0config = new C3P0Config("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/test?useUnicode=true;characterset=utf-8",
-                        "gkq", "gkq1990", 5, 10, 10, 20, 5, 5);
-            }else tmp.c3p0config = new C3P0Config("com.mysql.jdbc.Driver", "jdbc:mysql://localhost/gougoudai?useUnicode=true;characterset=utf-8",
-                    "root", "123", 5, 10, 10, 20, 5, 5);
+//            tmp.connectString = "jdbc:mysql://112.124.17.212:3306/test?useUnicode=true&amp;characterset=utf-8&user=gkq&password=gkq1990";
+            tmp.jdbcPoolConfig=new JDBCPoolConfig();
+            tmp.jdbcPoolConfig.setDriverClassName("com.mysql.jdbc.Driver");
+            tmp.jdbcPoolConfig.setUserName("api");
+            tmp.jdbcPoolConfig.setPassword("api@123");
+            tmp.jdbcPoolConfig.setJdbcUrl("jdbc:mysql://localhost/test?useUnicode=true&amp;characterset=utf-8");
+            tmp.jdbcPoolConfig.setMaxActive(100);
+            tmp.jdbcPoolConfig.setInitialSize(10);
+            tmp.jdbcPoolConfig.setMinEvictableIdleTimeMillis(30000);
+            tmp.jdbcPoolConfig.setMinIdle(10);
+            tmp.jdbcPoolConfig.setMaxIdle(100);
+            tmp.jdbcPoolConfig.setMaxWait(10000);
+            tmp.jdbcPoolConfig.setTestWhileIdle(true);//空闲连接测试
         }
         Instance = tmp;
         Instance.accessLogger = LogManager.getLogger(Instance.accessLoggerName);
@@ -43,8 +50,8 @@ public class CommonConfig {
     public String      autogenPath;
     public String      cacheVersion;
     public CacheDBType cacheType;
-    public String      connectString;
-    public C3P0Config  c3p0config;
+//    public String      connectString;
+    public JDBCPoolConfig jdbcPoolConfig;
 
     @XmlTransient
     public TokenHelper tokenHelper;
