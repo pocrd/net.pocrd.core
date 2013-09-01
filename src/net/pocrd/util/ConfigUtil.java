@@ -7,11 +7,17 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public final class ConfigUtil {
+    private static final Logger logger        = LogManager.getLogger(ConfigUtil.class);
     private static final String path;
+    private static final int    SEARCH_PARENT = 3;
     static {
         File directory = new File(".");
         path = directory.getAbsolutePath();
+        logger.info("set config base path:" + path);
     }
 
     /**
@@ -44,17 +50,25 @@ public final class ConfigUtil {
             File file = new File(name);
             if (!file.exists()) {
                 File folder = new File(path);
+                int i = 0;
                 while (!file.exists() && folder != null) {
                     file = new File(folder.getAbsolutePath() + "/" + name);
                     folder = folder.getParentFile();
+                    i++;
+                    if (i > SEARCH_PARENT) {
+                        break;
+                    }
                 }
             }
             if (!file.exists()) {
                 if (!CommonConfig.isDebug) {
                     throw new RuntimeException("cannot file config file : " + name);
                 } else {
+                    logger.error("cannot load config file." + name);
                     return null;
                 }
+            } else {
+                logger.info("load config file " + name + " successful.");
             }
 
             JAXBContext context = JAXBContext.newInstance(clazz);
@@ -65,6 +79,7 @@ public final class ConfigUtil {
             if (!CommonConfig.isDebug) {
                 throw new RuntimeException(e);
             } else {
+                logger.error("load config failed:" + name, e);
                 return null;
             }
         }

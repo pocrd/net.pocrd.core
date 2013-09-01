@@ -42,7 +42,7 @@ public class HMacHelper {
             pwd = key;
             mac.init(secretKey);
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("create hmac helper failed.", e);
         }
     }
 
@@ -75,7 +75,7 @@ public class HMacHelper {
             }
             return Arrays.equals(sig, result);
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("varify sig failed.", e);
         }
         return false;
     }

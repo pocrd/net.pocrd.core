@@ -212,11 +212,11 @@ public class HttpApiProvider implements Opcodes {
             if (CommonConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
-                    File folder = new File(CommonConfig.Instance.autogenPath + "\\ApiExecuter\\");
+                    File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "ApiExecuter" + File.separator);
                     if (!folder.exists()) {
                         folder.mkdirs();
                     }
-                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + "\\ApiExecuter\\" + name + ".class");
+                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + File.separator + "ApiExecuter" + File.separator + name + ".class");
                     fos.write(cw.toByteArray());
                 } finally {
                     if (fos != null) {

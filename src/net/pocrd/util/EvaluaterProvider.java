@@ -137,11 +137,11 @@ public class EvaluaterProvider implements Opcodes {
             if (CommonConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
-                    File folder = new File(CommonConfig.Instance.autogenPath + "\\Evaluater\\");
+                    File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "Evaluater" + File.separator);
                     if (!folder.exists()) {
                         folder.mkdirs();
                     }
-                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + "\\Evaluater\\" + className + ".class");
+                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + File.separator + "Evaluater" + File.separator + className + ".class");
                     fos.write(cw.toByteArray());
                 } finally {
                     if (fos != null) {

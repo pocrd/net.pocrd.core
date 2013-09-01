@@ -336,9 +336,9 @@ public class CacheProvider implements Opcodes {
     private static void outPutClassFile(String fileName, byte[] byteArray) {
         FileOutputStream fos = null;
         try {
-            File folder = new File(CommonConfig.Instance.autogenPath + "\\CachedClass\\");
+            File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "CachedClass" + File.separator);
             if (!folder.exists()) folder.mkdirs();
-            fos = new FileOutputStream(CommonConfig.Instance.autogenPath + "\\CachedClass\\" + fileName + ".class");
+            fos = new FileOutputStream(CommonConfig.Instance.autogenPath + File.separator + "CachedClass" + File.separator + fileName + ".class");
             fos.write(byteArray);
         } catch (FileNotFoundException e) {
             e.printStackTrace();

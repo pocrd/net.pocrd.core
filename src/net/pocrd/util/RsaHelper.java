@@ -90,7 +90,7 @@ public class RsaHelper {
 
             return baos.toByteArray();
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("rsa decrypt failed.", e);
         }
         return null;
     }
@@ -119,7 +119,7 @@ public class RsaHelper {
             signature.update(content);
             return signature.verify(sign);
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("rsa verify failed.", e);
         }
         return false;
     }

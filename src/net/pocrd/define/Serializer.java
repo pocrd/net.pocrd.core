@@ -15,7 +15,7 @@ public interface Serializer<T> {
                                                                     try {
                                                                         out.write(instance.getBytes(ConstField.UTF8));
                                                                     } catch (Exception e) {
-                                                                        throw new ReturnCodeException(ReturnCode.UNKNOWN_ERROR);
+                                                                        throw new ReturnCodeException(ReturnCode.UNKNOWN_ERROR, e);
                                                                     }
                                                                 }
 
@@ -24,7 +24,7 @@ public interface Serializer<T> {
                                                                     try {
                                                                         out.write(instance.getBytes(ConstField.UTF8));
                                                                     } catch (Exception e) {
-                                                                        throw new ReturnCodeException(ReturnCode.UNKNOWN_ERROR);
+                                                                        throw new ReturnCodeException(ReturnCode.UNKNOWN_ERROR, e);
                                                                     }
                                                                 }
 

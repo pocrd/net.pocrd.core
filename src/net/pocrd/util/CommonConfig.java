@@ -29,8 +29,8 @@ public class CommonConfig {
             tmp.jdbcPoolConfig=new JDBCPoolConfig();
             tmp.jdbcPoolConfig.setDriverClassName("com.mysql.jdbc.Driver");
             tmp.jdbcPoolConfig.setUserName("api");
-            tmp.jdbcPoolConfig.setPassword("api@123");
-            tmp.jdbcPoolConfig.setJdbcUrl("jdbc:mysql://localhost/test?useUnicode=true&amp;characterset=utf-8");
+            tmp.jdbcPoolConfig.setPassword("1q2w3e4r5t");
+            tmp.jdbcPoolConfig.setJdbcUrl("jdbc:mysql://112.124.17.212:3306/test?useUnicode=true&amp;characterset=utf-8");
             tmp.jdbcPoolConfig.setMaxActive(100);
             tmp.jdbcPoolConfig.setInitialSize(10);
             tmp.jdbcPoolConfig.setMinEvictableIdleTimeMillis(30000);

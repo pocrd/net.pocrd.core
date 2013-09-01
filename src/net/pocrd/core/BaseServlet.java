@@ -27,7 +27,7 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class BaseServlet extends HttpServlet {
     private static final long     serialVersionUID = 1L;
-    private static final Logger   logger           = LogManager.getLogger(BaseServlet.class.getName());
+    private static final Logger   logger           = LogManager.getLogger(BaseServlet.class);
     private static TokenHelper    tokenHelper      = new TokenHelper(CommonConfig.Instance.tokenPwd);
 
     protected static final Logger access           = CommonConfig.Instance.accessLogger;
@@ -224,10 +224,10 @@ public abstract class BaseServlet extends HttpServlet {
             call.setReturnCode(ReturnCode.SUCCESS);
         } catch (ReturnCodeException rce) {
             call.setReturnCode(rce.getCode());
-            logger.error(rce);
+            logger.error("", rce);
         } catch (Exception e) {
             call.setReturnCode(ReturnCode.UNKNOWN_ERROR);
-            logger.error(e);
+            logger.error("unknown error.", e);
         }
 
         ReturnCode code = call.getReturnCode();
