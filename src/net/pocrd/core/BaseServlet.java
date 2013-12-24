@@ -47,9 +47,10 @@ public abstract class BaseServlet extends HttpServlet {
      * 注册api接口，该函数需要在应用程序启动完成前结束工作
      * 
      * @param packageName
+     * @param entityPrefix
      */
-    public static void registerAll(String packageName) {
-        apiManager = new ApiManager(packageName);
+    public static void registerAll(String packageName, String entityPrefix) {
+        apiManager = new ApiManager(packageName, entityPrefix);
     }
 
     public static ApiMethodInfo[] getApiInfos() {
@@ -192,7 +193,7 @@ public abstract class BaseServlet extends HttpServlet {
 
                     if (context.caller != null) {
                         // TODO:fill device info into caller
-                        context.sn = Long.toString(context.caller.sn);
+                        context.deviceId = Long.toString(context.caller.deviceId);
                         context.uid = Long.toString(context.caller.uid);
                     }
                 } catch (RuntimeException e) {
@@ -200,11 +201,11 @@ public abstract class BaseServlet extends HttpServlet {
                 }
             }
 
-            if (context.sn == null) {
-                String c_sn = request.getParameter("c_sn");
-                if (c_sn != null && c_sn.length() > 0) {
-                    // 用以区分从token中解析出的sn
-                    context.sn = "-" + c_sn;
+            if (context.deviceId == null) {
+                String devId = request.getParameter("deviceId");
+                if (devId != null && devId.length() > 0) {
+                    // 用以区分从token中解析出的deviceId
+                    context.deviceId = "-" + devId;
                 }
             }
 

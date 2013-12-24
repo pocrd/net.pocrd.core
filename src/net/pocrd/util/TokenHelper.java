@@ -28,7 +28,7 @@ public class TokenHelper {
             caller.expire = dis.readLong();
             caller.level = dis.readInt();
             caller.securityLevel = dis.readInt();
-            caller.sn = dis.readLong();
+            caller.deviceId = dis.readLong();
             caller.uid = dis.readLong();
             
             return caller;
@@ -46,7 +46,7 @@ public class TokenHelper {
             dos.writeLong(caller.expire);
             dos.writeInt(caller.level);
             dos.writeInt(caller.securityLevel);
-            dos.writeLong(caller.sn);
+            dos.writeLong(caller.deviceId);
             dos.writeLong(caller.uid);
 
             byte[] bs = baos.toByteArray();

@@ -27,6 +27,12 @@ public @interface ApiParameter {
     String defaultValue() default "";
     
     /**
+     * 验证参数是否合法的
+     * @return
+     */
+    String verifyRegex() default "";
+    
+    /**
      * 参数注释
      * @return
      */

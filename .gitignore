@@ -5,6 +5,7 @@
 *.exe
 *.log
 *.prefs
+.classpath
 .metadata
 .settings
 /build/

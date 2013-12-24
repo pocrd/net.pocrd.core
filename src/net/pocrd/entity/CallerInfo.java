@@ -13,7 +13,7 @@ public class CallerInfo {
     public static final CallerInfo TESTER = new CallerInfo();
     static {
         if (CommonConfig.isDebug) {
-            TESTER.sn = -1;
+            TESTER.deviceId = -1;
             TESTER.uid = -1;
             TESTER.appid = -1;
             TESTER.level = Integer.MAX_VALUE;
@@ -33,6 +33,6 @@ public class CallerInfo {
     public long                    expire;
     public int                     level;
     public int                     securityLevel;
-    public long                    sn;
+    public long                    deviceId;
     public long                    uid;
 }

@@ -49,7 +49,7 @@ public class ApiContext {
     /**
      * 设备序列号,日志用
      */
-    public String                   sn;
+    public String                   deviceId;
 
     /**
      * 二进制码串，根据客户端上传的功能码16进制码解析得到，且对应二进制左起第一位为1(也做开始标识位，含义：normal，获取普通书籍)。 为了支持更多的位扩展,改码值时总是进行字符串操作。
@@ -108,7 +108,7 @@ public class ApiContext {
         sb.append("  ");
         sb.append(uid);
         sb.append("  ");
-        sb.append(sn);
+        sb.append(deviceId);
         sb.append("  ");
         return sb.toString();
     }
@@ -125,7 +125,7 @@ public class ApiContext {
         this.format = SerializeType.JSON;
         this.location = null;
         this.requestInfo = null;
-        this.sn = null;
+        this.deviceId = null;
         this.startTime = 0;
         this.token = null;
         this.uid = null;

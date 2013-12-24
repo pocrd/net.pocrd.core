@@ -35,5 +35,5 @@ public enum CommonParameter {
      * signature
      * 参数字符串签名
      */
-    si,
+    sig,
 }

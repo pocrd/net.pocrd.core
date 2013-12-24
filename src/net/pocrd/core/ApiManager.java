@@ -22,8 +22,10 @@ public class ApiManager {
     private static final ApiMethodInfo[]     empty           = new ApiMethodInfo[0];
     private HashMap<String, HttpApiExecuter> nameToApi       = new HashMap<String, HttpApiExecuter>();
     private HashMap<String, ApiMethodInfo>   apiInfos        = new HashMap<String, ApiMethodInfo>();
+    private String entityPrefix;
 
-    public ApiManager(String packageName) {
+    public ApiManager(String packageName, String entityPrefix) {
+    	this.entityPrefix = entityPrefix;
         // TODO:需要开发一个编译器plugin在编译期判断返回值是否合法(基本类型，特殊类型或者特殊的泛型类型)
         registerAll(packageName);
     }
@@ -121,16 +123,11 @@ public class ApiManager {
                     apiInfo.returnType = mInfo.getReturnType();
                     if (CommonConfig.isDebug) {
                         Class<?> type = apiInfo.returnType;
-                        if (!apiInfo.returnType.getName().startsWith("net.pocrd.api.resp.Api") && type != String.class) {
+                        if (!apiInfo.returnType.getName().startsWith(entityPrefix) && type != String.class) {
                             throw new RuntimeException("不支持的返回值类型" + clazz.getName() + " " + type.getName());
                         }
                     }
-                    // 移除命名空间
-                    // if (apiInfo.returnTypeString.contains("$")) {
-                    // apiInfo.returnTypeString = apiInfo.returnTypeString.substring(apiInfo.returnTypeString.lastIndexOf('$') + 1);
-                    // } else if (apiInfo.returnTypeString.contains(".")) {
-                    // apiInfo.returnTypeString = apiInfo.returnTypeString.substring(apiInfo.returnTypeString.lastIndexOf('.') + 1);
-                    // }
+
                     if (apiInfo.returnType == String.class) {
                         apiInfo.serializer = Serializer.stringSerializer;
                     } else {
