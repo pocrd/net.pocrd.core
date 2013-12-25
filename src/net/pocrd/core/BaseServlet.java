@@ -225,7 +225,7 @@ public abstract class BaseServlet extends HttpServlet {
             call.setReturnCode(ReturnCode.SUCCESS);
         } catch (ReturnCodeException rce) {
             call.setReturnCode(rce.getCode());
-            logger.error("", rce);
+            logger.error("servlet catch an error.", rce);
         } catch (Exception e) {
             call.setReturnCode(ReturnCode.UNKNOWN_ERROR);
             logger.error("unknown error.", e);
