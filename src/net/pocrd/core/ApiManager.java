@@ -22,10 +22,10 @@ public class ApiManager {
     private static final ApiMethodInfo[]     empty           = new ApiMethodInfo[0];
     private HashMap<String, HttpApiExecuter> nameToApi       = new HashMap<String, HttpApiExecuter>();
     private HashMap<String, ApiMethodInfo>   apiInfos        = new HashMap<String, ApiMethodInfo>();
-    private String entityPrefix;
+    private String                           entityPrefix;
 
     public ApiManager(String packageName, String entityPrefix) {
-    	this.entityPrefix = entityPrefix;
+        this.entityPrefix = entityPrefix;
         // TODO:需要开发一个编译器plugin在编译期判断返回值是否合法(基本类型，特殊类型或者特殊的泛型类型)
         registerAll(packageName);
     }
@@ -91,9 +91,7 @@ public class ApiManager {
                         ApiParameterInfo pInfo = new ApiParameterInfo();
                         Class<?> type = parameterTypes[i];
                         if (CommonConfig.isDebug) {
-                            if (!type.isPrimitive() && type != String.class && type != Boolean.class && type != Byte.class && type != Character.class
-                                    && type != Short.class && type != Integer.class && type != Long.class && type != Float.class
-                                    && type != Double.class) {
+                            if (!type.isPrimitive() && type != String.class) {
                                 throw new RuntimeException("不支持的参数类型" + clazz.getName() + " " + type.getName());
                             }
                         }
@@ -106,10 +104,21 @@ public class ApiManager {
                             Annotation n = a[j];
                             if (n.annotationType() == ApiParameter.class) {
                                 ApiParameter p = (ApiParameter)n;
-                                pInfo.defaultValue = p.defaultValue();
                                 pInfo.description = p.desc();
                                 pInfo.isRequired = p.required();
                                 pInfo.name = p.name();
+                                pInfo.verifyRegex = p.verifyRegex();
+                                if ("".equals(pInfo.verifyRegex)) {
+                                    pInfo.verifyRegex = null;
+                                }
+                                if (pInfo.isRequired) {
+                                    pInfo.defaultValue = null;
+                                } else {
+                                    pInfo.defaultValue = p.defaultValue();
+                                    if (pInfo.defaultValue == null && pInfo.type.isPrimitive()) {
+                                        throw new RuntimeException("nullable primitive parameter must has a default value. " + pInfo.name);
+                                    }
+                                }
                                 break;
                             }
                             j++;

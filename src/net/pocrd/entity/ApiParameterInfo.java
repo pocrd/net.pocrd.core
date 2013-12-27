@@ -11,7 +11,12 @@ public class ApiParameterInfo {
      * 默认值字符串形式
      */
     public String  defaultValue;
-
+    
+    /**
+     * 验证字符串表达式
+     */
+    public String verifyRegex;
+    
     /**
      * 是否必须
      */

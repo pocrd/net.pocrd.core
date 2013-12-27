@@ -90,25 +90,24 @@ public class BytecodeUtil implements Opcodes {
             mv.visitInsn(ACONST_NULL);
         } else {
             if (clazz.isPrimitive()) {
-                String pName = clazz.toString();
-                if ("boolean".equals(pName)) {
+                if (clazz == boolean.class) {
                     loadConst(mv, Boolean.parseBoolean(s) ? 1 : 0);
-                } else if ("byte".equals(pName)) {
+                } else if (clazz == byte.class) {
                     loadConst(mv, Integer.parseInt(s));
-                } else if ("char".equals(pName)) {
+                } else if (clazz == char.class) {
                     loadConst(mv, Integer.parseInt(s));
-                } else if ("short".equals(pName)) {
+                } else if (clazz == short.class) {
                     loadConst(mv, Integer.parseInt(s));
-                } else if ("int".equals(pName)) {
+                } else if (clazz == int.class) {
                     loadConst(mv, Integer.parseInt(s));
-                } else if ("long".equals(pName)) {
+                } else if (clazz == long.class) {
                     loadConst(mv, Long.parseLong(s));
-                } else if ("float".equals(pName)) {
+                } else if (clazz == float.class) {
                     loadConst(mv, Float.parseFloat(s));
-                } else if ("double".equals(pName)) {
+                } else if (clazz == double.class) {
                     loadConst(mv, Double.parseDouble(s));
                 } else {
-                    throw new RuntimeException("不支持的参数类型" + pName);
+                    throw new RuntimeException("不支持的参数类型" + clazz.getName());
                 }
             } else {
                 if (clazz == Boolean.class) {
@@ -177,6 +176,5 @@ public class BytecodeUtil implements Opcodes {
         }
         cw.visitInnerClass(clazz.getName().replace('.', '/'), dc.getName().replace('.', '/'), clazz.getSimpleName(), flag);
     }
-    
-    
+
 }

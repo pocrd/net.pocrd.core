@@ -21,6 +21,7 @@ import org.objectweb.asm.Type;
  * @author rendong
  */
 public class HttpApiProvider implements Opcodes {
+    private static final String REGEX_PREFIX = "regex_";
 
     public static HttpApiExecuter getApiExecuter(String name, ApiMethodInfo method) {
         try {
@@ -32,21 +33,35 @@ public class HttpApiProvider implements Opcodes {
             String classDesc = "L" + className + ";";
             ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
             FieldVisitor fv;
-            MethodVisitor mv;
-
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object",
                     new String[] { HttpApiExecuter.class.getName().replace('.', '/') });
             {
                 fv = cw.visitField(ACC_PRIVATE, "instance", "Ljava/lang/Object;", null, null);
                 fv.visitEnd();
             }
+            for (int i = 0; i < parameterInfos.length; i++) {
+                ApiParameterInfo parameterInfo = parameterInfos[i];
+                if (parameterInfo.verifyRegex != null) {
+                    fv = cw.visitField(ACC_PUBLIC, REGEX_PREFIX + parameterInfo.name, "Ljava/util/regex/Pattern;", null, null);
+                    fv.visitEnd();
+                }
+            }
             {
-                mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
+                MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mv.visitCode();
                 Label l0 = new Label();
                 mv.visitLabel(l0);
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
+                for (int i = 0; i < parameterInfos.length; i++) {
+                    ApiParameterInfo parameterInfo = parameterInfos[i];
+                    if (parameterInfo.verifyRegex != null) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitLdcInsn(parameterInfo.verifyRegex);
+                        mv.visitMethodInsn(INVOKESTATIC, "java/util/regex/Pattern", "compile", "(Ljava/lang/String;)Ljava/util/regex/Pattern;");
+                        mv.visitFieldInsn(PUTFIELD, className, REGEX_PREFIX + parameterInfo.name, "Ljava/util/regex/Pattern;");
+                    }
+                }
                 mv.visitInsn(RETURN);
                 Label l1 = new Label();
                 mv.visitLabel(l1);
@@ -55,7 +70,7 @@ public class HttpApiProvider implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC, "setInstance", "(Ljava/lang/Object;)V", null, null);
+                MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "setInstance", "(Ljava/lang/Object;)V", null, null);
                 mv.visitCode();
                 Label l0 = new Label();
                 mv.visitLabel(l0);
@@ -73,140 +88,156 @@ public class HttpApiProvider implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC, "execute", "([Ljava/lang/String;)Ljava/lang/Object;", null, null);
-                mv.visitCode();
-                //Label l0 = new Label();
-                Label l1 = new Label();
-                Label l2 = new Label();
-                Label l3 = new Label();
-                Label l4 = new Label();
-                mv.visitTryCatchBlock(l2, l3, l4, "java/lang/Exception");
-                //mv.visitLabel(l0);
-                int notNullCount = 0;
-                for (int i = 0; i < parameterInfos.length; i++) {
-                    ApiParameterInfo parameterInfo = parameterInfos[i];
-                    if (parameterInfo.isRequired || (parameterInfo.defaultValue == null && parameterInfo.type.isPrimitive())) {
-                        notNullCount++;
-                    }
-                }
-                for (int i = 0; i < parameterInfos.length; i++) {
-                    ApiParameterInfo parameterInfo = parameterInfos[i];
-                    if (parameterInfo.isRequired || (parameterInfo.defaultValue == null && parameterInfo.type.isPrimitive())) {
-                        mv.visitVarInsn(ALOAD, 1);
-                        BytecodeUtil.loadConst(mv, i);
-                        mv.visitInsn(AALOAD);
-                        notNullCount--;
-                        if (notNullCount == 0) {
-                            mv.visitJumpInsn(IFNONNULL, l2);
-                        } else {
-                            mv.visitJumpInsn(IFNULL, l1);
+                PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_PUBLIC, "execute", "([Ljava/lang/String;)Ljava/lang/Object;", null, null);
+                pmv.visitCode();
+                if (parameterInfos.length > 0) {
+                    for (int i = 0; i < parameterInfos.length; i++) {
+                        ApiParameterInfo parameterInfo = parameterInfos[i];
+                        Label l1 = new Label();
+                        Label l2 = new Label();
+                        if (parameterInfo.isRequired || parameterInfo.verifyRegex != null) {
+                            if (parameterInfo.isRequired) {
+                                pmv.loadArg(1);
+                                pmv.loadConst(i);
+                                pmv.visitInsn(AALOAD);
+                                if (parameterInfo.verifyRegex != null) {
+                                    pmv.visitJumpInsn(IFNULL, l1);
+                                } else {
+                                    pmv.visitJumpInsn(IFNONNULL, l2);
+                                }
+                            }
+                            if (parameterInfo.verifyRegex != null) {
+                                if (!parameterInfo.isRequired) {
+                                    pmv.loadArg(1);
+                                    pmv.loadConst(i);
+                                    pmv.visitInsn(AALOAD);
+                                    pmv.visitJumpInsn(IFNULL, l2);
+                                }
+                                pmv.loadArg(0);
+                                pmv.visitFieldInsn(GETFIELD, className, REGEX_PREFIX + parameterInfo.name, "Ljava/util/regex/Pattern;");
+                                pmv.loadArg(1);
+                                pmv.loadConst(i);
+                                pmv.visitInsn(AALOAD);
+                                pmv.visitMethodInsn(INVOKEVIRTUAL, "java/util/regex/Pattern", "matcher",
+                                        "(Ljava/lang/CharSequence;)Ljava/util/regex/Matcher;");
+                                pmv.visitMethodInsn(INVOKEVIRTUAL, "java/util/regex/Matcher", "matches", "()Z");
+                                pmv.visitJumpInsn(IFNE, l2);
+                            }
+                            pmv.visitLabel(l1);
+                            pmv.visitTypeInsn(NEW, "net/pocrd/entity/ReturnCodeException");
+                            pmv.visitInsn(DUP);
+                            pmv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ReturnCode", "PARAMETER_ERROR", "Lnet/pocrd/entity/ReturnCode;");
+                            pmv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+                            pmv.visitInsn(DUP);
+                            pmv.loadConst("parameter validation failed : " + parameterInfo.name + "=");
+                            pmv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+                            pmv.loadArg(1);
+                            pmv.loadConst(i);
+                            pmv.visitInsn(AALOAD);
+                            pmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                            pmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+                            pmv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>",
+                                    "(Lnet/pocrd/entity/ReturnCode;Ljava/lang/String;)V");
+                            pmv.visitInsn(ATHROW);
+                            pmv.visitLabel(l2);
                         }
                     }
-                }
-                mv.visitLabel(l1);
-                mv.visitTypeInsn(NEW, "net/pocrd/entity/ReturnCodeException");
-                mv.visitInsn(DUP);
-                mv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ReturnCode", "PARAMETER_ERROR", "Lnet/pocrd/entity/ReturnCode;");
-                mv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>", "(Lnet/pocrd/entity/ReturnCode;)V");
-                mv.visitInsn(ATHROW);
-                mv.visitLabel(l2);
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitFieldInsn(GETFIELD, className, "instance", "Ljava/lang/Object;");
-                mv.visitTypeInsn(CHECKCAST, clazz.getName().replace('.', '/'));
-                for (int i = 0; i < parameterInfos.length; i++) {
-                    ApiParameterInfo parameterInfo = parameterInfos[i];
-                    Class<?> parameterType = parameterInfo.type;
-                    String defaultValueString = null;
-                    if (!parameterInfo.isRequired) {
-                        defaultValueString = parameterInfo.defaultValue;
-                    }
-                    mv.visitVarInsn(ALOAD, 1);
-                    BytecodeUtil.loadConst(mv, i);
-                    mv.visitInsn(AALOAD);
-                    Label loopLabel2 = new Label();
-                    if (defaultValueString != null) {
-                        Label loopLabel1 = new Label();
-                        mv.visitJumpInsn(IFNONNULL, loopLabel1);
-                        BytecodeUtil.loadConst(mv, defaultValueString, parameterType);
-                        mv.visitJumpInsn(GOTO, loopLabel2);
-                        mv.visitLabel(loopLabel1);
-                        mv.visitVarInsn(ALOAD, 1);
-                        BytecodeUtil.loadConst(mv, i);
-                        mv.visitInsn(AALOAD);
-                    }
-                    if (parameterType.isPrimitive()) {
-                        String pName = parameterType.toString();
-                        if ("boolean".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "parseBoolean", "(Ljava/lang/String;)Z");
-                        } else if ("byte".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "parseByte", "(Ljava/lang/String;)B");
-                        } else if ("char".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I");
-                            mv.visitInsn(I2C);
-                        } else if ("short".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "parseShort", "(Ljava/lang/String;)S");
-                        } else if ("int".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I");
-                        } else if ("long".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "parseLong", "(Ljava/lang/String;)J");
-                        } else if ("float".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "parseFloat", "(Ljava/lang/String;)F");
-                        } else if ("double".equals(pName)) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "parseDouble", "(Ljava/lang/String;)D");
-                        } else {
-                            throw new RuntimeException("不支持的参数类型" + pName);
+                    pmv.declareLocal("e", Exception.class);
+                    for (int i = 0; i < parameterInfos.length; i++) {
+                        Label l1 = new Label();
+                        Label l2 = new Label();
+                        Label l3 = new Label();
+                        ApiParameterInfo parameterInfo = parameterInfos[i];
+                        Class<?> parameterType = parameterInfo.type;
+                        pmv.declareLocal("" + i, parameterInfo.type);
+                        if (parameterType != String.class) {
+                            pmv.visitTryCatchBlock(l1, l2, l3, "java/lang/Exception");
+                            pmv.visitLabel(l1);
                         }
-                    } else {
-                        if (parameterType == Boolean.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Ljava/lang/String;)Ljava/lang/Boolean;");
-                        } else if (parameterType == Byte.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(Ljava/lang/String;)Ljava/lang/Byte;");
-                        } else if (parameterType == Character.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I");
-                            mv.visitInsn(I2C);
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;");
-                        } else if (parameterType == Short.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(Ljava/lang/String;)Ljava/lang/Short;");
-                        } else if (parameterType == Integer.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(Ljava/lang/String;)Ljava/lang/Integer;");
-                        } else if (parameterType == Long.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(Ljava/lang/String;)Ljava/lang/Long;");
-                        } else if (parameterType == Float.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(Ljava/lang/String;)Ljava/lang/Float;");
-                        } else if (parameterType == Double.class) {
-                            mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(Ljava/lang/String;)Ljava/lang/Double;");
+                        String defaultValueString = null;
+                        if (!parameterInfo.isRequired) {
+                            defaultValueString = parameterInfo.defaultValue;
+                        }
+                        pmv.loadArg(1);
+                        pmv.loadConst(i);
+                        pmv.visitInsn(AALOAD);
+                        Label loopLabel2 = new Label();
+                        // 参数类型不为String时需要捕获类型转换异常
+                        if (defaultValueString != null) {
+                            Label loopLabel1 = new Label();
+                            pmv.visitJumpInsn(IFNONNULL, loopLabel1);
+                            pmv.loadConst(defaultValueString, parameterType);
+                            pmv.visitJumpInsn(GOTO, loopLabel2);
+                            pmv.visitLabel(loopLabel1);
+                            pmv.visitVarInsn(ALOAD, 1);
+                            pmv.loadConst(i);
+                            pmv.visitInsn(AALOAD);
+                        }
+
+                        if (parameterType == boolean.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "parseBoolean", "(Ljava/lang/String;)Z");
+                        } else if (parameterType == byte.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "parseByte", "(Ljava/lang/String;)B");
+                        } else if (parameterType == char.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I");
+                            pmv.visitInsn(I2C);
+                        } else if (parameterType == short.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "parseShort", "(Ljava/lang/String;)S");
+                        } else if (parameterType == int.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "parseInt", "(Ljava/lang/String;)I");
+                        } else if (parameterType == long.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "parseLong", "(Ljava/lang/String;)J");
+                        } else if (parameterType == float.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "parseFloat", "(Ljava/lang/String;)F");
+                        } else if (parameterType == double.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "parseDouble", "(Ljava/lang/String;)D");
                         } else if (parameterType == String.class) {
                             // Do nothing
                         } else {
                             throw new RuntimeException("不支持的参数类型" + parameterType.getName());
                         }
-                    }
-                    if (defaultValueString != null) {
-                        mv.visitLabel(loopLabel2);
+                        if (defaultValueString != null) {
+                            pmv.visitLabel(loopLabel2);
+                        }
+                        pmv.setLocal("" + i);
+                        // 参数类型不为String时需要捕获类型转换异常
+                        if (parameterType != String.class) {
+                            pmv.visitLabel(l2);
+                            Label label_end = new Label();
+                            pmv.visitJumpInsn(GOTO, label_end);
+                            pmv.visitLabel(l3);
+                            pmv.setLocal("e");
+                            pmv.visitTypeInsn(NEW, "net/pocrd/entity/ReturnCodeException");
+                            pmv.visitInsn(DUP);
+                            pmv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ReturnCode", "PARAMETER_ERROR", "Lnet/pocrd/entity/ReturnCode;");
+                            pmv.visitTypeInsn(NEW, "java/lang/StringBuilder");
+                            pmv.visitInsn(DUP);
+                            pmv.loadConst("parameter validation failed : " + parameterInfo.name + "=");
+                            pmv.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
+                            pmv.loadArg(1);
+                            pmv.loadConst(i);
+                            pmv.visitInsn(AALOAD);
+                            pmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append", "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                            pmv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
+                            pmv.loadLocal("e");
+                            pmv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>",
+                                    "(Lnet/pocrd/entity/ReturnCode;Ljava/lang/String;Ljava/lang/Exception;)V");
+                            pmv.visitInsn(ATHROW);
+                            pmv.visitLabel(label_end);
+                        }
                     }
                 }
-                mv.visitMethodInsn(INVOKEVIRTUAL, clazz.getName().replace('.', '/'), method.proxyMethodInfo.getName(),
+                pmv.visitVarInsn(ALOAD, 0);
+                pmv.visitFieldInsn(GETFIELD, className, "instance", "Ljava/lang/Object;");
+                pmv.visitTypeInsn(CHECKCAST, clazz.getName().replace('.', '/'));
+                for (int i = 0; i < parameterInfos.length; i++) {
+                    pmv.loadLocal("" + i);
+                }
+                pmv.visitMethodInsn(INVOKEVIRTUAL, clazz.getName().replace('.', '/'), method.proxyMethodInfo.getName(),
                         Type.getMethodDescriptor(method.proxyMethodInfo));
-                mv.visitLabel(l3);
-                mv.visitInsn(ARETURN);
-                mv.visitLabel(l4);
-                mv.visitVarInsn(ASTORE, 2);
-                // Label l5 = new Label();
-                // mv.visitLabel(l5);
-                mv.visitTypeInsn(NEW, "net/pocrd/entity/ReturnCodeException");
-                mv.visitInsn(DUP);
-                mv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ReturnCode", "PARAMETER_ERROR", "Lnet/pocrd/entity/ReturnCode;");
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>",
-                        "(Lnet/pocrd/entity/ReturnCode;Ljava/lang/Exception;)V");
-                mv.visitInsn(ATHROW);
-                // Label l6 = new Label();
-                // mv.visitLabel(l6);
-                // mv.visitLocalVariable("this", classDesc, null, l0, l6, 0);
-                // mv.visitLocalVariable("parameters", "[Ljava/lang/String;", null, l0, l6, 1);
-                // mv.visitLocalVariable("e", "Ljava/lang/Exception;", null, l5, l6, 2);
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
+                pmv.visitInsn(ARETURN);
+                pmv.visitMaxs(0, 0);
+                pmv.visitEnd();
             }
             cw.visitEnd();
             if (CommonConfig.isDebug) {

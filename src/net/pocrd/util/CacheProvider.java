@@ -174,10 +174,10 @@ public class CacheProvider implements Opcodes {
                     int expire = cacheAnnotation.expire();
                     paramTypes = m.getParameterTypes();
                     mvWrapper = new MethodVisitorWrapper(cw, m);
-                    LocalBuilder cacheKeyBuilder = mvWrapper.declareLocal(String.class);
-                    LocalBuilder cacheManagerBuilder = mvWrapper.declareLocal(ICacheManager.class);
-                    LocalBuilder cacheObjectBuilder = mvWrapper.declareLocal(Object.class);
-                    LocalBuilder returnTypeBuilder = mvWrapper.declareLocal(returnType);
+                    LocalVariable cacheKeyBuilder = mvWrapper.declareLocal(String.class);
+                    LocalVariable cacheManagerBuilder = mvWrapper.declareLocal(ICacheManager.class);
+                    LocalVariable cacheObjectBuilder = mvWrapper.declareLocal(Object.class);
+                    LocalVariable returnTypeBuilder = mvWrapper.declareLocal(returnType);
                     Label ljump0 = new Label();
                     Label ljump1 = new Label();
                     Label ljump2 = new Label();

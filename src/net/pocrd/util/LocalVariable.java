@@ -1,7 +1,7 @@
 package net.pocrd.util;
 
-public class LocalBuilder {
-    public LocalBuilder(int slotPos, int loadOpcode, int storeOpcode) {
+public class LocalVariable {
+    public LocalVariable(int slotPos, int loadOpcode, int storeOpcode) {
         this.slotPos = slotPos;
         this.loadOpcode = loadOpcode;
         this.storeOpcode = storeOpcode;
