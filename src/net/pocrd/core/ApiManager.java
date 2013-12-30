@@ -2,31 +2,38 @@ package net.pocrd.core;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
 
 import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.DesignedErrorCode;
 import net.pocrd.annotation.HttpApi;
+import net.pocrd.define.ConstField;
 import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
+import net.pocrd.util.CDataString;
 import net.pocrd.util.ClassUtil;
 import net.pocrd.util.CommonConfig;
 import net.pocrd.util.HttpApiProvider;
 import net.pocrd.util.SerializerProvider;
 
-public class ApiManager {
+public final class ApiManager {
     private static final String              API_METHOD_NAME = "execute";
     private static final ApiMethodInfo[]     empty           = new ApiMethodInfo[0];
     private HashMap<String, HttpApiExecuter> nameToApi       = new HashMap<String, HttpApiExecuter>();
     private HashMap<String, ApiMethodInfo>   apiInfos        = new HashMap<String, ApiMethodInfo>();
+    private HashMap<String, String>          protos          = new HashMap<String, String>();
     private String                           entityPrefix;
 
     public ApiManager(String packageName, String entityPrefix) {
         this.entityPrefix = entityPrefix;
         // TODO:需要开发一个编译器plugin在编译期判断返回值是否合法(基本类型，特殊类型或者特殊的泛型类型)
+        protos = ClassUtil.getAllProtoInPackage(entityPrefix);
         registerAll(packageName);
     }
 
@@ -141,6 +148,13 @@ public class ApiManager {
                         apiInfo.serializer = Serializer.stringSerializer;
                     } else {
                         apiInfo.serializer = SerializerProvider.getSerializer(apiInfo.returnType);
+                        String[] ts = getTypeSchema(apiInfo.returnType);
+                        if (ts != null && ts.length > 0) {
+                            apiInfo.returnInfo = new CDataString[ts.length];
+                            for (int i = 0; i < ts.length; i++) {
+                                apiInfo.returnInfo[i] = new CDataString(ts[i]);
+                            }
+                        }
                     }
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;
@@ -151,6 +165,47 @@ public class ApiManager {
         }
         if (!found) {
             throw new RuntimeException(API_METHOD_NAME + " method not found. class:" + clazz.getName());
+        }
+    }
+
+    private String[] getTypeSchema(Class<?> clazz) {
+        LinkedList<String> list = new LinkedList<String>();
+        HashSet<String> ns = new HashSet<String>();
+        String name = clazz.getSimpleName();
+        ns.add(name);
+        if (protos.containsKey(name)) {
+            list.add(protos.get(name));
+            fillProtoTypeDependence(clazz, ns);
+            for (String n : ns) {
+                if (protos.containsKey(n)) {
+                    if (!name.equals(n)) {
+                        list.add(protos.get(n));
+                    }
+                } else {
+                    throw new RuntimeException("proto file missing. " + n);
+                }
+            }
+        } else {
+            // TODO:通过反射构建type schema
+            throw new RuntimeException("not a proto type. " + name);
+        }
+        return list.toArray(ConstField.EMPTY_STRING_ARRAY);
+    }
+
+    private void fillProtoTypeDependence(Class<?> clazz, HashSet<String> ns) {
+        for (Method m : clazz.getDeclaredMethods()) {
+            if ((m.getModifiers() & Modifier.PUBLIC) != Modifier.PUBLIC) {
+                continue;
+            }
+            Class<?> t = m.getReturnType();
+            String n = t.getSimpleName();
+            if ("Builder".equals(n) || n.endsWith("OrBuilder")) {
+                continue;
+            }
+            if (!ns.contains(n) && t.getName().startsWith(entityPrefix)) {
+                ns.add(n);
+                fillProtoTypeDependence(t, ns);
+            }
         }
     }
 }

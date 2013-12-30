@@ -10,6 +10,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
+import net.pocrd.util.CDataString;
 
 /**
  * 接口信息
@@ -65,6 +66,13 @@ public class ApiMethodInfo {
      * 方法状态
      */
     public ApiOpenState               state         = ApiOpenState.OPEN;
+
+    /**
+     * 返回值格式定义
+     */
+    @XmlElementWrapper(name = "returnInfo")
+    @XmlElement(name = "entity")
+    public CDataString[]                   returnInfo    = null;
 
     /**
      * 参数类型

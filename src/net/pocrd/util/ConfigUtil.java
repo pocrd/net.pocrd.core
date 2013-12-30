@@ -62,13 +62,13 @@ public final class ConfigUtil {
             }
             if (!file.exists()) {
                 if (!CommonConfig.isDebug) {
-                    throw new RuntimeException("cannot file config file : " + name);
+                    throw new RuntimeException("cannot file config file : " + name + " from " + path);
                 } else {
-                    logger.error("cannot load config file." + name);
+                    logger.error("cannot load config file." + name + " from " + path);
                     return null;
                 }
             } else {
-                logger.info("load config file " + name + " successful.");
+                logger.info("load config file " + name + " from " + file.getAbsolutePath() + " successful.");
             }
 
             JAXBContext context = JAXBContext.newInstance(clazz);
@@ -79,7 +79,7 @@ public final class ConfigUtil {
             if (!CommonConfig.isDebug) {
                 throw new RuntimeException(e);
             } else {
-                logger.error("load config failed:" + name, e);
+                logger.error("cannot load config file." + name + " from " + path, e);
                 return null;
             }
         }
