@@ -10,6 +10,7 @@ import javax.xml.bind.annotation.XmlTransient;
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
+import net.pocrd.entity.ReturnCode.CodeInfo;
 import net.pocrd.util.CDataString;
 
 /**
@@ -25,7 +26,7 @@ public class ApiMethodInfo {
     static {
         UnknownMethod.methodName = "Unknown";
         UnknownMethod.description = "未知资源";
-        UnknownMethod.errorCodes = new int[] {};
+        UnknownMethod.errorCodes = new CodeInfo[] {};
         UnknownMethod.parameterInfos = null;
         UnknownMethod.proxyMethodInfo = null;
         UnknownMethod.securityLevel = SecurityType.None;
@@ -86,7 +87,7 @@ public class ApiMethodInfo {
      */
     @XmlElementWrapper(name = "errorCodes")
     @XmlElement(name = "apiCode")
-    public int[]                      errorCodes;
+    public CodeInfo[]                      errorCodes;
 
     /**
      * 所代理的方法的信息

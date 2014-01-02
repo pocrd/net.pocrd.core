@@ -15,8 +15,6 @@ public class CallerInfo {
         if (CommonConfig.isDebug) {
             TESTER.deviceId = -1;
             TESTER.uid = -1;
-            TESTER.appid = -1;
-            TESTER.level = Integer.MAX_VALUE;
             TESTER.expire = Long.MAX_VALUE;
             TESTER.securityLevel = SecurityType.Test.getValue();
         }
@@ -29,9 +27,7 @@ public class CallerInfo {
     public String[]                groups;
 
     // 参与token计算
-    public int                     appid;
     public long                    expire;
-    public int                     level;
     public int                     securityLevel;
     public long                    deviceId;
     public long                    uid;

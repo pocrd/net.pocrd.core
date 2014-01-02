@@ -3,7 +3,6 @@ package net.pocrd.core;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashSet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,7 +35,7 @@ public abstract class BaseServlet extends HttpServlet {
 
     public static final byte[]    XML_START        = "<xml>".getBytes(ConstField.UTF8);
     public static final byte[]    XML_END          = "</xml>".getBytes(ConstField.UTF8);
-    public static final byte[]    XML_EMPTY          = "<empty/>".getBytes(ConstField.UTF8);
+    public static final byte[]    XML_EMPTY        = "<empty/>".getBytes(ConstField.UTF8);
     public static final byte[]    JSON_STAT        = "{\"stat\":".getBytes(ConstField.UTF8);
     public static final byte[]    JSON_CONTENT     = ",\"content\":[".getBytes(ConstField.UTF8);
     public static final byte[]    JSON_SPLIT       = ",".getBytes(ConstField.UTF8);
@@ -125,17 +124,20 @@ public abstract class BaseServlet extends HttpServlet {
         {
             context.agent = request.getHeader("User-Agent");
             context.clientIP = request.getRemoteAddr();
-        }
-        {
-            String cid = request.getHeader("_cid");
-            if (cid != null) {
-                context.agent = "(" + cid + ")" + context.agent;
+            context.cid = request.getParameter("cid");
+            if (context.cid != null && (context.cid.length() < 6 || context.cid.length() > 16)) {
+                context.cid = null;
+            }
+            context.appid = request.getParameter(CommonParameter.aid.toString());
+            String vc = request.getParameter(CommonParameter.vc.toString());
+            if (vc != null && vc.length() > 0) {
+                context.versionCode = Integer.parseInt(vc);
             }
         }
         {
             String httpMethod = request.getMethod();
             if ("POST".equalsIgnoreCase(httpMethod)) {
-                StringBuilder sb = new StringBuilder(128);
+                StringBuilder sb = new StringBuilder(256);
                 Enumeration<String> keys = request.getParameterNames();
                 while (keys.hasMoreElements()) {
                     String key = keys.nextElement();
@@ -149,14 +151,6 @@ public abstract class BaseServlet extends HttpServlet {
                 context.requestInfo = sb.toString();
             } else {
                 context.requestInfo = request.getQueryString();
-            }
-        }
-        {
-            String functionFlags = request.getParameter(CommonParameter.ff.toString());
-            if (functionFlags == null || functionFlags.length() == 0) {
-                context.functionFlags = null;
-            } else {
-                context.functionFlags = new HashSet<String>(Arrays.asList(functionFlags.split(",")));
             }
         }
         {
@@ -201,6 +195,7 @@ public abstract class BaseServlet extends HttpServlet {
                 }
             }
 
+            // 未验证的deviceid加上"-"前缀
             if (context.deviceId == null) {
                 String devId = request.getParameter("deviceId");
                 if (devId != null && devId.length() > 0) {

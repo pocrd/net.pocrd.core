@@ -2,12 +2,6 @@ package net.pocrd.define;
 
 public enum CommonParameter {
     /**
-     * FunctionFlags
-     * 客户端功能性标签，用于标示客户端支持的扩展功能
-     */
-    ff,
-    
-    /**
      * Format
      * 返回值格式，取值为枚举SerializeType中的定义
      */
@@ -36,4 +30,28 @@ public enum CommonParameter {
      * 参数字符串签名
      */
     sig,
+    
+    /**
+     * application id
+     * 应用编号
+     */
+    aid,
+    
+    /**
+     * call id
+     * 客户端调用编号
+     */
+    cid,
+    
+    /**
+     * device id
+     * 设备标示符
+     */
+    did,
+    
+    /**
+     * version code
+     * 客户端数字版本号
+     */
+    vc,
 }

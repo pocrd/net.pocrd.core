@@ -16,6 +16,8 @@ import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
+import net.pocrd.entity.ReturnCode;
+import net.pocrd.entity.ReturnCode.CodeInfo;
 import net.pocrd.util.CDataString;
 import net.pocrd.util.ClassUtil;
 import net.pocrd.util.CommonConfig;
@@ -84,8 +86,16 @@ public final class ApiManager {
                     apiInfo.description = api.desc();
                     apiInfo.methodName = api.name();
                     DesignedErrorCode errors = mInfo.getAnnotation(DesignedErrorCode.class);
-                    if (errors != null) {
-                        apiInfo.errorCodes = errors.value();
+                    if (errors != null && errors.value() != null) {
+                        int[] es = errors.value();
+                        int size = es.length;
+                        if (size > 0) {
+                            apiInfo.errorCodes = new CodeInfo[size];
+                            for (int i = 0; i < size; i++) {
+                                ReturnCode c = ReturnCode.findCode(es[i]);
+                                apiInfo.errorCodes[i] = new CodeInfo(c.getCode(), c.getName(), c.getDesc());
+                            }
+                        }
                     }
                     apiInfo.proxyMethodInfo = mInfo;
                     Class<?>[] parameterTypes = mInfo.getParameterTypes();
@@ -115,8 +125,19 @@ public final class ApiManager {
                                 pInfo.isRequired = p.required();
                                 pInfo.name = p.name();
                                 pInfo.verifyRegex = p.verifyRegex();
-                                if ("".equals(pInfo.verifyRegex)) {
-                                    pInfo.verifyRegex = null;
+                                if (pInfo.verifyRegex == null) {
+                                    pInfo.verifyMsg = null;
+                                } else {
+                                    if (pInfo.verifyRegex.length() == 0) {
+                                        pInfo.verifyRegex = null;
+                                        pInfo.verifyMsg = null;
+                                    } else {
+                                        pInfo.verifyMsg = p.verifyMsg();
+                                        if (pInfo.verifyMsg == null) {
+                                            throw new RuntimeException("verifyMsg should not null when verifyRegex is not null. method:"
+                                                    + apiInfo.methodName + "  parameter:" + pInfo.name);
+                                        }
+                                    }
                                 }
                                 if (pInfo.isRequired) {
                                     pInfo.defaultValue = null;

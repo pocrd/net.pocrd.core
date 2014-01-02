@@ -24,9 +24,7 @@ public class TokenHelper {
 
         try {
             CallerInfo caller = new CallerInfo();
-            caller.appid = dis.readInt();
             caller.expire = dis.readLong();
-            caller.level = dis.readInt();
             caller.securityLevel = dis.readInt();
             caller.deviceId = dis.readLong();
             caller.uid = dis.readLong();
@@ -42,9 +40,7 @@ public class TokenHelper {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(9);
         DataOutputStream dos = new DataOutputStream(baos);
         try {
-            dos.writeInt(caller.appid);
             dos.writeLong(caller.expire);
-            dos.writeInt(caller.level);
             dos.writeInt(caller.securityLevel);
             dos.writeLong(caller.deviceId);
             dos.writeLong(caller.uid);

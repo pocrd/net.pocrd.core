@@ -1,7 +1,6 @@
 ﻿package net.pocrd.entity;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 
 import net.pocrd.define.SerializeType;
 
@@ -45,6 +44,11 @@ public class ApiContext {
      * 用户账号,日志用
      */
     public String                   uid;
+    
+    /**
+     * http请求的标识符
+     */
+    public String                   cid;
 
     /**
      * 设备序列号,日志用
@@ -52,16 +56,19 @@ public class ApiContext {
     public String                   deviceId;
 
     /**
-     * 二进制码串，根据客户端上传的功能码16进制码解析得到，且对应二进制左起第一位为1(也做开始标识位，含义：normal，获取普通书籍)。 为了支持更多的位扩展,改码值时总是进行字符串操作。
-     * 解析过程为：客户端16进制码=>Version(2进制码串)=>2进制码串从左向右按位匹配FilterVersion中枚举的所有功能项(枚举int值代表的是在version码中中从左起对应的位数)
-     * 例如：FilterVersion中枚举了{1(普通书),2,3,4,5..8},客户端上传"F1"解析得到的Version(二进制码)11110001,即支持功能1、2、3、4、8
+     * 客户端应用版本号
      */
-    public HashSet<String>          functionFlags;
+    public int                      versionCode;
+
+    /**
+     * 应用编号
+     */
+    public String                   appid;
 
     /**
      * 返回值序列化方式
      */
-    public SerializeType            format       = SerializeType.XML;
+    public SerializeType            format       = SerializeType.JSON;
 
     /**
      * 返回消息的语言
@@ -106,10 +113,6 @@ public class ApiContext {
         sb.append("  ");
         sb.append(clientIP);
         sb.append("  ");
-        sb.append(uid);
-        sb.append("  ");
-        sb.append(deviceId);
-        sb.append("  ");
         return sb.toString();
     }
 
@@ -117,18 +120,20 @@ public class ApiContext {
      * 清除变量信息
      */
     public final void clear() {
+        this.cid = null;
         this.agent = null;
         this.apiCallInfos = null;
+        this.appid=null;
         this.caller = null;
         this.clientIP = null;
         this.currentCall = null;
+        this.deviceId = null;
         this.format = SerializeType.JSON;
         this.location = null;
         this.requestInfo = null;
-        this.deviceId = null;
         this.startTime = 0;
         this.token = null;
         this.uid = null;
-        this.functionFlags = null;
+        this.versionCode = 0;
     }
 }

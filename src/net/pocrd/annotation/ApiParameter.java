@@ -10,31 +10,31 @@ import java.lang.annotation.Target;
 public @interface ApiParameter {
     /**
      * 是否为必要参数
-     * @return
      */
     boolean required();
     
     /**
      * 参数名称
-     * @return
      */
     String name();
     
     /**
      * 默认值
-     * @return
      */
     String defaultValue() default "";
     
     /**
      * 验证参数是否合法的
-     * @return
      */
     String verifyRegex() default "";
     
     /**
+     * 参数验证失败的提示信息
+     */
+    String verifyMsg() default "";
+    
+    /**
      * 参数注释
-     * @return
      */
     String desc();
 }

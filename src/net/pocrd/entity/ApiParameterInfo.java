@@ -18,6 +18,11 @@ public class ApiParameterInfo {
     public String verifyRegex;
     
     /**
+     * 验证错误提示
+     */
+    public String verifyMsg;
+    
+    /**
      * 是否必须
      */
     public boolean isRequired;
