@@ -10,8 +10,7 @@ public class ApiMethodCall {
         UnknownMethodCall.returnCode = ReturnCode.UNKNOWN_METHOD;
     }
 
-    private ApiMethodCall() {
-    }
+    private ApiMethodCall() {}
 
     public ApiMethodCall(ApiMethodInfo method) {
         returnCode = ReturnCode.NO_ASSIGN;
@@ -28,11 +27,21 @@ public class ApiMethodCall {
      * 调用结果(序列化前)
      */
     public Object        result;
+    
+    /**
+     * 返回值长度(未压缩前的byte数组长度)
+     */
+    public int resultLen;
 
     /**
      * 执行中的额外消息
      */
-    public StringBuilder Message    = new StringBuilder();
+    public StringBuilder message    = new StringBuilder();
+
+    /**
+     * 调用开始时间
+     */
+    public long          startTime;
 
     /**
      * 调用耗时
@@ -70,8 +79,8 @@ public class ApiMethodCall {
             originCode = code;
         }
     }
-    
-    public boolean isNoAssign(){
+
+    public boolean isNoAssign() {
         return returnCode == ReturnCode.NO_ASSIGN;
     }
 

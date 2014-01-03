@@ -76,16 +76,16 @@ public abstract class BaseServlet extends HttpServlet {
             if (fatalError || parseResult != ReturnCode.SUCCESS) {
                 access.info(apiContext.getStringInfo());
             } else {
+                int count = 0;
                 for (ApiMethodCall call : apiContext.apiCallInfos) {
                     if (call == ApiMethodCall.UnknownMethodCall) {
                         access.info("0  " + call.method.methodName + "  " + apiContext.getStringInfo());
                         continue;
                     }
                     apiContext.currentCall = call;
+                    call.startTime = (count++ == 0) ? apiContext.startTime : System.currentTimeMillis();
                     executeApiCall(call, apiContext, response);
-                    long currentTime = System.currentTimeMillis();
-                    call.costTime = (int)(currentTime - apiContext.startTime);
-                    apiContext.startTime = currentTime;
+                    call.costTime = (int)(System.currentTimeMillis() - call.startTime);
                     // TODO:记录访问的返回字节数(未压缩)
                     access.info(call.costTime + "  " + call.method.methodName + "  " + apiContext.getStringInfo());
                 }

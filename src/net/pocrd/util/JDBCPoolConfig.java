@@ -1,6 +1,8 @@
 package net.pocrd.util;
 
 public class JDBCPoolConfig {
+    // 配置节点名称
+    private String  configName;
     // 数据库连接地址
     private String  jdbcUrl;
     // 驱动名
@@ -9,14 +11,14 @@ public class JDBCPoolConfig {
     private String  password;
     // 是否允许JMX
     private boolean jmxEnabled         = true;
-    
-    //下面的属性是验证空闲连接使用
-    //空闲时是否进行检测,使用validationQuery
-    private boolean testWhileIdle=false;
-    //borrow时进行检测
-    private boolean testOnBorrow=true;
-    //return时进行检测
-    private boolean testOnReturn=false;
+
+    // 下面的属性是验证空闲连接使用
+    // 空闲时是否进行检测,使用validationQuery
+    private boolean testWhileIdle      = false;
+    // borrow时进行检测
+    private boolean testOnBorrow       = true;
+    // return时进行检测
+    private boolean testOnReturn       = false;
     // 验证语句
     private String  validationQuery    = "SELECT 1";
     // 验证周期
@@ -42,9 +44,16 @@ public class JDBCPoolConfig {
     private int     removeAbandonedTimeout;
     // 是否跟踪记录废弃连接的堆栈信息
     private boolean logAbandoned;
-    //连接池拦截器
+    // 连接池拦截器
     private String  jdbcInterceptors;
-    
+
+    public String getConfigName() {
+        return configName;
+    }
+
+    public void setConfigName(String configName) {
+        this.configName = configName;
+    }
 
     public String getJdbcUrl() {
         return jdbcUrl;
@@ -104,9 +113,11 @@ public class JDBCPoolConfig {
     public int getValidationInterval() {
         return validationInterval;
     }
-    
+
     /**
-     * (long) avoid excess validation, only run validation at most at this frequency - time in milliseconds. If a connection is due for validation, but has been validated previously within this interval, it will not be validated again. The default value is 30000 (30 seconds).
+     * (long) avoid excess validation, only run validation at most at this frequency - time in milliseconds. If a connection is due for validation,
+     * but has been validated previously within this interval, it will not be validated again. The default value is 30000 (30 seconds).
+     * 
      * @param validationInterval
      */
     public void setValidationInterval(int validationInterval) {
@@ -224,7 +235,8 @@ public class JDBCPoolConfig {
 
     /**
      * (boolean) Flag to log stack traces for application code which abandoned a Connection. Logging of abandoned Connections adds overhead for every
-     *  Connection borrow because a stack trace has to be generated. The default value is false.
+     * Connection borrow because a stack trace has to be generated. The default value is false.
+     * 
      * @param logAbandoned
      */
     public void setLogAbandoned(boolean logAbandoned) {
@@ -239,6 +251,7 @@ public class JDBCPoolConfig {
      * (boolean) Flag to remove abandoned connections if they exceed the removeAbandonedTimeout. If set to true a connection is considered abandoned
      * and eligible for removal if it has been in use longer than the removeAbandonedTimeout Setting this to true can recover db connections from
      * applications that fail to close a connection. See also logAbandoned The default value is false.
+     * 
      * @param removeAbandoned
      */
     public void setRemoveAbandoned(boolean removeAbandoned) {
@@ -248,9 +261,11 @@ public class JDBCPoolConfig {
     public String getJdbcInterceptors() {
         return jdbcInterceptors;
     }
-    
+
     /**
-     * flexible and pluggable interceptors to create any customizations around the pool, the query execution and the result set handling. More on this in the advanced section.
+     * flexible and pluggable interceptors to create any customizations around the pool, the query execution and the result set handling. More on this
+     * in the advanced section.
+     * 
      * @param jdbcInterceptors
      */
     public void setJdbcInterceptors(String jdbcInterceptors) {
@@ -260,9 +275,12 @@ public class JDBCPoolConfig {
     public boolean isTestWhileIdle() {
         return testWhileIdle;
     }
-    
+
     /**
-     * (boolean) The indication of whether objects will be validated by the idle object evictor (if any). If an object fails to validate, it will be dropped from the pool. NOTE - for a true value to have any effect, the validationQuery parameter must be set to a non-null string. The default value is false and this property has to be set in order for the pool cleaner/test thread is to run (also see timeBetweenEvictionRunsMillis)
+     * (boolean) The indication of whether objects will be validated by the idle object evictor (if any). If an object fails to validate, it will be
+     * dropped from the pool. NOTE - for a true value to have any effect, the validationQuery parameter must be set to a non-null string. The default
+     * value is false and this property has to be set in order for the pool cleaner/test thread is to run (also see timeBetweenEvictionRunsMillis)
+     * 
      * @param testWhileIdle
      */
     public void setTestWhileIdle(boolean testWhileIdle) {
@@ -272,9 +290,12 @@ public class JDBCPoolConfig {
     public boolean isTestOnBorrow() {
         return testOnBorrow;
     }
-    
+
     /**
-     * (boolean) The indication of whether objects will be validated before being borrowed from the pool. If the object fails to validate, it will be dropped from the pool, and we will attempt to borrow another. NOTE - for a true value to have any effect, the validationQuery parameter must be set to a non-null string. In order to have a more efficient validation, see validationInterval. Default value is false
+     * (boolean) The indication of whether objects will be validated before being borrowed from the pool. If the object fails to validate, it will be
+     * dropped from the pool, and we will attempt to borrow another. NOTE - for a true value to have any effect, the validationQuery parameter must be
+     * set to a non-null string. In order to have a more efficient validation, see validationInterval. Default value is false
+     * 
      * @param testOnBorrow
      */
     public void setTestOnBorrow(boolean testOnBorrow) {
@@ -284,9 +305,11 @@ public class JDBCPoolConfig {
     public boolean isTestOnReturn() {
         return testOnReturn;
     }
-    
+
     /**
-     * (boolean) The indication of whether objects will be validated before being returned to the pool. NOTE - for a true value to have any effect, the validationQuery parameter must be set to a non-null string. The default value is false.
+     * (boolean) The indication of whether objects will be validated before being returned to the pool. NOTE - for a true value to have any effect,
+     * the validationQuery parameter must be set to a non-null string. The default value is false.
+     * 
      * @param testOnReturn
      */
     public void setTestOnReturn(boolean testOnReturn) {

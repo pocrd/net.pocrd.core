@@ -1,5 +1,7 @@
 package net.pocrd.util;
 
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlElementWrapper;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
 
@@ -25,39 +27,28 @@ public class CommonConfig {
             tmp.staticSignPwd = "pocrd@gmail.com";
             tmp.cacheVersion = "v1.0";
             tmp.cacheType = CacheDBType.Redis;
-//            tmp.connectString = "jdbc:mysql://112.124.17.212:3306/test?useUnicode=true&amp;characterset=utf-8&user=gkq&password=gkq1990";
-            tmp.jdbcPoolConfig=new JDBCPoolConfig();
-            tmp.jdbcPoolConfig.setDriverClassName("com.mysql.jdbc.Driver");
-            tmp.jdbcPoolConfig.setUserName("api");
-            tmp.jdbcPoolConfig.setPassword("1q2w3e4r5t");
-            tmp.jdbcPoolConfig.setJdbcUrl("jdbc:mysql://112.124.17.212:3306/test?useUnicode=true&amp;characterset=utf-8");
-            tmp.jdbcPoolConfig.setMaxActive(100);
-            tmp.jdbcPoolConfig.setInitialSize(10);
-            tmp.jdbcPoolConfig.setMinEvictableIdleTimeMillis(30000);
-            tmp.jdbcPoolConfig.setMinIdle(10);
-            tmp.jdbcPoolConfig.setMaxIdle(100);
-            tmp.jdbcPoolConfig.setMaxWait(10000);
-            tmp.jdbcPoolConfig.setTestWhileIdle(true);//空闲连接测试
         }
         Instance = tmp;
         Instance.accessLogger = LogManager.getLogger(Instance.accessLoggerName);
         Instance.tokenHelper = new TokenHelper(Instance.tokenPwd);
     }
 
-    public String      accessLoggerName;
-    public String      tokenPwd;
-    public String      staticSignPwd;
-    public String      autogenPath;
-    public String      cacheVersion;
-    public CacheDBType cacheType;
-//    public String      connectString;
-    public JDBCPoolConfig jdbcPoolConfig;
+    public String           accessLoggerName;
+    public String           tokenPwd;
+    public String           staticSignPwd;
+    public String           autogenPath;
+    public String           cacheVersion;
+    public CacheDBType      cacheType;
+    
+    @XmlElementWrapper(name = "dbConfigs")
+    @XmlElement(name = "entry")
+    public JDBCPoolConfig[] dbConfigs;
 
     @XmlTransient
-    public TokenHelper tokenHelper;
+    public TokenHelper      tokenHelper;
 
     @XmlTransient
-    public Logger      accessLogger;
+    public Logger           accessLogger;
 
     /**
      * 缓存实现机制
