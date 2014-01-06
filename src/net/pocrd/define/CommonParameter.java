@@ -1,57 +1,57 @@
 package net.pocrd.define;
 
-public enum CommonParameter {
+public final class CommonParameter {
     /**
      * Format
      * 返回值格式，取值为枚举SerializeType中的定义
      */
-    ft,
+    public static final String ft = "ft";
     
     /**
      * Location
      * 用于返回信息国际化
      */
-    lo,
+    public static final String lo = "lo";
     
     /**
      * token
      * 代表访问者身份
      */
-    tk,
+    public static final String tk = "tk";
     
     /**
      * method
      * 请求的资源名
      */
-    mt,
+    public static final String mt = "mt";
     
     /**
      * signature
      * 参数字符串签名
      */
-    sig,
+    public static final String sig = "sig";
     
     /**
      * application id
      * 应用编号
      */
-    aid,
+    public static final String aid = "aid";
     
     /**
      * call id
      * 客户端调用编号
      */
-    cid,
+    public static final String cid = "cid";
     
     /**
      * device id
      * 设备标示符
      */
-    did,
+    public static final String did = "did";
     
     /**
      * version code
      * 客户端数字版本号
      */
-    vc,
+    public static final String vc = "vc";
 }

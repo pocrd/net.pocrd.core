@@ -1,5 +1,6 @@
 ﻿package net.pocrd.entity;
 
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 
 import net.pocrd.define.SerializeType;
@@ -11,14 +12,16 @@ public class ApiContext {
     /**
      * 当前线程的ApiContext对象
      */
-    private static ApiContext current;
+    private static ThreadLocal<ApiContext> threadLocal = new ThreadLocal<ApiContext>();
 
     /**
      * 获取当前Api上下文
      */
     public static ApiContext getCurrent() {
+        ApiContext current = threadLocal.get();
         if (current == null) {
             current = new ApiContext();
+            threadLocal.set(current);
         }
         return current;
     }
@@ -44,7 +47,7 @@ public class ApiContext {
      * 用户账号,日志用
      */
     public String                   uid;
-    
+
     /**
      * http请求的标识符
      */
@@ -58,7 +61,7 @@ public class ApiContext {
     /**
      * 客户端应用版本号
      */
-    public int                      versionCode;
+    public String                   versionCode;
 
     /**
      * 应用编号
@@ -101,6 +104,16 @@ public class ApiContext {
     public CallerInfo               caller;
 
     /**
+     * 已进行序列化的method call计数, 用于接口合并调用时分段下发返回值
+     */
+    public int                      serializeCount;
+
+    /**
+     * 线程相关的序列化数据缓冲池，用于暂存序列化数据
+     */
+    public ByteArrayOutputStream    outputStream = new ByteArrayOutputStream(4096);
+
+    /**
      * 返回string格式的信息摘要
      * 
      * @return
@@ -120,20 +133,22 @@ public class ApiContext {
      * 清除变量信息
      */
     public final void clear() {
-        this.cid = null;
         this.agent = null;
         this.apiCallInfos = null;
-        this.appid=null;
+        this.appid = null;
         this.caller = null;
+        this.cid = null;
         this.clientIP = null;
         this.currentCall = null;
         this.deviceId = null;
         this.format = SerializeType.JSON;
         this.location = null;
         this.requestInfo = null;
+        this.serializeCount = 0;
         this.startTime = 0;
         this.token = null;
         this.uid = null;
-        this.versionCode = 0;
+        this.versionCode = null;
+        this.outputStream.reset();
     }
 }

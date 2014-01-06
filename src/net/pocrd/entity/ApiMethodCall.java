@@ -27,11 +27,11 @@ public class ApiMethodCall {
      * 调用结果(序列化前)
      */
     public Object        result;
-    
+
     /**
      * 返回值长度(未压缩前的byte数组长度)
      */
-    public int resultLen;
+    public int           resultLen;
 
     /**
      * 执行中的额外消息

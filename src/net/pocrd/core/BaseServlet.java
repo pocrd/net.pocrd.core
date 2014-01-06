@@ -19,28 +19,32 @@ import net.pocrd.entity.CallerInfo;
 import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.util.CommonConfig;
+import net.pocrd.util.MiscUtil;
 import net.pocrd.util.TokenHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public abstract class BaseServlet extends HttpServlet {
-    private static final long     serialVersionUID = 1L;
-    private static final Logger   logger           = LogManager.getLogger(BaseServlet.class);
-    private static TokenHelper    tokenHelper      = new TokenHelper(CommonConfig.Instance.tokenPwd);
+    private static final long              serialVersionUID        = 1L;
+    private static final Logger            logger                  = LogManager.getLogger(BaseServlet.class);
+    private static TokenHelper             tokenHelper             = new TokenHelper(CommonConfig.Instance.tokenPwd);
 
-    protected static final Logger access           = CommonConfig.Instance.accessLogger;
-    protected static final String DEBUG_AGENT      = "pocrd.tester";
-    protected static ApiManager   apiManager;
+    protected static final Logger          access                  = CommonConfig.Instance.accessLogger;
+    protected static final String          DEBUG_AGENT             = "pocrd.tester";
+    protected static ApiManager            apiManager;
+    protected static final ApiMethodCall[] EMPTY_METHOD_CALL_ARRAY = new ApiMethodCall[0];
 
-    public static final byte[]    XML_START        = "<xml>".getBytes(ConstField.UTF8);
-    public static final byte[]    XML_END          = "</xml>".getBytes(ConstField.UTF8);
-    public static final byte[]    XML_EMPTY        = "<empty/>".getBytes(ConstField.UTF8);
-    public static final byte[]    JSON_STAT        = "{\"stat\":".getBytes(ConstField.UTF8);
-    public static final byte[]    JSON_CONTENT     = ",\"content\":[".getBytes(ConstField.UTF8);
-    public static final byte[]    JSON_SPLIT       = ",".getBytes(ConstField.UTF8);
-    public static final byte[]    JSON_END         = "]}".getBytes(ConstField.UTF8);
-    public static final byte[]    JSON_EMPTY       = "{}".getBytes(ConstField.UTF8);
+    public static final byte[]             XML_START               = "<xml>".getBytes(ConstField.UTF8);
+    public static final byte[]             XML_END                 = "</xml>".getBytes(ConstField.UTF8);
+    public static final byte[]             XML_EMPTY               = "<empty/>".getBytes(ConstField.UTF8);
+    public static final byte[]             JSON_STAT               = "{\"stat\":".getBytes(ConstField.UTF8);
+    public static final byte[]             JSON_CONTENT            = ",\"content\":[".getBytes(ConstField.UTF8);
+    public static final byte[]             JSON_SPLIT              = ",".getBytes(ConstField.UTF8);
+    public static final byte[]             JSON_END                = "]}".getBytes(ConstField.UTF8);
+    public static final byte[]             JSON_EMPTY              = "{}".getBytes(ConstField.UTF8);
+
+    protected Exception                    outputException         = null;
 
     /**
      * 注册api接口，该函数需要在应用程序启动完成前结束工作
@@ -86,7 +90,7 @@ public abstract class BaseServlet extends HttpServlet {
                     call.startTime = (count++ == 0) ? apiContext.startTime : System.currentTimeMillis();
                     executeApiCall(call, apiContext, response);
                     call.costTime = (int)(System.currentTimeMillis() - call.startTime);
-                    // TODO:记录访问的返回字节数(未压缩)
+                    serializeCallResult(apiContext, request, response, call);
                     access.info(call.costTime + "  " + call.method.methodName + "  " + apiContext.getStringInfo());
                 }
             }
@@ -100,9 +104,8 @@ public abstract class BaseServlet extends HttpServlet {
                 // 访问被拒绝
                 response.setStatus(401);
             } else {
-                try {
-                    output(apiContext, request, response);
-                } catch (Exception e) {
+                Exception e = output(apiContext, apiContext.apiCallInfos.toArray(EMPTY_METHOD_CALL_ARRAY), request, response);
+                if (e != null) {
                     logger.error("output failed.", e);
                 }
             }
@@ -110,7 +113,9 @@ public abstract class BaseServlet extends HttpServlet {
         }
     }
 
-    abstract protected void output(ApiContext apiContext, HttpServletRequest request, HttpServletResponse response) throws IOException;
+    abstract protected Exception output(ApiContext apiContext, ApiMethodCall[] calls, HttpServletRequest request, HttpServletResponse response);
+
+    abstract protected void serializeCallResult(ApiContext apiContext, HttpServletRequest request, HttpServletResponse response, ApiMethodCall call);
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         processRequest(request, response);
@@ -123,16 +128,16 @@ public abstract class BaseServlet extends HttpServlet {
     private void parseParameter(ApiContext context, HttpServletRequest request) {
         {
             context.agent = request.getHeader("User-Agent");
-            context.clientIP = request.getRemoteAddr();
-            context.cid = request.getParameter("cid");
-            if (context.cid != null && (context.cid.length() < 6 || context.cid.length() > 16)) {
+            context.clientIP = MiscUtil.getClientIP(request);
+            context.cid = request.getHeader(CommonParameter.cid);
+            if (context.cid != null && context.cid.length() > 16) {
                 context.cid = null;
             }
-            context.appid = request.getParameter(CommonParameter.aid.toString());
-            String vc = request.getParameter(CommonParameter.vc.toString());
-            if (vc != null && vc.length() > 0) {
-                context.versionCode = Integer.parseInt(vc);
+            if (context.cid == null) {
+                context.cid = "s:" + context.startTime;
             }
+            context.appid = request.getParameter(CommonParameter.aid);
+            context.versionCode = request.getParameter(CommonParameter.vc);
         }
         {
             String httpMethod = request.getMethod();
@@ -154,7 +159,7 @@ public abstract class BaseServlet extends HttpServlet {
             }
         }
         {
-            String format = request.getParameter(CommonParameter.ft.toString());
+            String format = request.getParameter(CommonParameter.ft);
             if (format != null && format.length() > 0) {
                 if (format.equals("xml")) {
                     context.format = SerializeType.XML;
@@ -170,13 +175,14 @@ public abstract class BaseServlet extends HttpServlet {
             }
         }
         {
-            context.location = request.getParameter(CommonParameter.lo.toString());
+            context.location = request.getParameter(CommonParameter.lo);
         }
         {
-            String token = request.getParameter(CommonParameter.tk.toString());
+            String token = request.getParameter(CommonParameter.tk);
             if (token != null && token.length() > 0) {
                 context.token = token;
                 try {
+                    // TODO: load caller info from session manager or token helper
                     context.caller = tokenHelper.parse(token);
 
                     if (CommonConfig.isDebug) {
@@ -195,21 +201,12 @@ public abstract class BaseServlet extends HttpServlet {
                 }
             }
 
-            // 未验证的deviceid加上"-"前缀
             if (context.deviceId == null) {
-                String devId = request.getParameter("deviceId");
-                if (devId != null && devId.length() > 0) {
-                    // 用以区分从token中解析出的deviceId
-                    context.deviceId = "-" + devId;
-                }
+                context.deviceId = request.getParameter(CommonParameter.did);
             }
 
             if (context.uid == null) {
-                String c_uid = request.getParameter("c_uid");
-                if (c_uid != null && c_uid.length() > 0) {
-                    // 用以区分从token中解析出的uid
-                    context.uid = "-" + c_uid;
-                }
+                context.uid = request.getParameter("c_uid");
             }
         }
     }
@@ -221,9 +218,9 @@ public abstract class BaseServlet extends HttpServlet {
         } catch (ReturnCodeException rce) {
             call.setReturnCode(rce.getCode());
             logger.error("servlet catch an error.", rce);
-        } catch (Exception e) {
+        } catch (Throwable t) {
             call.setReturnCode(ReturnCode.UNKNOWN_ERROR);
-            logger.error("unknown error.", e);
+            logger.error("unknown error.", t);
         }
 
         ReturnCode code = call.getReturnCode();
