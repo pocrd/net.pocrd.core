@@ -74,6 +74,12 @@ public class ReturnCode {
     public final static int                C_REQUEST_PARSE_ERROR            = -600;
     public final static ReturnCode         REQUEST_PARSE_ERROR              = new ReturnCode("REQUEST_PARSE_ERROR", "请求解析错误", C_REQUEST_PARSE_ERROR);
 
+    /**
+     * 网络访问失败, 对外显示为UNKNOWN_ERROR
+     */
+    private final static int C_WEB_ACCESS_FAILED = -700;
+    public final static ReturnCode         WEB_ACCESS_FAILED                = new ReturnCode("WEB_ACCESS_FAILED", C_WEB_ACCESS_FAILED, UNKNOWN_ERROR);
+    
     public final static int                C_SUCCESS                        = 0;
     public final static ReturnCode         SUCCESS                          = new ReturnCode("SUCCESS", "成功", C_SUCCESS);
 

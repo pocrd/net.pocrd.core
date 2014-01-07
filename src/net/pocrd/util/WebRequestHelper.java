@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import net.pocrd.define.ConstField;
+import net.pocrd.entity.ReturnCode;
+import net.pocrd.entity.ReturnCodeException;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -146,6 +149,12 @@ public class WebRequestHelper {
         InputStream is = null;
         try {
             resp = client.execute(req);
+            int statusCode = resp.getStatusLine().getStatusCode();
+            if (statusCode != HttpStatus.SC_OK) {
+                String url = baseUrl + "?" + params;
+                logger.warn("Api access failed. httpcode:" + statusCode + "  url=" + url);
+                throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, url + " code:" + statusCode);
+            }
             is = resp.getEntity().getContent();
             f.fill(is);
         } finally {
