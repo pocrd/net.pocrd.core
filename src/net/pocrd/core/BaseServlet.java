@@ -10,15 +10,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.pocrd.define.CommonParameter;
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.ConstField;
 import net.pocrd.define.SerializeType;
 import net.pocrd.entity.ApiContext;
 import net.pocrd.entity.ApiMethodCall;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.CallerInfo;
+import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCodeException;
-import net.pocrd.util.CommonConfig;
 import net.pocrd.util.MiscUtil;
 import net.pocrd.util.TokenHelper;
 
@@ -185,7 +186,7 @@ public abstract class BaseServlet extends HttpServlet {
                     // TODO: load caller info from session manager or token helper
                     context.caller = tokenHelper.parse(token);
 
-                    if (CommonConfig.isDebug) {
+                    if (CompileConfig.isDebug) {
                         if (context.caller == null && (context.agent != null && context.agent.contains(DEBUG_AGENT))) {
                             context.caller = CallerInfo.TESTER;
                         }
@@ -228,7 +229,7 @@ public abstract class BaseServlet extends HttpServlet {
             logger.error("未预料的错误返回码 " + call.getReturnCode());
             ReturnCode shadow = code.getShadow();
             if (shadow != null) {
-                if (CommonConfig.isDebug) {
+                if (CompileConfig.isDebug) {
                     if (Arrays.binarySearch(call.method.errorCodes, shadow.getCode()) < 0) {
                         throw new RuntimeException("method isn't export this shadow code. " + shadow.getCode());
                     }

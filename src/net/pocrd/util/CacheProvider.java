@@ -13,7 +13,9 @@ import net.pocrd.annotation.CacheMethod;
 import net.pocrd.annotation.CacheParameter;
 import net.pocrd.annotation.CacheParameter.CacheKeyType;
 import net.pocrd.core.PocClassLoader;
-import net.pocrd.util.CommonConfig.CacheDBType;
+import net.pocrd.define.CompileConfig;
+import net.pocrd.entity.CommonConfig;
+import net.pocrd.entity.CommonConfig.CacheDBType;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -87,7 +89,7 @@ public class CacheProvider implements Opcodes {
             if (Modifier.isFinal(mod)) throw new RuntimeException("Method can not be final,method name:" + method.getName());
             if (Modifier.isStatic(mod)) throw new RuntimeException("Method can not be static,method name:" + method.getName());
             if ("void".equals(returnType.getName())) {
-                if (CommonConfig.isDebug)// 空方法可以跳过代理
+                if (CompileConfig.isDebug)// 空方法可以跳过代理
                     throw new RuntimeException("Method return type can not be void,method name:" + method.getName());
                 else return false;
             }
@@ -228,7 +230,7 @@ public class CacheProvider implements Opcodes {
                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
                         mvWrapper.setLocal(cacheKeyBuilder);
                     }
-                    if (CommonConfig.isDebug) {
+                    if (CompileConfig.isDebug) {
                         mvWrapper.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
                         mvWrapper.loadLocal(cacheKeyBuilder);
                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "println", "(Ljava/lang/String;)V");
@@ -322,7 +324,7 @@ public class CacheProvider implements Opcodes {
                 }
             }
             cw.visitEnd();
-            if (CommonConfig.isDebug) {
+            if (CompileConfig.isDebug) {
                 outPutClassFile("Cache_" + clazz.getSimpleName(), cw.toByteArray());
             }
             T e = (T)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className.replace('/', '.'), cw.toByteArray())

@@ -9,8 +9,10 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.ConstField;
 import net.pocrd.define.Serializer;
+import net.pocrd.entity.CommonConfig;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -128,7 +130,7 @@ public class SerializerProvider implements Opcodes {
             }
             cw.visitEnd();
 
-            if (CommonConfig.isDebug) {
+            if (CompileConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
                     File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "Serializer" + File.separator);

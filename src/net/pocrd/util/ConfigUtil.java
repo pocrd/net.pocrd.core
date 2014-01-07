@@ -7,6 +7,8 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 
+import net.pocrd.define.CompileConfig;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,7 +63,7 @@ public final class ConfigUtil {
                 }
             }
             if (!file.exists()) {
-                if (!CommonConfig.isDebug) {
+                if (!CompileConfig.isDebug) {
                     throw new RuntimeException("cannot file config file : " + name + " from " + path);
                 } else {
                     logger.error("cannot load config file." + name + " from " + path);
@@ -76,7 +78,7 @@ public final class ConfigUtil {
             T c = (T)um.unmarshal(file);
             return c;
         } catch (JAXBException e) {
-            if (!CommonConfig.isDebug) {
+            if (!CompileConfig.isDebug) {
                 throw new RuntimeException(e);
             } else {
                 logger.error("cannot load config file." + name + " from " + path, e);

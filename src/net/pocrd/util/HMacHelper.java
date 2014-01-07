@@ -6,6 +6,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.ConstField;
 
 import org.apache.logging.log4j.LogManager;
@@ -53,7 +54,7 @@ public class HMacHelper {
             h = new HMacHelper(pwd);
             localHelper.set(h);
         }
-        if (CommonConfig.isDebug) {
+        if (CompileConfig.isDebug) {
             if(!pwd.equals(h.pwd)){
                 throw new RuntimeException("使用了不同的pwd产生hmac实例。");
             }

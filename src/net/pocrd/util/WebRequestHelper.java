@@ -3,7 +3,9 @@ package net.pocrd.util;
 import java.io.IOException;
 import java.io.InputStream;
 
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.ConstField;
+import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 
@@ -60,7 +62,7 @@ public class WebRequestHelper {
     public static String getResponseString(String baseUrl, String params, String cid) throws ClientProtocolException, IOException {
         CloseableHttpClient client = getHttpClient();
         HttpRequestBase req = null;
-        if (CommonConfig.isDebug) {
+        if (CompileConfig.isDebug) {
             logger.info("access url(" + cid + ") : " + baseUrl + "?" + params);
         }
         if (params == null) {
@@ -95,7 +97,7 @@ public class WebRequestHelper {
     public static byte[] getResponseBytes(String baseUrl, String params, String cid) throws ClientProtocolException, IOException {
         CloseableHttpClient client = getHttpClient();
         HttpRequestBase req = null;
-        if (CommonConfig.isDebug) {
+        if (CompileConfig.isDebug) {
             logger.info("access url(" + cid + ") : " + baseUrl + "?" + params);
         }
         if (params == null) {
@@ -127,7 +129,7 @@ public class WebRequestHelper {
     public static void fillResponse(String baseUrl, String params, String cid, ResponseFiller f) throws ClientProtocolException, IOException {
         CloseableHttpClient client = getHttpClient();
         HttpRequestBase req = null;
-        if (CommonConfig.isDebug) {
+        if (CompileConfig.isDebug) {
             logger.info("access url(" + cid + ") : " + baseUrl + "?" + params);
         }
         if (params == null) {

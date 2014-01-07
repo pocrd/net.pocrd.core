@@ -8,7 +8,9 @@ import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.Evaluater;
+import net.pocrd.entity.CommonConfig;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -134,7 +136,7 @@ public class EvaluaterProvider implements Opcodes {
                 mv.visitEnd();
             }
             cw.visitEnd();
-            if (CommonConfig.isDebug) {
+            if (CompileConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
                     File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "Evaluater" + File.separator);

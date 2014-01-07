@@ -11,6 +11,7 @@ import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.DesignedErrorCode;
 import net.pocrd.annotation.HttpApi;
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.ConstField;
 import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.define.Serializer;
@@ -20,7 +21,6 @@ import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCode.CodeInfo;
 import net.pocrd.util.CDataString;
 import net.pocrd.util.ClassUtil;
-import net.pocrd.util.CommonConfig;
 import net.pocrd.util.HttpApiProvider;
 import net.pocrd.util.SerializerProvider;
 
@@ -107,7 +107,7 @@ public final class ApiManager {
                     for (int i = 0; i < parameterTypes.length; i++) {
                         ApiParameterInfo pInfo = new ApiParameterInfo();
                         Class<?> type = parameterTypes[i];
-                        if (CommonConfig.isDebug) {
+                        if (CompileConfig.isDebug) {
                             if (!type.isPrimitive() && type != String.class) {
                                 throw new RuntimeException("不支持的参数类型" + clazz.getName() + " " + type.getName());
                             }
@@ -158,7 +158,7 @@ public final class ApiManager {
                     }
                     apiInfo.parameterInfos = pInfos;
                     apiInfo.returnType = mInfo.getReturnType();
-                    if (CommonConfig.isDebug) {
+                    if (CompileConfig.isDebug) {
                         Class<?> type = apiInfo.returnType;
                         if (!apiInfo.returnType.getName().startsWith(entityPrefix) && type != String.class) {
                             throw new RuntimeException("不支持的返回值类型" + clazz.getName() + " " + type.getName());

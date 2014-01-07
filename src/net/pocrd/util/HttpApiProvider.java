@@ -4,9 +4,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 
 import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
+import net.pocrd.entity.CommonConfig;
 
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.FieldVisitor;
@@ -240,7 +242,7 @@ public class HttpApiProvider implements Opcodes {
                 pmv.visitEnd();
             }
             cw.visitEnd();
-            if (CommonConfig.isDebug) {
+            if (CompileConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
                     File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "ApiExecuter" + File.separator);

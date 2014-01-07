@@ -1,7 +1,7 @@
 package net.pocrd.entity;
 
+import net.pocrd.define.CompileConfig;
 import net.pocrd.define.SecurityType;
-import net.pocrd.util.CommonConfig;
 
 /**
  * 调用者信息，包括设备信息和用户信息(已登录)的一部分
@@ -12,7 +12,7 @@ public class CallerInfo {
 
     public static final CallerInfo TESTER = new CallerInfo();
     static {
-        if (CommonConfig.isDebug) {
+        if (CompileConfig.isDebug) {
             TESTER.deviceId = -1;
             TESTER.uid = -1;
             TESTER.expire = Long.MAX_VALUE;
