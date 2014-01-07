@@ -39,7 +39,8 @@ public class CommonConfig {
     public String           autogenPath;
     public String           cacheVersion;
     public CacheDBType      cacheType;
-    
+    public boolean          useHttpGzip = true;
+
     @XmlElementWrapper(name = "dbConfigs")
     @XmlElement(name = "entry")
     public JDBCPoolConfig[] dbConfigs;
