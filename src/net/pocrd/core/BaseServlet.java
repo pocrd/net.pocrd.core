@@ -3,6 +3,7 @@ package net.pocrd.core;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -25,13 +26,17 @@ import net.pocrd.util.TokenHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
+import org.apache.logging.log4j.core.helpers.KeyValuePair;
 
 public abstract class BaseServlet extends HttpServlet {
     private static final long              serialVersionUID        = 1L;
     private static final Logger            logger                  = LogManager.getLogger(BaseServlet.class);
-    private static TokenHelper             tokenHelper             = new TokenHelper(CommonConfig.Instance.tokenPwd);
+    protected static final Marker          SERVLET_MARKER          = MarkerManager.getMarker("servlet");
+    private static TokenHelper             tokenHelper;
 
-    protected static final Logger          access                  = CommonConfig.Instance.accessLogger;
+    protected static final Logger          access                  = CommonConfig.getInstance().accessLogger;
     protected static final String          DEBUG_AGENT             = "pocrd.tester";
     protected static ApiManager            apiManager;
     protected static final ApiMethodCall[] EMPTY_METHOD_CALL_ARRAY = new ApiMethodCall[0];
@@ -53,12 +58,17 @@ public abstract class BaseServlet extends HttpServlet {
      * @param packageName
      * @param entityPrefix
      */
-    public static void registerAll(String packageName, String entityPrefix) {
+    public static void registerAll(String packageName, String entityPrefix, TokenHelper th) {
         apiManager = new ApiManager(packageName, entityPrefix);
+        tokenHelper = th;
     }
 
     public static ApiMethodInfo[] getApiInfos() {
         return apiManager.getApiMethodInfos();
+    }
+
+    public static List<KeyValuePair> getProtoString(Class<?> clazz) {
+        return apiManager.getTypeSchema(clazz);
     }
 
     private void processRequest(HttpServletRequest request, HttpServletResponse response) {
@@ -72,7 +82,7 @@ public abstract class BaseServlet extends HttpServlet {
             parseParameter(apiContext, request);
             parseResult = parseMethodInfo(apiContext, request);
         } catch (Exception e) {
-            logger.error("init request failed.", e);
+            logger.error(SERVLET_MARKER, "init request failed.", e);
             fatalError = true;
         }
 
@@ -96,19 +106,23 @@ public abstract class BaseServlet extends HttpServlet {
                 }
             }
         } catch (Exception e) {
-            logger.error("api execute error.", e);
+            logger.error(SERVLET_MARKER, "api execute error.", e);
         } finally {
-            if (fatalError || parseResult == ReturnCode.REQUEST_PARSE_ERROR) {
-                // 错误请求
-                response.setStatus(400);
-            } else if (parseResult != ReturnCode.SUCCESS) {
-                // 访问被拒绝
-                response.setStatus(401);
-            } else {
-                Exception e = output(apiContext, apiContext.apiCallInfos.toArray(EMPTY_METHOD_CALL_ARRAY), request, response);
-                if (e != null) {
-                    logger.error("output failed.", e);
+            try {
+                if (fatalError || parseResult == ReturnCode.REQUEST_PARSE_ERROR) {
+                    // 错误请求
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
+                } else if (parseResult != ReturnCode.SUCCESS) {
+                    // 访问被拒绝
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                } else {
+                    Exception e = output(apiContext, apiContext.apiCallInfos.toArray(EMPTY_METHOD_CALL_ARRAY), request, response);
+                    if (e != null) {
+                        logger.error(SERVLET_MARKER, "output failed.", e);
+                    }
                 }
+            } catch (Exception e) {
+                logger.error(SERVLET_MARKER, "output failed.", e);
             }
             apiContext.clear();
         }
@@ -139,6 +153,8 @@ public abstract class BaseServlet extends HttpServlet {
             }
             context.appid = request.getParameter(CommonParameter.aid);
             context.versionCode = request.getParameter(CommonParameter.vc);
+            context.deviceId = request.getParameter(CommonParameter.did);
+            context.uid = request.getParameter(CommonParameter.uid);
         }
         {
             String httpMethod = request.getMethod();
@@ -183,7 +199,6 @@ public abstract class BaseServlet extends HttpServlet {
             if (token != null && token.length() > 0) {
                 context.token = token;
                 try {
-                    // TODO: load caller info from session manager or token helper
                     context.caller = tokenHelper.parse(token);
 
                     if (CompileConfig.isDebug) {
@@ -191,23 +206,9 @@ public abstract class BaseServlet extends HttpServlet {
                             context.caller = CallerInfo.TESTER;
                         }
                     }
-
-                    if (context.caller != null) {
-                        // TODO:fill device info into caller
-                        context.deviceId = Long.toString(context.caller.deviceId);
-                        context.uid = Long.toString(context.caller.uid);
-                    }
                 } catch (RuntimeException e) {
-                    logger.error("get device info failed.", e);
+                    logger.error(SERVLET_MARKER, "get device info failed.", e);
                 }
-            }
-
-            if (context.deviceId == null) {
-                context.deviceId = request.getParameter(CommonParameter.did);
-            }
-
-            if (context.uid == null) {
-                context.uid = request.getParameter("c_uid");
             }
         }
     }
@@ -218,15 +219,15 @@ public abstract class BaseServlet extends HttpServlet {
             call.setReturnCode(ReturnCode.SUCCESS);
         } catch (ReturnCodeException rce) {
             call.setReturnCode(rce.getCode());
-            logger.error("servlet catch an error.", rce);
+            logger.error(SERVLET_MARKER, "servlet catch an error.", rce);
         } catch (Throwable t) {
             call.setReturnCode(ReturnCode.UNKNOWN_ERROR);
-            logger.error("unknown error.", t);
+            logger.error(SERVLET_MARKER, "unknown error.", t);
         }
 
         ReturnCode code = call.getReturnCode();
         if (code.getCode() > 0 && Arrays.binarySearch(call.method.errorCodes, code.getCode()) < 0) {
-            logger.error("未预料的错误返回码 " + call.getReturnCode());
+            logger.error(SERVLET_MARKER, "未预料的错误返回码 " + call.getReturnCode());
             ReturnCode shadow = code.getShadow();
             if (shadow != null) {
                 if (CompileConfig.isDebug) {

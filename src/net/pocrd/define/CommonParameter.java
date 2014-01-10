@@ -50,6 +50,12 @@ public final class CommonParameter {
     public static final String did = "did";
     
     /**
+     * user id
+     * 用户标示符
+     */
+    public static final String uid = "uid";
+    
+    /**
      * version code
      * 客户端数字版本号
      */

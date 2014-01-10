@@ -3,9 +3,7 @@ package net.pocrd.util;
 import java.io.IOException;
 import java.io.InputStream;
 
-import net.pocrd.define.CompileConfig;
 import net.pocrd.define.ConstField;
-import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 
@@ -23,11 +21,8 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.util.EntityUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class WebRequestHelper {
-    private static final Logger        logger                     = LogManager.getLogger(WebRequestHelper.class);
+public class WebRequestUtil {
     private static final int           MAX_CONNECTION_SIZE        = 50;
     private static final int           SOCKET_TIMEOUT             = 30000;
     private static final int           CONNECTION_TIMEOUT         = 3000;
@@ -38,7 +33,7 @@ public class WebRequestHelper {
 
     private static CloseableHttpClient getHttpClient() {
         if (hc == null) {
-            synchronized (WebRequestHelper.class) {
+            synchronized (WebRequestUtil.class) {
                 if (hc == null) {
                     PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
                     cm.setMaxTotal(MAX_CONNECTION_SIZE);
@@ -59,114 +54,100 @@ public class WebRequestHelper {
         return hc;
     }
 
-    public static String getResponseString(String baseUrl, String params, String cid) throws ClientProtocolException, IOException {
-        CloseableHttpClient client = getHttpClient();
-        HttpRequestBase req = null;
-        if (CompileConfig.isDebug) {
-            logger.info("access url(" + cid + ") : " + baseUrl + "?" + params);
-        }
-        if (params == null) {
-            req = new HttpGet(baseUrl);
-        } else if (params.length() > 200) {
-            HttpPost post = new HttpPost(baseUrl);
-            StringEntity se = new StringEntity(params, ConstField.UTF8);
-            se.setContentType("application/x-www-form-urlencoded");
-            post.setEntity(se);
-            req = post;
-        } else {
-            req = new HttpGet(baseUrl + "?" + params);
-        }
-        req.setConfig(rc);
-        if (CommonConfig.Instance.useHttpGzip) {
-            req.setHeader("Accept-Encoding", "gzip");
-        }
-        if (cid != null && cid.length() > 0) {
-            req.setHeader("cid", cid);
-        }
+    public static String getResponseString(String baseUrl, String params, String cid, boolean useGzip) {
         CloseableHttpResponse resp = null;
         try {
-            resp = client.execute(req);
+            resp = getHttpResponse(baseUrl, params, cid, useGzip);
             return EntityUtils.toString(resp.getEntity(), ConstField.UTF8);
+        } catch (ReturnCodeException rce) {
+            throw rce;
+        } catch (Exception e) {
+            throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",1 " + baseUrl + "?" + params, e);
         } finally {
             if (resp != null) {
-                resp.close();
+                try {
+                    resp.close();
+                } catch (Exception e) {
+                    throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",2 " + baseUrl + "?" + params, e);
+                }
             }
         }
     }
 
-    public static byte[] getResponseBytes(String baseUrl, String params, String cid) throws ClientProtocolException, IOException {
-        CloseableHttpClient client = getHttpClient();
-        HttpRequestBase req = null;
-        if (CompileConfig.isDebug) {
-            logger.info("access url(" + cid + ") : " + baseUrl + "?" + params);
-        }
-        if (params == null) {
-            req = new HttpGet(baseUrl);
-        } else if (params.length() > 200) {
-            HttpPost post = new HttpPost(baseUrl);
-            StringEntity se = new StringEntity(params, ConstField.UTF8);
-            se.setContentType("application/x-www-form-urlencoded");
-            post.setEntity(se);
-            req = post;
-        } else {
-            req = new HttpGet(baseUrl + "?" + params);
-        }
-        req.setConfig(rc);
-        if (CommonConfig.Instance.useHttpGzip) {
-            req.setHeader("Accept-Encoding", "gzip");
-        }
+    public static byte[] getResponseBytes(String baseUrl, String params, String cid, boolean useGzip) {
         CloseableHttpResponse resp = null;
         try {
-            resp = client.execute(req);
+            resp = getHttpResponse(baseUrl, params, cid, useGzip);
             return EntityUtils.toByteArray(resp.getEntity());
+        } catch (ReturnCodeException rce) {
+            throw rce;
+        } catch (Exception e) {
+            throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",1 " + baseUrl + "?" + params, e);
         } finally {
             if (resp != null) {
-                resp.close();
+                try {
+                    resp.close();
+                } catch (Exception e) {
+                    throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",2 " + baseUrl + "?" + params, e);
+                }
             }
         }
     }
 
-    public static void fillResponse(String baseUrl, String params, String cid, ResponseFiller f) throws ClientProtocolException, IOException {
-        CloseableHttpClient client = getHttpClient();
-        HttpRequestBase req = null;
-        if (CompileConfig.isDebug) {
-            logger.info("access url(" + cid + ") : " + baseUrl + "?" + params);
-        }
-        if (params == null) {
-            req = new HttpGet(baseUrl);
-        } else if (params.length() > 200) {
-            HttpPost post = new HttpPost(baseUrl);
-            StringEntity se = new StringEntity(params, ConstField.UTF8);
-            se.setContentType("application/x-www-form-urlencoded");
-            post.setEntity(se);
-            req = post;
-        } else {
-            req = new HttpGet(baseUrl + "?" + params);
-        }
-        req.setConfig(rc);
-        if (CommonConfig.Instance.useHttpGzip) {
-            req.setHeader("Accept-Encoding", "gzip");
-        }
+    public static void fillResponse(String baseUrl, String params, String cid, boolean useGzip, ResponseFiller f) {
         CloseableHttpResponse resp = null;
         InputStream is = null;
         try {
-            resp = client.execute(req);
-            int statusCode = resp.getStatusLine().getStatusCode();
-            if (statusCode != HttpStatus.SC_OK) {
-                String url = baseUrl + "?" + params;
-                logger.warn("Api access failed. httpcode:" + statusCode + "  url=" + url);
-                throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, url + " code:" + statusCode);
-            }
+            resp = getHttpResponse(baseUrl, params, cid, useGzip);
             is = resp.getEntity().getContent();
             f.fill(is);
+        } catch (ReturnCodeException rce) {
+            throw rce;
+        } catch (Exception e) {
+            throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",1 " + baseUrl + "?" + params, e);
         } finally {
             if (is != null) {
-                is.close();
+                try {
+                    is.close();
+                } catch (Exception e) {
+                    throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",2 " + baseUrl + "?" + params, e);
+                }
             }
             if (resp != null) {
-                resp.close();
+                try {
+                    resp.close();
+                } catch (Exception e) {
+                    throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",3 " + baseUrl + "?" + params, e);
+                }
             }
         }
+    }
+
+    private static CloseableHttpResponse getHttpResponse(String baseUrl, String params, String cid, boolean useGzip) throws ClientProtocolException, IOException {
+        CloseableHttpClient client = getHttpClient();
+        HttpRequestBase req = null;
+        if (params == null) {
+            req = new HttpGet(baseUrl);
+        } else if (params.length() > 200) {
+            HttpPost post = new HttpPost(baseUrl);
+            StringEntity se = new StringEntity(params, ConstField.UTF8);
+            se.setContentType("application/x-www-form-urlencoded");
+            post.setEntity(se);
+            req = post;
+        } else {
+            req = new HttpGet(baseUrl + "?" + params);
+        }
+        req.setConfig(rc);
+        if (useGzip) {
+            req.setHeader("Accept-Encoding", "gzip");
+        }
+        CloseableHttpResponse resp = null;
+        resp = client.execute(req);
+        int statusCode = resp.getStatusLine().getStatusCode();
+        if (statusCode != HttpStatus.SC_OK) {
+            throw new ReturnCodeException(ReturnCode.WEB_ACCESS_FAILED, cid + ",0 " + baseUrl + "?" + params + " code:" + statusCode);
+        }
+        return resp;
     }
 
     public static interface ResponseFiller {

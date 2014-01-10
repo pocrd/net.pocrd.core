@@ -18,10 +18,14 @@ import sun.security.rsa.RSAPublicKeyImpl;
  * RSA工具类, blockSize = keySize - 11;
  */
 public class RsaHelper {
-    private static final Logger  logger          = LogManager.getLogger("net.pocrd.util");
+    private static final Logger  logger = LogManager.getLogger("net.pocrd.util");
 
     private RSAPublicKeyImpl     publicKey;
     private RSAPrivateCrtKeyImpl privateKey;
+
+    public RsaHelper(String publicKey, String privateKey) {
+        this(Base64Util.decode(publicKey), Base64Util.decode(privateKey));
+    }
 
     public RsaHelper(byte[] publicKey, byte[] privateKey) {
         try {
@@ -31,6 +35,21 @@ public class RsaHelper {
             }
             if (privateKey != null && privateKey.length > 0) {
                 this.privateKey = (RSAPrivateCrtKeyImpl)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKey));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public RsaHelper(String publicKey) {
+        this(Base64Util.decode(publicKey));
+    }
+
+    public RsaHelper(byte[] publicKey) {
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            if (publicKey != null && publicKey.length > 0) {
+                this.publicKey = (RSAPublicKeyImpl)keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
             }
         } catch (Exception e) {
             throw new RuntimeException(e);

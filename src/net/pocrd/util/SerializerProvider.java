@@ -133,11 +133,11 @@ public class SerializerProvider implements Opcodes {
             if (CompileConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
-                    File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "Serializer" + File.separator);
+                    File folder = new File(CommonConfig.getInstance().autogenPath + File.separator + "Serializer" + File.separator);
                     if (!folder.exists()) {
                         folder.mkdirs();
                     }
-                    fos = new FileOutputStream(CommonConfig.Instance.autogenPath + File.separator + "Serializer" + File.separator + className + ".class");
+                    fos = new FileOutputStream(CommonConfig.getInstance().autogenPath + File.separator + "Serializer" + File.separator + className + ".class");
                     fos.write(cw.toByteArray());
                 } finally {
                     if (fos != null) {

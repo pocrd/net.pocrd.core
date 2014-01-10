@@ -4,11 +4,13 @@ import javax.xml.bind.annotation.adapters.XmlAdapter;
 import javax.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
 
 public class CDataString {
+    public String desc;
     @XmlJavaTypeAdapter(CDataAdapter.class)
-    String value;
+    public String value;
 
-    public CDataString(String str) {
+    public CDataString(String str, String des) {
         value = str;
+        desc = des;
     }
 
     public static class CDataAdapter extends XmlAdapter<String, String> {

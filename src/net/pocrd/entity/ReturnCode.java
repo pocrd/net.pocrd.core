@@ -55,11 +55,11 @@ public class ReturnCode {
     public final static ReturnCode         ACCESS_DENIED                    = new ReturnCode("ACCESS_DENIED", "访问被拒绝", C_ACCESS_DENIED);
 
     /**
-     * 未提供token, 对外显示为ACCESS_DENIED
+     * token验证失败, 对外显示为ACCESS_DENIED
      */
-    private final static int               C_ACCESS_DENIED_MISSING_TOKEN    = -401;
-    public final static ReturnCode         ACCESS_DENIED_MISSING_TOKEN      = new ReturnCode("ACCESS_DENIED_MISSING_TOKEN",
-                                                                                    C_ACCESS_DENIED_MISSING_TOKEN, ACCESS_DENIED);
+    private final static int               C_ACCESS_DENIED_TOKEN_ERROR      = -401;
+    public final static ReturnCode         ACCESS_DENIED_TOKEN_ERROR        = new ReturnCode("ACCESS_DENIED_TOKEN_ERROR",
+                                                                                    C_ACCESS_DENIED_TOKEN_ERROR, ACCESS_DENIED);
 
     /**
      * 未达到接口所需安全级别, 对外显示为ACCESS_DENIED
@@ -67,6 +67,13 @@ public class ReturnCode {
     private final static int               C_ACCESS_DENIED_UNMATCH_SECURITY = -402;
     public final static ReturnCode         ACCESS_DENIED_UNMATCH_SECURITY   = new ReturnCode("ACCESS_DENIED_UNMATCH_SECURITY",
                                                                                     C_ACCESS_DENIED_UNMATCH_SECURITY, ACCESS_DENIED);
+
+    /**
+     * device id验证失败, 对外显示为ACCESS_DENIED
+     */
+    private final static int               C_ACCESS_DENIED_DEVICEID_ERROR   = -403;
+    public final static ReturnCode         ACCESS_DENIED_DEVICEID_ERROR     = new ReturnCode("ACCESS_DENIED_DEVICEID_ERROR",
+                                                                                    C_ACCESS_DENIED_DEVICEID_ERROR, ACCESS_DENIED);
 
     public final static int                C_SIGNATURE_ERROR                = -500;
     public final static ReturnCode         SIGNATURE_ERROR                  = new ReturnCode("SIGNATURE_ERROR", "签名错误", C_SIGNATURE_ERROR);
@@ -77,9 +84,9 @@ public class ReturnCode {
     /**
      * 网络访问失败, 对外显示为UNKNOWN_ERROR
      */
-    private final static int C_WEB_ACCESS_FAILED = -700;
+    private final static int               C_WEB_ACCESS_FAILED              = -700;
     public final static ReturnCode         WEB_ACCESS_FAILED                = new ReturnCode("WEB_ACCESS_FAILED", C_WEB_ACCESS_FAILED, UNKNOWN_ERROR);
-    
+
     public final static int                C_SUCCESS                        = 0;
     public final static ReturnCode         SUCCESS                          = new ReturnCode("SUCCESS", "成功", C_SUCCESS);
 

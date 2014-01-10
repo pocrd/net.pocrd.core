@@ -6,13 +6,13 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 
 import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.DesignedErrorCode;
 import net.pocrd.annotation.HttpApi;
 import net.pocrd.define.CompileConfig;
-import net.pocrd.define.ConstField;
 import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.ApiMethodInfo;
@@ -23,6 +23,8 @@ import net.pocrd.util.CDataString;
 import net.pocrd.util.ClassUtil;
 import net.pocrd.util.HttpApiProvider;
 import net.pocrd.util.SerializerProvider;
+
+import org.apache.logging.log4j.core.helpers.KeyValuePair;
 
 public final class ApiManager {
     private static final String              API_METHOD_NAME = "execute";
@@ -94,6 +96,17 @@ public final class ApiManager {
                             for (int i = 0; i < size; i++) {
                                 ReturnCode c = ReturnCode.findCode(es[i]);
                                 apiInfo.errorCodes[i] = new CodeInfo(c.getCode(), c.getName(), c.getDesc());
+                            }
+                            // 避免重复定义error code
+                            if (CompileConfig.isDebug) {
+                                HashSet<Integer> set = new HashSet<Integer>();
+                                for (int i = 0; i < size; i++) {
+                                    if (set.contains(es[i])) {
+                                        throw new RuntimeException("duplicate error code " + es[i] + " in " + clazz.getName());
+                                    } else {
+                                        set.add(es[i]);
+                                    }
+                                }
                             }
                         }
                     }
@@ -169,16 +182,20 @@ public final class ApiManager {
                         apiInfo.serializer = Serializer.stringSerializer;
                     } else {
                         apiInfo.serializer = SerializerProvider.getSerializer(apiInfo.returnType);
-                        String[] ts = getTypeSchema(apiInfo.returnType);
-                        if (ts != null && ts.length > 0) {
-                            apiInfo.returnInfo = new CDataString[ts.length];
-                            for (int i = 0; i < ts.length; i++) {
-                                apiInfo.returnInfo[i] = new CDataString(ts[i]);
+                        List<KeyValuePair> ts = getTypeSchema(apiInfo.returnType);
+                        if (ts != null && ts.size() > 0) {
+                            apiInfo.returnInfo = new CDataString[ts.size()];
+                            int i = 0;
+                            for (KeyValuePair kv : ts) {
+                                apiInfo.returnInfo[i++] = new CDataString(kv.getValue(), kv.getKey());
                             }
                         }
                     }
                     apiInfo.securityLevel = apiInfo.securityLevel;
                     apiInfo.state = apiInfo.state;
+                    if (apiInfos.containsKey(apiInfo.methodName)) {
+                        throw new RuntimeException("duplicate definision for " + apiInfo.methodName);
+                    }
                     apiInfos.put(apiInfo.methodName, apiInfo);
                     nameToApi.put(apiInfo.methodName, HttpApiProvider.getApiExecuter(apiInfo.methodName, apiInfo));
                 }
@@ -189,18 +206,18 @@ public final class ApiManager {
         }
     }
 
-    private String[] getTypeSchema(Class<?> clazz) {
-        LinkedList<String> list = new LinkedList<String>();
+    public List<KeyValuePair> getTypeSchema(Class<?> clazz) {
+        List<KeyValuePair> list = new LinkedList<KeyValuePair>();
         HashSet<String> ns = new HashSet<String>();
         String name = clazz.getSimpleName();
         ns.add(name);
         if (protos.containsKey(name)) {
-            list.add(protos.get(name));
+            list.add(new KeyValuePair(name, protos.get(name)));
             fillProtoTypeDependence(clazz, ns);
             for (String n : ns) {
                 if (protos.containsKey(n)) {
                     if (!name.equals(n)) {
-                        list.add(protos.get(n));
+                        list.add(new KeyValuePair(n, protos.get(n)));
                     }
                 } else {
                     throw new RuntimeException("proto file missing. " + n);
@@ -210,7 +227,7 @@ public final class ApiManager {
             // TODO:通过反射构建type schema
             throw new RuntimeException("not a proto type. " + name);
         }
-        return list.toArray(ConstField.EMPTY_STRING_ARRAY);
+        return list;
     }
 
     private void fillProtoTypeDependence(Class<?> clazz, HashSet<String> ns) {

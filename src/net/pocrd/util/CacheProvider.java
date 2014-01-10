@@ -103,7 +103,7 @@ public class CacheProvider implements Opcodes {
      * @return
      */
     public static ICacheManager getCacheManager() {
-        CacheDBType cacheType = CommonConfig.Instance.cacheType;
+        CacheDBType cacheType = CommonConfig.getInstance().cacheType;
         if (CacheDBType.Redis.equals(cacheType)) {
             return (ICacheManager)SingletonUtil.getSingleton(CacheManager4Redis.class);
         } else if (CacheDBType.Memcache.equals(cacheType)) {
@@ -171,7 +171,7 @@ public class CacheProvider implements Opcodes {
                     if ("void".equals(returnType.getName())) {
                         continue;
                     }
-                    String keyName = CommonConfig.Instance.cacheVersion + CACHE_SPLITER + cacheAnnotation.key() + CACHE_SPLITER;
+                    String keyName = CommonConfig.getInstance().cacheVersion + CACHE_SPLITER + cacheAnnotation.key() + CACHE_SPLITER;
                     // + returnType.getCanonicalName() + CACHE_SPLITER;// returnType不参与签名，给返回结果多态提供可能
                     int expire = cacheAnnotation.expire();
                     paramTypes = m.getParameterTypes();
@@ -202,7 +202,7 @@ public class CacheProvider implements Opcodes {
                                     Class<?> paramType = paramTypes[indexOfParam];
                                     mvWrapper.loadArg(indexOfParam + 1);
                                     if (paramType.isArray()) {
-                                        paramType = StringHelper.getCorrectType(paramType);// TODO
+                                        paramType = StringUtil.getCorrectType(paramType);// TODO
                                         mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/StringHelper", "toString",
                                                 Type.getMethodDescriptor(stringType, Type.getType(paramType)));
                                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
@@ -338,9 +338,9 @@ public class CacheProvider implements Opcodes {
     private static void outPutClassFile(String fileName, byte[] byteArray) {
         FileOutputStream fos = null;
         try {
-            File folder = new File(CommonConfig.Instance.autogenPath + File.separator + "CachedClass" + File.separator);
+            File folder = new File(CommonConfig.getInstance().autogenPath + File.separator + "CachedClass" + File.separator);
             if (!folder.exists()) folder.mkdirs();
-            fos = new FileOutputStream(CommonConfig.Instance.autogenPath + File.separator + "CachedClass" + File.separator + fileName + ".class");
+            fos = new FileOutputStream(CommonConfig.getInstance().autogenPath + File.separator + "CachedClass" + File.separator + fileName + ".class");
             fos.write(byteArray);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
