@@ -88,6 +88,12 @@ public class ApiMethodInfo {
     @XmlElementWrapper(name = "errorCodes")
     @XmlElement(name = "apiCode")
     public CodeInfo[]                      errorCodes;
+    
+    /**
+     * 该方法可能抛出的业务异常的errorcode int集合, 用于二分查找
+     */
+    @XmlTransient
+    public int[] errors;
 
     /**
      * 所代理的方法的信息

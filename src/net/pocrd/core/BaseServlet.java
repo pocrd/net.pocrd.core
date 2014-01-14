@@ -22,7 +22,6 @@ import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.ReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.util.MiscUtil;
-import net.pocrd.util.TokenHelper;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,6 @@ public abstract class BaseServlet extends HttpServlet {
     private static final long              serialVersionUID        = 1L;
     private static final Logger            logger                  = LogManager.getLogger(BaseServlet.class);
     protected static final Marker          SERVLET_MARKER          = MarkerManager.getMarker("servlet");
-    private static TokenHelper             tokenHelper;
 
     protected static final Logger          access                  = CommonConfig.getInstance().accessLogger;
     protected static final String          DEBUG_AGENT             = "pocrd.tester";
@@ -58,9 +56,8 @@ public abstract class BaseServlet extends HttpServlet {
      * @param packageName
      * @param entityPrefix
      */
-    public static void registerAll(String packageName, String entityPrefix, TokenHelper th) {
+    public static void registerAll(String packageName, String entityPrefix) {
         apiManager = new ApiManager(packageName, entityPrefix);
-        tokenHelper = th;
     }
 
     public static ApiMethodInfo[] getApiInfos() {
@@ -113,7 +110,7 @@ public abstract class BaseServlet extends HttpServlet {
                     // 错误请求
                     response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
                 } else if (parseResult != ReturnCode.SUCCESS) {
-                    // 访问被拒绝
+                    // 访问被拒绝(如签名验证失败)
                     response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
                 } else {
                     Exception e = output(apiContext, apiContext.apiCallInfos.toArray(EMPTY_METHOD_CALL_ARRAY), request, response);
@@ -144,17 +141,17 @@ public abstract class BaseServlet extends HttpServlet {
         {
             context.agent = request.getHeader("User-Agent");
             context.clientIP = MiscUtil.getClientIP(request);
-            context.cid = request.getHeader(CommonParameter.cid);
+            context.cid = request.getHeader(CommonParameter.callId);
             if (context.cid != null && context.cid.length() > 16) {
                 context.cid = null;
             }
             if (context.cid == null) {
                 context.cid = "s:" + context.startTime;
             }
-            context.appid = request.getParameter(CommonParameter.aid);
-            context.versionCode = request.getParameter(CommonParameter.vc);
-            context.deviceId = request.getParameter(CommonParameter.did);
-            context.uid = request.getParameter(CommonParameter.uid);
+            context.appid = request.getParameter(CommonParameter.applicationId);
+            context.versionCode = request.getParameter(CommonParameter.versionCode);
+            context.deviceId = request.getParameter(CommonParameter.deviceId);
+            context.uid = request.getParameter(CommonParameter.userId);
         }
         {
             String httpMethod = request.getMethod();
@@ -176,7 +173,7 @@ public abstract class BaseServlet extends HttpServlet {
             }
         }
         {
-            String format = request.getParameter(CommonParameter.ft);
+            String format = request.getParameter(CommonParameter.format);
             if (format != null && format.length() > 0) {
                 if (format.equals("xml")) {
                     context.format = SerializeType.XML;
@@ -192,23 +189,20 @@ public abstract class BaseServlet extends HttpServlet {
             }
         }
         {
-            context.location = request.getParameter(CommonParameter.lo);
+            context.location = request.getParameter(CommonParameter.location);
         }
         {
-            String token = request.getParameter(CommonParameter.tk);
-            if (token != null && token.length() > 0) {
-                context.token = token;
-                try {
-                    context.caller = tokenHelper.parse(token);
+            context.token = request.getParameter(CommonParameter.token);
+            try {
+                context.caller = parseCaller(context, context.token);
 
-                    if (CompileConfig.isDebug) {
-                        if (context.caller == null && (context.agent != null && context.agent.contains(DEBUG_AGENT))) {
-                            context.caller = CallerInfo.TESTER;
-                        }
+                if (CompileConfig.isDebug) {
+                    if (context.caller == null && (context.agent != null && context.agent.contains(DEBUG_AGENT))) {
+                        context.caller = CallerInfo.TESTER;
                     }
-                } catch (RuntimeException e) {
-                    logger.error(SERVLET_MARKER, "get device info failed.", e);
                 }
+            } catch (RuntimeException e) {
+                logger.error(SERVLET_MARKER, "get device info failed.", e);
             }
         }
     }
@@ -226,7 +220,7 @@ public abstract class BaseServlet extends HttpServlet {
         }
 
         ReturnCode code = call.getReturnCode();
-        if (code.getCode() > 0 && Arrays.binarySearch(call.method.errorCodes, code.getCode()) < 0) {
+        if (code.getCode() > 0 && Arrays.binarySearch(call.method.errors, code.getCode()) < 0) {
             logger.error(SERVLET_MARKER, "未预料的错误返回码 " + call.getReturnCode());
             ReturnCode shadow = code.getShadow();
             if (shadow != null) {
@@ -243,11 +237,20 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     /**
+     * 解析调用者信息
+     * 
+     * @param context
+     * @param token
+     * @return
+     */
+    abstract protected CallerInfo parseCaller(ApiContext context, String token);
+
+    /**
      * 解析调用方法。
      * 
      * @param context
      * @param request
      * @return 0 success, .
      */
-    public abstract ReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request);
+    abstract protected ReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request);
 }

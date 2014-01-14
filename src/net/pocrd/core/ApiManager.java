@@ -93,9 +93,11 @@ public final class ApiManager {
                         int size = es.length;
                         if (size > 0) {
                             apiInfo.errorCodes = new CodeInfo[size];
+                            apiInfo.errors = new int[size];
                             for (int i = 0; i < size; i++) {
                                 ReturnCode c = ReturnCode.findCode(es[i]);
                                 apiInfo.errorCodes[i] = new CodeInfo(c.getCode(), c.getName(), c.getDesc());
+                                apiInfo.errors[i] = c.getCode();
                             }
                             // 避免重复定义error code
                             if (CompileConfig.isDebug) {
@@ -191,8 +193,8 @@ public final class ApiManager {
                             }
                         }
                     }
-                    apiInfo.securityLevel = apiInfo.securityLevel;
-                    apiInfo.state = apiInfo.state;
+                    apiInfo.securityLevel = api.security();
+                    apiInfo.state = api.state();
                     if (apiInfos.containsKey(apiInfo.methodName)) {
                         throw new RuntimeException("duplicate definision for " + apiInfo.methodName);
                     }
