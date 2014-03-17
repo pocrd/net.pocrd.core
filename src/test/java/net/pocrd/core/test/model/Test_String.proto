@@ -1,0 +1,5 @@
+package net.pocrd.core.test.model;
+
+message Test_String {
+    optional string str = 1;
+}

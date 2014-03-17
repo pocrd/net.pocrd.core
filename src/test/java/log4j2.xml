@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="OFF" name="pocrd">
+    <appenders>
+        <RollingFile name="ErrorFile" fileName="../clientlogs/error/error.log" filePattern="../logs/error/error-%d{yyyy-MM-dd}-%i.log">
+            <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY" />
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t]: %class %L %M - %msg%xEx%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="20 MB" />
+            </Policies>
+        </RollingFile>
+        <RollingFile name="InfoFile" fileName="../clientlogs/info/info.log" filePattern="../logs/info/info-%d{yyyy-MM-dd}-%i.log">
+            <ThresholdFilter level="ERROR" onMatch="DENY" onMismatch="ACCEPT" />
+            <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level [%t]: %logger - %msg%xEx%n" />
+            <Policies>
+                <TimeBasedTriggeringPolicy />
+                <SizeBasedTriggeringPolicy size="20 MB" />
+            </Policies>
+        </RollingFile>
+    </appenders>
+    <loggers>
+        <root level="trace">
+            <appender-ref ref="ErrorFile" />
+            <appender-ref ref="InfoFile" />
+        </root>
+    </loggers>
+</configuration>  
