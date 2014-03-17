@@ -7,10 +7,11 @@
 *.prefs
 .classpath
 .metadata
-.settings
+.settings/
 /build/
 /bin/
 /debug/
+/target/
 
 # Numerous always-ignore extensions
 *.diff
@@ -48,3 +49,4 @@ nbproject
 .CVS
 .idea
 node_modules
+/target
