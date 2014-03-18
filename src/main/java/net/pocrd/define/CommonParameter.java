@@ -60,4 +60,10 @@ public final class CommonParameter {
      * 客户端数字版本号
      */
     public static final String versionCode = "vc";
+    
+    /**
+     * signature method
+     * 签名算法 sha1,rsa,ecc
+     */
+    public static final String signatureMethod = "sm";
 }

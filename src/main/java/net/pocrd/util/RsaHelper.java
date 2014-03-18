@@ -17,6 +17,7 @@ import sun.security.rsa.RSAPublicKeyImpl;
 /**
  * RSA工具类, blockSize = keySize - 11;
  */
+@SuppressWarnings("restriction")
 public class RsaHelper {
     private static final Logger  logger = LogManager.getLogger("net.pocrd.util");
 

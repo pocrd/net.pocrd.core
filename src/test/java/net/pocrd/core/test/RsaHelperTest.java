@@ -28,7 +28,7 @@ public class RsaHelperTest {
             byte[] pri = kp.getPrivate().getEncoded();
             RsaHelper rsa = new RsaHelper(pub, pri);
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10000; i++) {
                 sb.append(String.valueOf(i));
             }
             String content = sb.toString();
@@ -55,7 +55,7 @@ public class RsaHelperTest {
 
             RsaHelper rsa = new RsaHelper(pub, pri);
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10000; i++) {
                 sb.append(String.valueOf(i));
             }
             byte[] data = sb.toString().getBytes(ConstField.UTF8);
