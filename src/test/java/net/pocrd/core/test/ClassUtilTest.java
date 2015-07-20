@@ -1,9 +1,9 @@
 package net.pocrd.core.test;
 
-import static org.junit.Assert.assertTrue;
 import net.pocrd.util.ClassUtil;
-
 import org.junit.Test;
+
+import static org.junit.Assert.assertTrue;
 
 public class ClassUtilTest {
 

@@ -1,10 +1,18 @@
 package net.pocrd.util;
 
-public class LocalVariable {
-    public LocalVariable(int slotPos, int loadOpcode, int storeOpcode) {
+class LocalVariable {
+    LocalVariable(int slotPos, int loadOpcode, int storeOpcode) {
         this.slotPos = slotPos;
         this.loadOpcode = loadOpcode;
         this.storeOpcode = storeOpcode;
+        this.doubleSlot = false;
+    }
+
+    LocalVariable(int slotPos, int loadOpcode, int storeOpcode, boolean doubleSlot) {
+        this.slotPos = slotPos;
+        this.loadOpcode = loadOpcode;
+        this.storeOpcode = storeOpcode;
+        this.doubleSlot = doubleSlot;
     }
 
     /**
@@ -20,27 +28,22 @@ public class LocalVariable {
      */
     private int slotPos;
 
+    /**
+     * 是否占用两个slot
+     */
+    private boolean doubleSlot;
+
     public int getLoadOpcode() {
         return loadOpcode;
-    }
-
-    public void setLoadOpcode(int loadOpcode) {
-        this.loadOpcode = loadOpcode;
     }
 
     public int getStoreOpcode() {
         return storeOpcode;
     }
 
-    public void setStoreOpcode(int storeOpcode) {
-        this.storeOpcode = storeOpcode;
-    }
-
     public int getSlotPos() {
         return slotPos;
     }
 
-    public void setSlotPos(int slotPos) {
-        this.slotPos = slotPos;
-    }
+    public boolean isDoubleSlot() {return doubleSlot;}
 }

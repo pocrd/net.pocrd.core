@@ -1,5 +1,14 @@
 package net.pocrd.core.test;
 
+import com.sun.rowset.CachedRowSetImpl;
+import net.pocrd.core.test.model.ORMObject;
+import net.pocrd.util.ORMProvider;
+import org.junit.Assert;
+import org.junit.Test;
+
+import javax.sql.rowset.RowSetMetaDataImpl;
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
 import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.sql.ResultSetMetaData;
@@ -7,18 +16,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.List;
 
-import javax.sql.rowset.RowSetMetaDataImpl;
-import javax.sql.rowset.serial.SerialBlob;
-import javax.sql.rowset.serial.SerialClob;
-
-import net.pocrd.core.test.model.ORMObject;
-import net.pocrd.util.ORMProvider;
-
-import org.junit.Assert;
-import org.junit.Test;
-
-import com.sun.rowset.CachedRowSetImpl;
-
+@SuppressWarnings("restriction")
 public class ORMProviderTest {
     @Test
     public void testORMProvider() throws SQLException, UnsupportedEncodingException {
@@ -125,23 +123,23 @@ public class ORMProviderTest {
             Assert.assertEquals(obj.s1, o.s1);
             Assert.assertEquals(obj.b1, o.b1);
             Assert.assertEquals(obj.bd1, o.bd1);
-            //Assert.assertEquals(obj.bl1, o.bl1);
-            Assert.assertEquals(obj.bs1, o.bs1);
+            // Assert.assertEquals(obj.bl1, o.bl1);
+            Assert.assertArrayEquals(obj.bs1, o.bs1);
             Assert.assertEquals(obj.by1, o.by1);
-            //Assert.assertEquals(obj.cl1, o.cl1);
+            // Assert.assertEquals(obj.cl1, o.cl1);
             Assert.assertEquals(obj.i1, o.i1);
             Assert.assertEquals(obj.sh1, o.sh1);
-            
+
             Assert.assertEquals(obj.getD(), o.getD(), 0);
             Assert.assertEquals(obj.getF(), o.getF(), 0);
             Assert.assertEquals(obj.getL(), o.getL());
             Assert.assertEquals(obj.getS(), o.getS());
             Assert.assertEquals(obj.getB(), o.getB());
             Assert.assertEquals(obj.getBd(), o.getBd());
-            //Assert.assertEquals(obj.getBl(), o.getBl());
-            Assert.assertEquals(obj.getBs(), o.getBs());
+            // Assert.assertEquals(obj.getBl(), o.getBl());
+            Assert.assertArrayEquals(obj.getBs(), o.getBs());
             Assert.assertEquals(obj.getBy(), o.getBy());
-            //Assert.assertEquals(obj.getCl(), o.getCl());
+            // Assert.assertEquals(obj.getCl(), o.getCl());
             Assert.assertEquals(obj.getI(), o.getI());
             Assert.assertEquals(obj.getSh(), o.getSh());
         }

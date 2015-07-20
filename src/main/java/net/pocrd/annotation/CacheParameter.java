@@ -9,7 +9,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface CacheParameter {
     CacheKeyType type() default CacheKeyType.Normal;
+
     public static enum CacheKeyType {
-        Normal, PageIndex, PageSize, Filter
+        Normal,
+        PageIndex,
+        PageSize,
+        Filter
     }
 }

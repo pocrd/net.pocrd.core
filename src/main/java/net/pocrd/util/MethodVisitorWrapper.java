@@ -1,12 +1,12 @@
 package net.pocrd.util;
 
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
     private int                      countOfArgs     = 0;
@@ -15,7 +15,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 根据指定信息创建方法签名
-     * 
+     *
      * @param cw
      * @param access
      * @param name
@@ -24,7 +24,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
      * @param exceptions
      */
     public MethodVisitorWrapper(final ClassWriter cw, final int access, final String name, final String desc, final String signature,
-            final String[] exceptions) {
+                                final String[] exceptions) {
         super(ASM4);
         mv = cw.visitMethod(access, name, desc, signature, exceptions);
         declareArgs(access, desc);
@@ -32,7 +32,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 根据method模板复制方法签名
-     * 
+     *
      * @param cw
      * @param method
      */
@@ -53,7 +53,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 根据函数签名计算栈长度
-     * 
+     *
      * @param access
      * @param desc
      */
@@ -69,8 +69,8 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
         if (argTypes != null) {
             for (int i = 0; i < argTypes.length; i++) {
                 String argClassName = argTypes[i].getClassName();
-                if ("int".equals(argClassName) || "boolean".equals(argClassName) || "short".equals(argClassName) || "byte".equals(argClassName)
-                        || "char".equals(argClassName)) {
+                if ("int".equals(argClassName) || "boolean".equals(argClassName) || "short".equals(argClassName) || "byte".equals(
+                        argClassName) || "char".equals(argClassName)) {
                     localVarInfo.add(new LocalVariable(nextFreeSlotPos, ILOAD, ISTORE));
                 } else if ("float".equals(argClassName)) {
                     localVarInfo.add(new LocalVariable(nextFreeSlotPos, FLOAD, FSTORE));
@@ -91,7 +91,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 修改函数入参的值
-     * 
+     *
      * @param mv
      * @param indexOfArg if method is not static,args start from "this", else args start from the first parameter of method
      */
@@ -100,7 +100,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
             LocalVariable vinfo = localVarInfo.get(indexOfArg);
             if (vinfo != null) {
                 mv.visitVarInsn(vinfo.getStoreOpcode(), vinfo.getSlotPos());
-            } else throw new RuntimeException("参数未声明,index:" + indexOfArg);
+            } else { throw new RuntimeException("参数未声明,index:" + indexOfArg); }
         } else {
             throw new RuntimeException("参数索引非法,index:" + indexOfArg);
         }
@@ -108,7 +108,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 加载函数入参
-     * 
+     *
      * @param mv
      * @param indexOfArg if method is not static,args start from "this", else args start from the first parameter of method
      */
@@ -117,7 +117,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
             LocalVariable vinfo = localVarInfo.get(indexOfArg);
             if (vinfo != null) {
                 mv.visitVarInsn(vinfo.getLoadOpcode(), vinfo.getSlotPos());
-            } else throw new RuntimeException("参数未声明,index:" + indexOfArg);
+            } else { throw new RuntimeException("参数未声明,index:" + indexOfArg); }
         } else {
             throw new RuntimeException("参数索引非法,index:" + indexOfArg);
         }
@@ -125,8 +125,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 局部变量声明
-     * 
-     * @param mv
+     *
      * @param clazz
      */
     public LocalVariable declareLocal(Class<?> clazz) {
@@ -145,7 +144,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
                 } else if ("long".equals(pName)) {
                     localBuilder = new LocalVariable(nextFreeSlotPos, LLOAD, LSTORE);
                     nextFreeSlotPos++;
-                } else throw new RuntimeException("不支持的类型" + clazz.getName());
+                } else { throw new RuntimeException("不支持的类型" + clazz.getName()); }
             } else {
                 localBuilder = new LocalVariable(nextFreeSlotPos, ALOAD, ASTORE);
             }
@@ -157,7 +156,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 存储局部变量
-     * 
+     *
      * @param mv
      * @param indexOfLocal
      */
@@ -169,7 +168,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 加载局部变量
-     * 
+     *
      * @param mv
      * @param lb
      */
@@ -181,8 +180,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 强制类型转换
-     * 
-     * @param mv
+     *
      * @param clazz
      */
     public void doCast(Class<?> clazz) {
@@ -212,7 +210,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
             } else if ("long".equals(className)) {
                 mv.visitTypeInsn(CHECKCAST, "java/lang/Long");
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J");
-            } else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else { throw new RuntimeException("不支持的类型" + clazz.getName()); }
         } else {
             mv.visitTypeInsn(CHECKCAST, clazz.getName().replace('.', '/'));
         }
@@ -220,52 +218,47 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 值类型装箱
-     * 
-     * @param mv
+     *
      * @param clazz
      */
     public void doInbox(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             String className = clazz.getName();
-            if ("int".equals(className))
+            if ("int".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
-            else if ("char".equals(className))
+            } else if ("char".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;");
-            else if ("short".equals(className))
+            } else if ("short".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;");
-            else if ("byte".equals(className))
+            } else if ("byte".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;");
-            else if ("float".equals(className))
+            } else if ("float".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
-            else if ("boolean".equals(className))
+            } else if ("boolean".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
-            else if ("double".equals(className))
+            } else if ("double".equals(className)) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
-            else if ("long".equals(className))
-                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
-            else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if ("long".equals(className)) { mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;"); } else {
+                throw new RuntimeException("不支持的类型" + clazz.getName());
+            }
         }
     }
 
     /**
      * 方法返回
-     * 
+     *
      * @param mv
      * @param clazz
      */
     public void doReturn(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             String className = clazz.getName();
-            if ("int".equals(className) || "char".equals(className) || "short".equals(className) || "byte".equals(className)
-                    || "float".equals(className) || "boolean".equals(className))
+            if ("int".equals(className) || "char".equals(className) || "short".equals(className) || "byte".equals(className) || "float".equals(
+                    className) || "boolean".equals(className)) {
                 mv.visitInsn(IRETURN);
-            else if ("double".equals(className))
-                mv.visitInsn(DRETURN);
-            else if ("long".equals(className))
+            } else if ("double".equals(className)) { mv.visitInsn(DRETURN); } else if ("long".equals(className)) {
                 mv.visitInsn(LRETURN);
-            else if ("void".equals(className))
-                mv.visitInsn(RETURN);
-            else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if ("void".equals(className)) { mv.visitInsn(RETURN); } else throw new RuntimeException("不支持的类型" + clazz.getName());
         } else {
             mv.visitInsn(ARETURN);
         }
@@ -273,31 +266,26 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 类型判断
-     * 
-     * @param mv
+     *
      * @param clazz
      */
     public void doInstanceof(Class<?> clazz) {
         String type = null;
         if (clazz.isPrimitive()) {
             String className = clazz.getName();
-            if ("int".equals(className))
-                type = "java/lang/Integer";
-            else if ("char".equals(className))
+            if ("int".equals(className)) { type = "java/lang/Integer"; } else if ("char".equals(className)) {
                 type = "java/lang/Char";
-            else if ("short".equals(className))
+            } else if ("short".equals(className)) {
                 type = "java/lang/Short";
-            else if ("byte".equals(className))
+            } else if ("byte".equals(className)) {
                 type = "java/lang/Byte";
-            else if ("float".equals(className))
+            } else if ("float".equals(className)) {
                 type = "java/lang/Float";
-            else if ("boolean".equals(className))
+            } else if ("boolean".equals(className)) {
                 type = "java/lang/Boolean";
-            else if ("double".equals(className))
+            } else if ("double".equals(className)) {
                 type = "java/lang/Double";
-            else if ("long".equals(className))
-                type = "java/lang/Long";
-            else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if ("long".equals(className)) { type = "java/lang/Long"; } else throw new RuntimeException("不支持的类型" + clazz.getName());
         } else {
             type = clazz.getName().replace('.', '/');
         }
@@ -306,7 +294,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 长整形常量加载
-     * 
+     *
      * @param l
      */
     public void loadConst(long l) {
@@ -315,13 +303,13 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
         } else if (l == 1) {
             mv.visitInsn(LCONST_1);
         } else {
-            mv.visitLdcInsn(new Long(l));
+            mv.visitLdcInsn(Long.valueOf(l));
         }
     }
 
     /**
      * 单精度浮点型常量加载
-     * 
+     *
      * @param f
      */
     public void loadConst(float f) {
@@ -338,7 +326,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 双精度浮点型常量加载
-     * 
+     *
      * @param d
      */
     public void loadConst(double d) {
@@ -353,7 +341,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 整数型常量加载
-     * 
+     *
      * @param i
      */
     public void loadConst(int i) {
@@ -385,7 +373,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
                 } else if (i <= Short.MAX_VALUE && i >= Short.MIN_VALUE) {
                     mv.visitIntInsn(SIPUSH, i);
                 } else {
-                    mv.visitLdcInsn(new Integer(i));
+                    mv.visitLdcInsn(Integer.valueOf(i));
                 }
                 break;
         }
@@ -393,7 +381,7 @@ public class MethodVisitorWrapper extends MethodVisitor implements Opcodes {
 
     /**
      * 字符串型常量加载
-     * 
+     *
      * @param s
      */
     public void loadConst(String s) {

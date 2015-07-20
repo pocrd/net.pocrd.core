@@ -1,14 +1,13 @@
 package net.pocrd.core.test;
 
-import java.lang.reflect.Method;
-
 import net.pocrd.core.PocClassLoader;
 import net.pocrd.util.MethodVisitorWrapper;
-
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.Opcodes;
+
+import java.lang.reflect.Method;
 
 public class MethodVisitorWrapperTest implements Opcodes {
     @Test
@@ -67,12 +66,12 @@ public class MethodVisitorWrapperTest implements Opcodes {
         // byte[] content = cw.toByteArray();
         // output.write(content, 0, content.length);
         // output.close();
-        PocClassLoader pocClassLoader = new PocClassLoader(Thread.currentThread().getContextClassLoader());
+        PocClassLoader pocClassLoader = new PocClassLoader(MethodVisitorWrapperTest.class.getClassLoader());
         Class<?> testClass = pocClassLoader.defineClass("net.pocrd.test.core.util.MethodVisitorWrapperTest", cw.toByteArray());
         Method main = testClass.getMethod("main", String.class);// invoke method of instance
         main.invoke(testClass.newInstance(), "Tim.Guan");
         Method staticMain = testClass.getMethod("staticMain", String[].class);// invoke static
-        staticMain.invoke(null, new Object[] { new String[] {} });
+        staticMain.invoke(null, new Object[]{new String[]{}});
     }
 
 }

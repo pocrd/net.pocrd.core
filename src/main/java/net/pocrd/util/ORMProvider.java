@@ -1,5 +1,16 @@
 package net.pocrd.util;
 
+import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.ConstField;
+import net.pocrd.define.ResultSetMapper;
+import net.pocrd.entity.CommonConfig;
+import net.pocrd.entity.CompileConfig;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Field;
@@ -15,18 +26,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
-import net.pocrd.core.PocClassLoader;
-import net.pocrd.define.CompileConfig;
-import net.pocrd.define.ConstField;
-import net.pocrd.define.ResultSetMapper;
-import net.pocrd.entity.CommonConfig;
-
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
 
 public class ORMProvider implements Opcodes {
     private static final ConcurrentHashMap<String, ResultSetMapper<?>> mappers = new ConcurrentHashMap<String, ResultSetMapper<?>>();
@@ -52,8 +51,8 @@ public class ORMProvider implements Opcodes {
                             pmap.put(ps[i].trim(), i + 1);
                         }
                     }
-                    String className = "net.pocrd.autogen.ORM_" + clazz.getName().replace('.', '_')
-                            + Md5Util.computeToHex(sql.getBytes(ConstField.UTF8));
+                    String className = "net.pocrd.autogen.ORM_" + clazz.getName().replace('.', '_') + Md5Util.computeToHex(
+                            sql.getBytes(ConstField.UTF8));
                     className = className.replace('$', '_');
                     String c_name = className.replace('.', '/');
                     String c_desc = "L" + c_name + ";";
@@ -63,7 +62,7 @@ public class ORMProvider implements Opcodes {
 
                     try {
                         cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name, "Ljava/lang/Object;Lnet/pocrd/define/ResultSetMapper<" + p_desc + ">;",
-                                "java/lang/Object", new String[] { m_name });
+                                 "java/lang/Object", new String[]{m_name});
                         MethodVisitor mv;
                         {
                             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -81,7 +80,7 @@ public class ORMProvider implements Opcodes {
                         }
                         {
                             PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_PUBLIC, "getData", "(Ljava/sql/ResultSet;)" + p_desc, null,
-                                    new String[] { "java/sql/SQLException" });
+                                                                        new String[]{"java/sql/SQLException"});
                             pmv.visitCode();
                             pmv.declareLocal("result", clazz);
                             pmv.visitTypeInsn(NEW, p_name);
@@ -127,7 +126,7 @@ public class ORMProvider implements Opcodes {
                         }
                         {
                             mv = cw.visitMethod(ACC_PUBLIC + ACC_BRIDGE + ACC_SYNTHETIC, "getData", "(Ljava/sql/ResultSet;)Ljava/lang/Object;", null,
-                                    new String[] { "java/sql/SQLException" });
+                                                new String[]{"java/sql/SQLException"});
                             mv.visitCode();
                             Label l0 = new Label();
                             mv.visitLabel(l0);
@@ -143,12 +142,13 @@ public class ORMProvider implements Opcodes {
                         if (CompileConfig.isDebug) {
                             FileOutputStream fos = null;
                             try {
-                                File folder = new File(CommonConfig.getInstance().autogenPath + File.separator + "ORM" + File.separator);
+                                File folder = new File(CommonConfig.getInstance().getAutogenPath() + File.separator + "ORM" + File.separator);
                                 if (!folder.exists()) {
                                     folder.mkdirs();
                                 }
-                                fos = new FileOutputStream(CommonConfig.getInstance().autogenPath + File.separator + "ORM" + File.separator
-                                        + className.substring(18) + ".class");
+                                fos = new FileOutputStream(
+                                        CommonConfig.getInstance().getAutogenPath() + File.separator + "ORM" + File.separator + className.substring(
+                                                18) + ".class");
                                 fos.write(cw.toByteArray());
                             } finally {
                                 if (fos != null) {
@@ -156,8 +156,8 @@ public class ORMProvider implements Opcodes {
                                 }
                             }
                         }
-                        mapper = (ResultSetMapper<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(
-                                className.replace('/', '.'), cw.toByteArray()).newInstance();
+                        mapper = (ResultSetMapper<T>)new PocClassLoader(ORMProvider.class.getClassLoader()).defineClass(className.replace('/', '.'),
+                                                                                                                        cw.toByteArray()).newInstance();
                     } catch (Exception e) {
                         throw new RuntimeException(className, e);
                     }

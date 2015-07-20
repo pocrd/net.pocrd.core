@@ -1,28 +1,38 @@
 package net.pocrd.util;
 
-import java.security.SecureRandom;
+import net.pocrd.annotation.NotThreadSafe;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.security.SecureRandom;
 
+@NotThreadSafe
 public class AesHelper {
     private SecretKeySpec   keySpec;
     private IvParameterSpec iv;
     // 需要使用无填充时使用，此时会为密钥计算出一个唯一的iv来使用
-    private boolean         useCFB = false;
+    private boolean useCFB = false;
 
     public AesHelper(byte[] aesKey, byte[] iv) {
         if (aesKey == null || aesKey.length < 16 || (iv != null && iv.length < 16)) {
             throw new RuntimeException("错误的初始密钥");
         }
         if (iv == null) {
-            useCFB = true;
             iv = Md5Util.compute(aesKey);
         }
         keySpec = new SecretKeySpec(aesKey, "AES");
         this.iv = new IvParameterSpec(iv);
+    }
+
+    public AesHelper(byte[] aesKey, boolean cfb) {
+        if (aesKey == null || aesKey.length < 16) {
+            throw new RuntimeException("错误的初始密钥");
+        }
+        useCFB = cfb;
+        keySpec = new SecretKeySpec(aesKey, "AES");
+        this.iv = new IvParameterSpec(Md5Util.compute(aesKey));
     }
 
     public byte[] encrypt(byte[] data) {

@@ -7,10 +7,10 @@ import java.lang.annotation.Target;
 
 /**
  * 用于添加运行时需要用到的注释
- * @author rendong
  *
+ * @author rendong
  */
-@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.PACKAGE, ElementType.TYPE })
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.PACKAGE, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Description {
     String value();

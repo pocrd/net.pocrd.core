@@ -2,15 +2,15 @@ package net.pocrd.util;
 
 public class JDBCPoolConfig {
     // 配置节点名称
-    private String  configName;
+    private String configName;
     // 数据库连接地址
-    private String  jdbcUrl;
+    private String jdbcUrl;
     // 驱动名
-    private String  driverClassName;
-    private String  userName;
-    private String  password;
+    private String driverClassName;
+    private String username;
+    private String password;
     // 是否允许JMX
-    private boolean jmxEnabled         = true;
+    private boolean jmxEnabled = true;
 
     // 下面的属性是验证空闲连接使用
     // 空闲时是否进行检测,使用validationQuery
@@ -71,12 +71,12 @@ public class JDBCPoolConfig {
         this.driverClassName = driverClassName;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPassword() {
@@ -103,7 +103,7 @@ public class JDBCPoolConfig {
      * (String) The SQL query that will be used to validate connections from this pool before returning them to the caller. If specified, this query
      * does not have to return any data, it just can't throw a SQLException. The default value is null. Example values are SELECT 1(mysql), select 1
      * from dual(oracle), SELECT 1(MS Sql Server)
-     * 
+     *
      * @param validationQuery
      */
     public void setValidationQuery(String validationQuery) {
@@ -117,7 +117,7 @@ public class JDBCPoolConfig {
     /**
      * (long) avoid excess validation, only run validation at most at this frequency - time in milliseconds. If a connection is due for validation,
      * but has been validated previously within this interval, it will not be validated again. The default value is 30000 (30 seconds).
-     * 
+     *
      * @param validationInterval
      */
     public void setValidationInterval(int validationInterval) {
@@ -132,7 +132,7 @@ public class JDBCPoolConfig {
      * (int) The number of milliseconds to sleep between runs of the idle connection validation/cleaner thread. This value should not be set under 1
      * second. It dictates how often we check for idle, abandoned connections, and how often we validate idle connections. The default value is 5000
      * (5 seconds).
-     * 
+     *
      * @param timeBetweenEvictionRunsMillis
      */
     public void setTimeBetweenEvictionRunsMillis(int timeBetweenEvictionRunsMillis) {
@@ -145,7 +145,7 @@ public class JDBCPoolConfig {
 
     /**
      * The maximum number of active connections that can be allocated from this pool at the same time. The default value is 100
-     * 
+     *
      * @param maxActive
      */
     public void setMaxActive(int maxActive) {
@@ -158,7 +158,7 @@ public class JDBCPoolConfig {
 
     /**
      * (int)The initial number of connections that are created when the pool is started. Default value is 10
-     * 
+     *
      * @param initialSize
      */
     public void setInitialSize(int initialSize) {
@@ -172,7 +172,7 @@ public class JDBCPoolConfig {
     /**
      * (int) The maximum number of milliseconds that the pool will wait (when there are no available connections) for a connection to be returned
      * before throwing an exception. Default value is 30000 (30 seconds)
-     * 
+     *
      * @param maxWait
      */
     public void setMaxWait(int maxWait) {
@@ -194,7 +194,7 @@ public class JDBCPoolConfig {
     /**
      * (int) The minimum amount of time an object may sit idle in the pool before it is eligible for eviction. The default value is 60000 (60
      * seconds).
-     * 
+     *
      * @param minEvictableIdleTimeMillis
      */
     public void setMinEvictableIdleTimeMillis(int minEvictableIdleTimeMillis) {
@@ -208,7 +208,7 @@ public class JDBCPoolConfig {
     /**
      * The minimum number of established connections that should be kept in the pool at all times. The connection pool can shrink below this number if
      * validation queries fail. Default value is derived from initialSize:10 (also see testWhileIdle)
-     * 
+     *
      * @param minIdle
      */
     public void setMinIdle(int minIdle) {
@@ -222,7 +222,7 @@ public class JDBCPoolConfig {
     /**
      * The maximum number of connections that should be kept in the pool at all times. Default value is maxActive:100 Idle connections are checked
      * periodically (if enabled) and connections that been idle for longer than minEvictableIdleTimeMillis will be released. (also see testWhileIdle)
-     * 
+     *
      * @param maxIdle
      */
     public void setMaxIdle(int maxIdle) {
@@ -236,7 +236,7 @@ public class JDBCPoolConfig {
     /**
      * (boolean) Flag to log stack traces for application code which abandoned a Connection. Logging of abandoned Connections adds overhead for every
      * Connection borrow because a stack trace has to be generated. The default value is false.
-     * 
+     *
      * @param logAbandoned
      */
     public void setLogAbandoned(boolean logAbandoned) {
@@ -251,7 +251,7 @@ public class JDBCPoolConfig {
      * (boolean) Flag to remove abandoned connections if they exceed the removeAbandonedTimeout. If set to true a connection is considered abandoned
      * and eligible for removal if it has been in use longer than the removeAbandonedTimeout Setting this to true can recover db connections from
      * applications that fail to close a connection. See also logAbandoned The default value is false.
-     * 
+     *
      * @param removeAbandoned
      */
     public void setRemoveAbandoned(boolean removeAbandoned) {
@@ -265,7 +265,7 @@ public class JDBCPoolConfig {
     /**
      * flexible and pluggable interceptors to create any customizations around the pool, the query execution and the result set handling. More on this
      * in the advanced section.
-     * 
+     *
      * @param jdbcInterceptors
      */
     public void setJdbcInterceptors(String jdbcInterceptors) {
@@ -280,7 +280,7 @@ public class JDBCPoolConfig {
      * (boolean) The indication of whether objects will be validated by the idle object evictor (if any). If an object fails to validate, it will be
      * dropped from the pool. NOTE - for a true value to have any effect, the validationQuery parameter must be set to a non-null string. The default
      * value is false and this property has to be set in order for the pool cleaner/test thread is to run (also see timeBetweenEvictionRunsMillis)
-     * 
+     *
      * @param testWhileIdle
      */
     public void setTestWhileIdle(boolean testWhileIdle) {
@@ -295,7 +295,7 @@ public class JDBCPoolConfig {
      * (boolean) The indication of whether objects will be validated before being borrowed from the pool. If the object fails to validate, it will be
      * dropped from the pool, and we will attempt to borrow another. NOTE - for a true value to have any effect, the validationQuery parameter must be
      * set to a non-null string. In order to have a more efficient validation, see validationInterval. Default value is false
-     * 
+     *
      * @param testOnBorrow
      */
     public void setTestOnBorrow(boolean testOnBorrow) {
@@ -309,7 +309,7 @@ public class JDBCPoolConfig {
     /**
      * (boolean) The indication of whether objects will be validated before being returned to the pool. NOTE - for a true value to have any effect,
      * the validationQuery parameter must be set to a non-null string. The default value is false.
-     * 
+     *
      * @param testOnReturn
      */
     public void setTestOnReturn(boolean testOnReturn) {

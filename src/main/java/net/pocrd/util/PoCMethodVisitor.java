@@ -1,30 +1,48 @@
 package net.pocrd.util;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.lang.reflect.Method;
+import java.util.HashMap;
+
 public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
-    private int                            nextFreeSlotPos = 0;
-    private LocalVariable[]                args            = null;
-    private HashMap<String, LocalVariable> lvs             = new HashMap<String, LocalVariable>();
+    private boolean[]                      slotFlags = new boolean[256];
+    private LocalVariable[]                args      = null;
+    private HashMap<String, LocalVariable> lvs       = new HashMap<String, LocalVariable>();
+
+    private int allocSlot() {
+        return allocSlot(false);
+    }
+
+    private int allocSlot(boolean doubleSlot) {
+        if (doubleSlot) {
+            for (int i = 0; i < slotFlags.length; i++) {
+                if (!slotFlags[i] && !slotFlags[i + 1]) {
+                    slotFlags[i] = true;
+                    slotFlags[i + 1] = true;
+                    return i;
+                }
+            }
+        } else {
+            for (int i = 0; i < slotFlags.length; i++) {
+                if (!slotFlags[i]) {
+                    slotFlags[i] = true;
+                    return i;
+                }
+            }
+        }
+
+        throw new RuntimeException("out of slot.");
+    }
 
     /**
      * 根据签名创建method visitor
-     * 
-     * @param cw
-     * @param access
-     * @param name
-     * @param desc
-     * @param signature
-     * @param exceptions
      */
-    public PoCMethodVisitor(final ClassWriter cw, final int access, final String name, final String desc, final String signature,
-            final String[] exceptions) {
+    PoCMethodVisitor(final ClassWriter cw, final int access, final String name, final String desc, final String signature,
+                     final String[] exceptions) {
         super(ASM4);
         mv = cw.visitMethod(access, name, desc, signature, exceptions);
         declareArgs(access, desc);
@@ -32,11 +50,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 根据method模板创建method visitor
-     * 
-     * @param cw
-     * @param method
      */
-    public PoCMethodVisitor(final ClassWriter cw, final Method method) {
+    PoCMethodVisitor(final ClassWriter cw, final Method method) {
         super(ASM4);
         int mod = method.getModifiers();
         String desc = Type.getMethodDescriptor(method);
@@ -53,99 +68,110 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 根据方法签名计算方法栈
-     * @param access
-     * @param desc
      */
     private void declareArgs(final int access, final String desc) {
-        Type[] argTypes = Type.getArgumentTypes(desc);
-        int count = argTypes != null ? argTypes.length : 0;
-        int hasThis = 0;
-        if ((access & ACC_STATIC) != access) {// this
-            hasThis = 1;
-            count++;
-            args = new LocalVariable[count];
-            args[0] = new LocalVariable(nextFreeSlotPos, ALOAD, ASTORE);
-            nextFreeSlotPos++;
-        } else {
-            args = new LocalVariable[count];
-        }
-
-        if (argTypes != null) {
-            for (int i = 0; i < argTypes.length; i++) {
-                Class<?> clazz = argTypes[i].getClass();
-                if (clazz == int.class || clazz == boolean.class || clazz == short.class || clazz == byte.class || clazz == char.class) {
-                    args[i + hasThis] = new LocalVariable(nextFreeSlotPos, ILOAD, ISTORE);
-                } else if (clazz == float.class) {
-                    args[i + hasThis] = new LocalVariable(nextFreeSlotPos, FLOAD, FSTORE);
-                } else if (clazz == double.class) {
-                    args[i + hasThis] = new LocalVariable(nextFreeSlotPos, DLOAD, DSTORE);
-                    nextFreeSlotPos++;
-                } else if (clazz == long.class) {
-                    args[i + hasThis] = new LocalVariable(nextFreeSlotPos, LLOAD, LSTORE);
-                    nextFreeSlotPos++;
-                } else {
-                    args[i + hasThis] = new LocalVariable(nextFreeSlotPos, ALOAD, ASTORE);
-                }
-                nextFreeSlotPos++;
+        try {
+            Type[] argTypes = Type.getArgumentTypes(desc);
+            int count = argTypes != null ? argTypes.length : 0;
+            int hasThis = 0;
+            if ((access & ACC_STATIC) != access) {// this
+                hasThis = 1;
+                count++;
+                args = new LocalVariable[count];
+                args[0] = new LocalVariable(allocSlot(), ALOAD, ASTORE);
+            } else {
+                args = new LocalVariable[count];
             }
+
+            if (argTypes != null) {
+                for (int i = 0; i < argTypes.length; i++) {
+                    String n = argTypes[i].getClassName();
+                    if ("int".equals(n) || "boolean".equals(n) || "short".equals(n) || "byte".equals(n) || "char".equals(n)) {
+                        args[i + hasThis] = new LocalVariable(allocSlot(), ILOAD, ISTORE);
+                    } else if ("float".equals(n)) {
+                        args[i + hasThis] = new LocalVariable(allocSlot(), FLOAD, FSTORE);
+                    } else if ("double".equals(n)) {
+                        args[i + hasThis] = new LocalVariable(allocSlot(true), DLOAD, DSTORE, true);
+                    } else if ("long".equals(n)) {
+                        args[i + hasThis] = new LocalVariable(allocSlot(true), LLOAD, LSTORE, true);
+                    } else {
+                        args[i + hasThis] = new LocalVariable(allocSlot(), ALOAD, ASTORE);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("declareArgs failed:" + desc, e);
         }
     }
 
     /**
      * 修改参数值
-     * @param index
      */
-    public void setArg(int index) {
+    void setArg(int index) {
         LocalVariable vinfo = args[index];
         mv.visitVarInsn(vinfo.getStoreOpcode(), vinfo.getSlotPos());
     }
 
     /**
      * 读取参数值
-     * @param index
      */
-    public void loadArg(int index) {
+    void loadArg(int index) {
         LocalVariable vinfo = args[index];
         mv.visitVarInsn(vinfo.getLoadOpcode(), vinfo.getSlotPos());
     }
 
     /**
      * 声明局部变量
-     * 
-     * @param mv
-     * @param clazz
      */
-    public void declareLocal(String localName, Class<?> clazz) {
+    void declareLocal(String localName, Class<?> clazz) {
         LocalVariable local = null;
         if (clazz.isPrimitive()) {
             if (clazz == int.class || clazz == boolean.class || clazz == short.class || clazz == byte.class || clazz == char.class) {
-                local = new LocalVariable(nextFreeSlotPos, ILOAD, ISTORE);
+                local = new LocalVariable(allocSlot(), ILOAD, ISTORE);
             } else if (clazz == float.class) {
-                local = new LocalVariable(nextFreeSlotPos, FLOAD, FSTORE);
+                local = new LocalVariable(allocSlot(), FLOAD, FSTORE);
             } else if (clazz == double.class) {
                 // double/long占两个slot
-                local = new LocalVariable(nextFreeSlotPos, DLOAD, DSTORE);
-                nextFreeSlotPos++;
+                local = new LocalVariable(allocSlot(true), DLOAD, DSTORE, true);
             } else if (clazz == long.class) {
-                local = new LocalVariable(nextFreeSlotPos, LLOAD, LSTORE);
-                nextFreeSlotPos++;
+                local = new LocalVariable(allocSlot(true), LLOAD, LSTORE, true);
             } else {
                 throw new RuntimeException("不支持的类型" + clazz.getName());
             }
         } else {
-            local = new LocalVariable(nextFreeSlotPos, ALOAD, ASTORE);
+            local = new LocalVariable(allocSlot(), ALOAD, ASTORE);
         }
         lvs.put(localName, local);
-        nextFreeSlotPos++;
+    }
+
+    void declareRefLocal(String localName) {
+        LocalVariable local = new LocalVariable(allocSlot(), ALOAD, ASTORE);
+        lvs.put(localName, local);
+    }
+
+    void deleteLocal(String localName) {
+        if (lvs.containsKey(localName)) {
+            LocalVariable lv = lvs.get(localName);
+            if (lv.isDoubleSlot()) {
+                slotFlags[lv.getSlotPos()] = false;
+                slotFlags[lv.getSlotPos() + 1] = false;
+            } else {
+                slotFlags[lv.getSlotPos()] = false;
+            }
+            lvs.remove(localName);
+        } else {
+            throw new RuntimeException("local variable : " + localName + " not defined.");
+        }
+    }
+
+    void incrementLocal(String localName, int value) {
+        visitIincInsn(lvs.get(localName).getSlotPos(), value);
     }
 
     /**
      * 存储局部变量
-     * 
-     * @param mv
-     * @param indexOfLocal
      */
-    public void setLocal(String localName) {
+    void setLocal(String localName) {
         LocalVariable lv = lvs.get(localName);
         if (lv != null) {
             mv.visitVarInsn(lv.getStoreOpcode(), lv.getSlotPos());
@@ -156,11 +182,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 加载局部变量
-     * 
-     * @param mv
-     * @param lb
      */
-    public void loadLocal(String localName) {
+    void loadLocal(String localName) {
         LocalVariable lv = lvs.get(localName);
         if (lv != null) {
             mv.visitVarInsn(lv.getLoadOpcode(), lv.getSlotPos());
@@ -171,11 +194,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 类型转换
-     * 
-     * @param mv
-     * @param clazz
      */
-    public void doCast(Class<?> clazz) {
+    void doCast(Class<?> clazz) {
         if (clazz.isPrimitive()) {
             if (clazz == int.class) {
                 mv.visitTypeInsn(CHECKCAST, "java/lang/Integer");
@@ -201,7 +221,7 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
             } else if (clazz == long.class) {
                 mv.visitTypeInsn(CHECKCAST, "java/lang/Long");
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Long", "longValue", "()J");
-            } else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else { throw new RuntimeException("不支持的类型" + clazz.getName()); }
         } else {
             mv.visitTypeInsn(CHECKCAST, clazz.getName().replace('.', '/'));
         }
@@ -209,50 +229,39 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 值类型装箱
-     * 
-     * @param mv
-     * @param clazz
      */
-    public void doInbox(Class<?> clazz) {
+    void doInbox(Class<?> clazz) {
         if (clazz.isPrimitive()) {
-            if (clazz == int.class)
+            if (clazz == int.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Integer", "valueOf", "(I)Ljava/lang/Integer;");
-            else if (clazz == char.class)
+            } else if (clazz == char.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Character", "valueOf", "(C)Ljava/lang/Character;");
-            else if (clazz == short.class)
+            } else if (clazz == short.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Short", "valueOf", "(S)Ljava/lang/Short;");
-            else if (clazz == byte.class)
+            } else if (clazz == byte.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Byte", "valueOf", "(B)Ljava/lang/Byte;");
-            else if (clazz == float.class)
+            } else if (clazz == float.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Float", "valueOf", "(F)Ljava/lang/Float;");
-            else if (clazz == boolean.class)
+            } else if (clazz == boolean.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
-            else if (clazz == double.class)
+            } else if (clazz == double.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
-            else if (clazz == long.class)
-                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
-            else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if (clazz == long.class) { mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;"); } else {
+                throw new RuntimeException("不支持的类型" + clazz.getName());
+            }
         }
     }
 
     /**
      * 方法返回
-     * 
-     * @param mv
-     * @param clazz
      */
-    public void doReturn(Class<?> clazz) {
+    void doReturn(Class<?> clazz) {
         if (clazz.isPrimitive()) {
-            if (clazz == int.class || clazz == char.class || clazz == short.class || clazz == byte.class || clazz == float.class
-                    || clazz == boolean.class)
+            if (clazz == int.class || clazz == char.class || clazz == short.class || clazz == byte.class || clazz == float.class || clazz == boolean.class) {
                 mv.visitInsn(IRETURN);
-            else if (clazz == double.class)
-                mv.visitInsn(DRETURN);
-            else if (clazz == long.class)
+            } else if (clazz == double.class) { mv.visitInsn(DRETURN); } else if (clazz == long.class) {
                 mv.visitInsn(LRETURN);
-            else if (clazz == void.class)
-                mv.visitInsn(RETURN);
-            else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if (clazz == void.class) { mv.visitInsn(RETURN); } else throw new RuntimeException("不支持的类型" + clazz.getName());
         } else {
             mv.visitInsn(ARETURN);
         }
@@ -260,29 +269,23 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 类型判断
-     * @param mv
-     * @param clazz
      */
-    public void doInstanceof(Class<?> clazz) {
+    void doInstanceof(Class<?> clazz) {
         String type = null;
         if (clazz.isPrimitive()) {
-            if (clazz == int.class)
-                type = "java/lang/Integer";
-            else if (clazz == char.class)
+            if (clazz == int.class) { type = "java/lang/Integer"; } else if (clazz == char.class) {
                 type = "java/lang/Char";
-            else if (clazz == short.class)
+            } else if (clazz == short.class) {
                 type = "java/lang/Short";
-            else if (clazz == byte.class)
+            } else if (clazz == byte.class) {
                 type = "java/lang/Byte";
-            else if (clazz == float.class)
+            } else if (clazz == float.class) {
                 type = "java/lang/Float";
-            else if (clazz == boolean.class)
+            } else if (clazz == boolean.class) {
                 type = "java/lang/Boolean";
-            else if (clazz == double.class)
+            } else if (clazz == double.class) {
                 type = "java/lang/Double";
-            else if (clazz == long.class)
-                type = "java/lang/Long";
-            else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if (clazz == long.class) { type = "java/lang/Long"; } else throw new RuntimeException("不支持的类型" + clazz.getName());
         } else {
             type = clazz.getName().replace('.', '/');
         }
@@ -291,23 +294,21 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 加载长整形常量
-     * @param l
      */
-    public void loadConst(long l) {
+    void loadConst(long l) {
         if (l == 0) {
             mv.visitInsn(LCONST_0);
         } else if (l == 1) {
             mv.visitInsn(LCONST_1);
         } else {
-            mv.visitLdcInsn(new Long(l));
+            mv.visitLdcInsn(Long.valueOf(l));
         }
     }
 
     /**
      * 加载单精度浮点型常量
-     * @param f
      */
-    public void loadConst(float f) {
+    void loadConst(float f) {
         if (f == 0) {
             mv.visitInsn(FCONST_0);
         } else if (f == 1) {
@@ -321,9 +322,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 加载双精度浮点型常量
-     * @param d
      */
-    public void loadConst(double d) {
+    void loadConst(double d) {
         if (d == 0) {
             mv.visitInsn(DCONST_0);
         } else if (d == 1) {
@@ -335,9 +335,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 加载整形常量
-     * @param i
      */
-    public void loadConst(int i) {
+    void loadConst(int i) {
         switch (i) {
             case -1:
                 mv.visitInsn(ICONST_M1);
@@ -366,7 +365,7 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
                 } else if (i <= Short.MAX_VALUE && i >= Short.MIN_VALUE) {
                     mv.visitIntInsn(SIPUSH, i);
                 } else {
-                    mv.visitLdcInsn(new Integer(i));
+                    mv.visitLdcInsn(Integer.valueOf(i));
                 }
                 break;
         }
@@ -374,9 +373,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 加载字符串型常量
-     * @param s
      */
-    public void loadConst(String s) {
+    void loadConst(String s) {
         if (s == null) {
             mv.visitInsn(ACONST_NULL);
         } else {
@@ -386,12 +384,14 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
 
     /**
      * 加载指定类型常量
-     * @param s       常量字面值
-     * @param clazz   常量类型
      */
-    public void loadConst(String s, Class<?> clazz) {
+    void loadConst(String s, Class<?> clazz) {
         if (s == null) {
-            mv.visitInsn(ACONST_NULL);
+            if (clazz.isPrimitive()) {
+
+            } else {
+                mv.visitInsn(ACONST_NULL);
+            }
         } else {
             if (clazz.isPrimitive()) {
                 if (clazz == boolean.class) {
@@ -440,6 +440,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
                     mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
                 } else if (clazz == String.class) {
                     mv.visitLdcInsn(s);
+                } else if (clazz.isEnum()) {
+                    mv.visitFieldInsn(GETSTATIC, clazz.getName().replace('.', '/'), s, Type.getDescriptor(clazz));
                 } else {
                     throw new RuntimeException("不支持的参数类型" + clazz.getName());
                 }

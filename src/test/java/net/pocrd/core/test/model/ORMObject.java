@@ -5,18 +5,18 @@ import java.sql.Blob;
 import java.sql.Clob;
 
 public class ORMObject {
-    public long        l1;
-    public BigDecimal  bd1;
-    public Blob        bl1;
-    public boolean     b1;
-    public byte        by1;
-    public byte[]      bs1;
-    public Clob        cl1;
-    public double      d1;
-    public float       f1;
-    public int         i1;
-    public String      s1;
-    public short       sh1;
+    public long       l1;
+    public BigDecimal bd1;
+    public Blob       bl1;
+    public boolean    b1;
+    public byte       by1;
+    public byte[]     bs1;
+    public Clob       cl1;
+    public double     d1;
+    public float      f1;
+    public int        i1;
+    public String     s1;
+    public short      sh1;
 
     private long       l;
     private BigDecimal bd;

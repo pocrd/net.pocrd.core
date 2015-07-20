@@ -1,10 +1,10 @@
 package net.pocrd.util;
 
-import java.lang.reflect.Modifier;
-
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+
+import java.lang.reflect.Modifier;
 
 public class BytecodeUtil implements Opcodes {
     public static void loadConst(MethodVisitor mv, long l) {
@@ -13,7 +13,7 @@ public class BytecodeUtil implements Opcodes {
         } else if (l == 1) {
             mv.visitInsn(LCONST_1);
         } else {
-            mv.visitLdcInsn(new Long(l));
+            mv.visitLdcInsn(Long.valueOf(l));
         }
     }
 
@@ -68,7 +68,7 @@ public class BytecodeUtil implements Opcodes {
                 } else if (i <= Short.MAX_VALUE && i >= Short.MIN_VALUE) {
                     mv.visitIntInsn(SIPUSH, i);
                 } else {
-                    mv.visitLdcInsn(new Integer(i));
+                    mv.visitLdcInsn(Integer.valueOf(i));
                 }
                 break;
         }

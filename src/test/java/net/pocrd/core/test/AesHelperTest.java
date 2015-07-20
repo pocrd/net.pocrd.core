@@ -1,16 +1,16 @@
 package net.pocrd.core.test;
 
-import static org.junit.Assert.assertTrue;
-
-import java.util.Arrays;
-
 import net.pocrd.define.ConstField;
 import net.pocrd.util.AesHelper;
 import net.pocrd.util.Base64Util;
-
 import org.junit.Test;
 
-//TODO:add multi-thread testing
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
+
+import static org.junit.Assert.assertTrue;
+
+//TODO:add multi-thread    testing
 public class AesHelperTest {
 
     @Test
@@ -20,14 +20,14 @@ public class AesHelperTest {
         assertTrue(aes != null);
         System.out.println(Base64Util.encodeToString(key));
     }
-    
+
     @Test
-    public void testEncrypt() {
+    public void testEncrypt() throws UnsupportedEncodingException {
         {
             // remember to replace {java_home}/jre/lib/security with
             // http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html
             byte[] key = AesHelper.randomKey(256);
-            AesHelper aes = new AesHelper(key, null);
+            AesHelper aes = new AesHelper(key, true);
             assertTrue(aes != null);
             StringBuilder sb = new StringBuilder(1000);
             for (int i = 0; i < 100; i++) {
@@ -40,7 +40,7 @@ public class AesHelperTest {
 
         {
             byte[] key = AesHelper.randomKey(256);
-            AesHelper aes = new AesHelper(key, "0123456789123456".getBytes());
+            AesHelper aes = new AesHelper(key, "0123456789123456".getBytes("UTF-8"));
             assertTrue(aes != null);
             StringBuilder sb = new StringBuilder(1000);
             for (int i = 0; i < 100; i++) {
@@ -53,12 +53,12 @@ public class AesHelperTest {
     }
 
     @Test
-    public void testDecrypt() {
+    public void testDecrypt() throws UnsupportedEncodingException {
         {
             // remember to replace {java_home}/jre/lib/security with
             // http://www.oracle.com/technetwork/java/javase/downloads/jce-6-download-429243.html
             byte[] key = AesHelper.randomKey(256);
-            AesHelper aes = new AesHelper(key, null);
+            AesHelper aes = new AesHelper(key, true);
             assertTrue(aes != null);
             StringBuilder sb = new StringBuilder(1000);
             for (int i = 0; i < 1000; i++) {
@@ -73,7 +73,7 @@ public class AesHelperTest {
 
         {
             byte[] key = AesHelper.randomKey(256);
-            AesHelper aes = new AesHelper(key, "0123456789123456".getBytes());
+            AesHelper aes = new AesHelper(key, "0123456789123456".getBytes("UTF-8"));
             assertTrue(aes != null);
             StringBuilder sb = new StringBuilder(1000);
             for (int i = 0; i < 1000; i++) {
@@ -98,15 +98,16 @@ public class AesHelperTest {
     }
 
     @Test
-    public void testMultithread() {
+    public void testMultithread() throws UnsupportedEncodingException {
         byte[] key = AesHelper.randomKey(256);
-        final AesHelper aes = new AesHelper(key, "0123456789123456".getBytes());
+        System.out.println("aes:  " + Base64Util.encodeToString(key));
+        final AesHelper aes = new AesHelper(key, "0123456789123456".getBytes("UTF-8"));
         assertTrue(aes != null);
         StringBuilder sb = new StringBuilder(1000);
         for (int i = 0; i < 1000; i++) {
             sb.append(i);
         }
-        final byte[] content = sb.toString().getBytes();
+        final byte[] content = sb.toString().getBytes("UTF-8");
         MultithreadTestHelper.runInMultithread(5, 10000, new Runnable() {
 
             @Override

@@ -1,23 +1,30 @@
 package net.pocrd.util;
 
+import net.pocrd.annotation.NotThreadSafe;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.crypto.Cipher;
 import java.io.ByteArrayOutputStream;
 import java.security.KeyFactory;
+import java.security.Security;
 import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
-import javax.crypto.Cipher;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPrivateKey;
-import org.bouncycastle.jcajce.provider.asymmetric.ec.BCECPublicKey;
-
+@NotThreadSafe
 public class EccHelper {
-    private static final Logger logger = LogManager.getLogger("net.pocrd.util");
+    private static final Logger logger = LoggerFactory.getLogger(EccHelper.class);
     private static final int    SIZE   = 4096;
-    private BCECPublicKey       publicKey;
-    private BCECPrivateKey      privateKey;
+    private BCECPublicKey  publicKey;
+    private BCECPrivateKey privateKey;
+
+    static {
+        Security.addProvider(new BouncyCastleProvider());
+    }
 
     public EccHelper(String publicKey, String privateKey) {
         this(Base64Util.decode(publicKey), Base64Util.decode(privateKey));
@@ -25,13 +32,15 @@ public class EccHelper {
 
     public EccHelper(byte[] publicKey, byte[] privateKey) {
         try {
-            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+            KeyFactory keyFactory = KeyFactory.getInstance("EC", "BC");
             if (publicKey != null && publicKey.length > 0) {
                 this.publicKey = (BCECPublicKey)keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
             }
             if (privateKey != null && privateKey.length > 0) {
                 this.privateKey = (BCECPrivateKey)keyFactory.generatePrivate(new PKCS8EncodedKeySpec(privateKey));
             }
+        } catch (ClassCastException e) {
+            throw new RuntimeException("", e);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -43,7 +52,7 @@ public class EccHelper {
 
     public EccHelper(byte[] publicKey) {
         try {
-            KeyFactory keyFactory = KeyFactory.getInstance("EC");
+            KeyFactory keyFactory = KeyFactory.getInstance("EC", "BC");
             if (publicKey != null && publicKey.length > 0) {
                 this.publicKey = (BCECPublicKey)keyFactory.generatePublic(new X509EncodedKeySpec(publicKey));
             }
@@ -57,12 +66,12 @@ public class EccHelper {
             throw new RuntimeException("public key is null.");
         }
         try {
-            Cipher cipher = Cipher.getInstance("ECIES");
+            Cipher cipher = Cipher.getInstance("ECIES", "BC");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
             int size = SIZE;
             ByteArrayOutputStream baos = new ByteArrayOutputStream((content.length + size - 1) / size * (size + 45));
             int left = 0;
-            for (int i = 0; i < content.length;) {
+            for (int i = 0; i < content.length; ) {
                 left = content.length - i;
                 if (left > size) {
                     cipher.update(content, i, size);
@@ -85,12 +94,12 @@ public class EccHelper {
             throw new RuntimeException("private key is null.");
         }
         try {
-            Cipher cipher = Cipher.getInstance("ECIES");
+            Cipher cipher = Cipher.getInstance("ECIES", "BC");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             int size = SIZE + 45;
             ByteArrayOutputStream baos = new ByteArrayOutputStream((secret.length + size + 44) / (size + 45) * size);
             int left = 0;
-            for (int i = 0; i < secret.length;) {
+            for (int i = 0; i < secret.length; ) {
                 left = secret.length - i;
                 if (left > size) {
                     cipher.update(secret, i, size);
@@ -115,7 +124,7 @@ public class EccHelper {
             throw new RuntimeException("private key is null.");
         }
         try {
-            Signature signature = Signature.getInstance("SHA1withECDSA");
+            Signature signature = Signature.getInstance("SHA1withECDSA", "BC");
             signature.initSign(privateKey);
             signature.update(content);
             return signature.sign();
@@ -129,7 +138,7 @@ public class EccHelper {
             throw new RuntimeException("public key is null.");
         }
         try {
-            Signature signature = Signature.getInstance("SHA1withECDSA");
+            Signature signature = Signature.getInstance("SHA1withECDSA", "BC");
             signature.initVerify(publicKey);
             signature.update(content);
             return signature.verify(sign);

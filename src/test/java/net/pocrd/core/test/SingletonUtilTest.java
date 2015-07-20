@@ -1,10 +1,10 @@
 package net.pocrd.core.test;
 
+import net.pocrd.util.SingletonUtil;
+import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import net.pocrd.util.SingletonUtil;
-
-import org.junit.Test;
 
 public class SingletonUtilTest {
 
@@ -32,7 +32,7 @@ public class SingletonUtilTest {
         }
         fail("should create failed.");
     }
-    
+
     @Test
     public void testMultithreadSingleton() {
         TestClass1 c = SingletonUtil.getSingleton(TestClass1.class);

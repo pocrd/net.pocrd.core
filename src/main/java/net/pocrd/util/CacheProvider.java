@@ -1,5 +1,16 @@
 package net.pocrd.util;
 
+import net.pocrd.annotation.CacheMethod;
+import net.pocrd.annotation.CacheParameter;
+import net.pocrd.annotation.CacheParameter.CacheKeyType;
+import net.pocrd.core.PocClassLoader;
+import net.pocrd.entity.CommonConfig;
+import net.pocrd.entity.CompileConfig;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -10,29 +21,26 @@ import java.lang.reflect.Modifier;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.pocrd.annotation.CacheMethod;
-import net.pocrd.annotation.CacheParameter;
-import net.pocrd.annotation.CacheParameter.CacheKeyType;
-import net.pocrd.core.PocClassLoader;
-import net.pocrd.define.CompileConfig;
-import net.pocrd.entity.CommonConfig;
-import net.pocrd.entity.CommonConfig.CacheDBType;
-
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
-
 /**
  * Generate subclass with cacheMethod,then create and cache an single instance for input class. 延迟注册，只要需要代理的时候才会生成
- * 
- * @author guankaiqiang
+ *
  * @param <T>
+ *
+ * @author guankaiqiang
  */
 public class CacheProvider implements Opcodes {
+    /**
+     * 缓存实现机制
+     *
+     * @author guankaiqiang
+     */
+    public enum CacheDBType {
+        Redis,
+        Memcache
+    }
 
-    private static ConcurrentHashMap<Class<?>, Object> cache         = new ConcurrentHashMap<Class<?>, Object>();
-    private final static String                        CACHE_SPLITER = "|";
+    private static       ConcurrentHashMap<Class<?>, Object> cache         = new ConcurrentHashMap<Class<?>, Object>();
+    private final static String                              CACHE_SPLITER = "|";
 
     @SuppressWarnings("unchecked")
     public static <T> T getSingleton(Class<T> clazz) {
@@ -62,9 +70,10 @@ public class CacheProvider implements Opcodes {
     }
 
     /**
-     * @author guankaiqiang
      * @param clazz CacheProvider generates cachedClass, only if target has at least one or more method which can be accessed publicly and its return
-     *            type is not void and is not final,not abstract or not static
+     *              type is not void and is not final,not abstract or not static
+     *
+     * @author guankaiqiang
      */
     public static <T> boolean hasCacheMethod(Class<T> clazz) {
         boolean isValid = false;
@@ -77,7 +86,7 @@ public class CacheProvider implements Opcodes {
 
     /**
      * 检测方法是符合被代理的条件
-     * 
+     *
      * @param method
      */
     private static boolean checkCacheMethod(Method method) {
@@ -91,23 +100,22 @@ public class CacheProvider implements Opcodes {
             if (Modifier.isStatic(mod)) throw new RuntimeException("Method can not be static,method name:" + method.getName());
             if ("void".equals(returnType.getName())) {
                 if (CompileConfig.isDebug)// 空方法可以跳过代理
-                    throw new RuntimeException("Method return type can not be void,method name:" + method.getName());
-                else return false;
+                { throw new RuntimeException("Method return type can not be void,method name:" + method.getName()); } else { return false; }
             }
             return true;
-        } else return false;
+        } else { return false; }
     }
 
     /**
      * cacheType TODO：更好的实现，提供使用者自定义的方式
-     * 
+     *
      * @return
      */
     public static ICacheManager getCacheManager() {
-        CacheDBType cacheType = CommonConfig.getInstance().cacheType;
-        if (CacheDBType.Redis.equals(cacheType)) {
+        String cacheType = CommonConfig.getInstance().getCacheType();
+        if (CacheDBType.Redis.name().equals(cacheType)) {
             return (ICacheManager)SingletonUtil.getSingleton(CacheManager4Redis.class);
-        } else if (CacheDBType.Memcache.equals(cacheType)) {
+        } else if (CacheDBType.Memcache.name().equals(cacheType)) {
             return (ICacheManager)SingletonUtil.getSingleton(CacheManager4Memcache.class);
         } else {
             throw new RuntimeException("不支持的缓存实现机制：" + cacheType);
@@ -132,9 +140,10 @@ public class CacheProvider implements Opcodes {
      * 为何使用 cachekey而非使用classname+methoddescriptor做为cachekey： 1.这样做便于缓存管理；
      * 2.当发现使用了重复的cachekey时，能让开发人员发现已经存在了这样一个缓存实现，以便开发者去决定修改这个函数或者是复用这个函数；(这个更倾向于编译期检查warning) 生成缓存Instatnce 避免缓存数据序列化异常解决方案：
      * 1.返回值类型进行了属性修改，系统新发布时cacheDB中缓存数据未失效，如果cache命中会导致序列化异常， 通过使用cacheVersion，避免命中无效cache数据，来规避属性修改导致序列化异常； 2.约束缓存键名的使用管理； 3.instanceof做类型检测，支持多态
-     * 
-     * @author guankaiqiang
+     *
      * @return
+     *
+     * @author guankaiqiang
      */
     @SuppressWarnings("unchecked")
     public static <T> T newCachedClassInstance(Class<T> clazz) {
@@ -172,7 +181,7 @@ public class CacheProvider implements Opcodes {
                     if ("void".equals(returnType.getName())) {
                         continue;
                     }
-                    String keyName = CommonConfig.getInstance().cacheVersion + CACHE_SPLITER + cacheAnnotation.key() + CACHE_SPLITER;
+                    String keyName = CommonConfig.getInstance().getCacheVersion() + CACHE_SPLITER + cacheAnnotation.key() + CACHE_SPLITER;
                     // + returnType.getCanonicalName() + CACHE_SPLITER;// returnType不参与签名，给返回结果多态提供可能
                     int expire = cacheAnnotation.expire();
                     paramTypes = m.getParameterTypes();
@@ -185,7 +194,7 @@ public class CacheProvider implements Opcodes {
                     Label ljump1 = new Label();
                     Label ljump2 = new Label();
                     mvWrapper.visitCode();
-                    // 1.generate cachekey
+                    // 1.generator cachekey
                     {
                         mvWrapper.visitTypeInsn(NEW, "java/lang/StringBuilder");
                         mvWrapper.visitInsn(DUP);
@@ -205,22 +214,23 @@ public class CacheProvider implements Opcodes {
                                     if (paramType.isArray()) {
                                         paramType = CacheKeyUtil.getCorrectType(paramType);// TODO
                                         mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheProvider$CacheKeyUtil", "toString",
-                                                Type.getMethodDescriptor(stringType, Type.getType(paramType)));
+                                                                  Type.getMethodDescriptor(stringType, Type.getType(paramType)));
                                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
-                                                "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                                                                  "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
                                     } else {
                                         if (paramType.isPrimitive()) {
-                                            if (int.class.equals(paramType) || short.class.equals(paramType) || byte.class.equals(paramType))
+                                            if (int.class.equals(paramType) || short.class.equals(paramType) || byte.class.equals(paramType)) {
                                                 paramType = int.class;
+                                            }
                                         } else {
                                             paramType = Object.class;
                                         }
                                         mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
-                                                Type.getMethodDescriptor(stringBuilderType, Type.getType(paramType)));
+                                                                  Type.getMethodDescriptor(stringBuilderType, Type.getType(paramType)));
                                     }
                                     mvWrapper.visitLdcInsn(CACHE_SPLITER);
                                     mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
-                                            "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                                                              "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
                                 } else {
                                     // TODO:Support autopaging/filter
                                     throw new RuntimeException("不识别的CacheKeyType:" + paramAnnotation.type());
@@ -238,8 +248,8 @@ public class CacheProvider implements Opcodes {
                     }
                     {
                         // 2.ICacheManager cacheManager = CacheProvider.getCacheManager();
-                        mvWrapper
-                                .visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheProvider", "getCacheManager", "()Lnet/pocrd/util/ICacheManager;");
+                        mvWrapper.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/CacheProvider", "getCacheManager",
+                                                  "()Lnet/pocrd/util/ICacheManager;");
                         mvWrapper.setLocal(cacheManagerBuilder);
                     }
                     {
@@ -314,7 +324,7 @@ public class CacheProvider implements Opcodes {
                             mvWrapper.visitMethodInsn(INVOKESPECIAL, "java/lang/StringBuilder", "<init>", "(Ljava/lang/String;)V");
                             mvWrapper.loadLocal(cacheKeyBuilder);
                             mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "append",
-                                    "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+                                                      "(Ljava/lang/String;)Ljava/lang/StringBuilder;");
                             mvWrapper.visitMethodInsn(INVOKEVIRTUAL, "java/lang/StringBuilder", "toString", "()Ljava/lang/String;");
                             mvWrapper.visitMethodInsn(INVOKESPECIAL, "java/lang/RuntimeException", "<init>", "(Ljava/lang/String;)V");
                             mvWrapper.visitInsn(ATHROW);
@@ -328,40 +338,47 @@ public class CacheProvider implements Opcodes {
             if (CompileConfig.isDebug) {
                 outPutClassFile("Cache_" + clazz.getSimpleName(), cw.toByteArray());
             }
-            T e = (T)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className.replace('/', '.'), cw.toByteArray())
-                    .newInstance();
+            T e = (T)new PocClassLoader(CacheProvider.class.getClassLoader()).defineClass(className.replace('/', '.'),
+                                                                                          cw.toByteArray()).newInstance();
             return e;
         } catch (Exception e) {
-            throw new RuntimeException("generate failed. " + clazz.getName(), e);
+            throw new RuntimeException("generator failed. " + clazz.getName(), e);
         }
     }
 
     private static void outPutClassFile(String fileName, byte[] byteArray) {
         FileOutputStream fos = null;
         try {
-            File folder = new File(CommonConfig.getInstance().autogenPath + File.separator + "CachedClass" + File.separator);
-            if (!folder.exists()) folder.mkdirs();
-            fos = new FileOutputStream(CommonConfig.getInstance().autogenPath + File.separator + "CachedClass" + File.separator + fileName + ".class");
+            File folder = new File(CommonConfig.getInstance().getAutogenPath() + File.separator + "CachedClass" + File.separator);
+            if (!folder.exists()) {
+                folder.mkdirs();
+            }
+            fos = new FileOutputStream(
+                    CommonConfig.getInstance().getAutogenPath() + File.separator + "CachedClass" + File.separator + fileName + ".class");
             fos.write(byteArray);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            try {
-                fos.close();
-            } catch (IOException e) {
-                e.printStackTrace();
+            if (fos != null) {
+                try {
+
+                    fos.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
-    
+
     /**
      * @author guankaiqiang
      */
     public static class CacheKeyUtil {
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(int[] array) {
@@ -377,8 +394,9 @@ public class CacheProvider implements Opcodes {
 
         /**
          * 避免Integer[]做unbox
-         * 
+         *
          * @param array
+         *
          * @return
          */
         public static String toString(Integer[] array) {
@@ -394,6 +412,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(boolean[] array) {
@@ -409,6 +428,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(Boolean[] array) {
@@ -424,6 +444,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(short[] array) {
@@ -439,6 +460,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(Short[] array) {
@@ -454,6 +476,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(byte[] array) {
@@ -469,6 +492,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(Byte[] array) {
@@ -484,6 +508,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(float[] array) {
@@ -499,6 +524,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(Float[] array) {
@@ -514,6 +540,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(double[] array) {
@@ -529,6 +556,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(Double[] array) {
@@ -544,6 +572,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(long[] array) {
@@ -559,6 +588,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(Long[] array) {
@@ -574,6 +604,7 @@ public class CacheProvider implements Opcodes {
 
         /**
          * @param array
+         *
          * @return
          */
         public static String toString(String[] array) {
@@ -582,16 +613,14 @@ public class CacheProvider implements Opcodes {
             }
             StringBuilder sb = new StringBuilder();
             for (String i : array) {
-                if (i != null)
-                    sb.append("[" + i + "]");
-                else sb.append("[null]");
+                if (i != null) { sb.append("[" + i + "]"); } else sb.append("[null]");
             }
             return sb.toString();
         }
 
         /**
          * array.toString()
-         * 
+         *
          * @return
          */
         public static String toString(Object[] array) {
@@ -600,30 +629,28 @@ public class CacheProvider implements Opcodes {
             }
             StringBuilder sb = new StringBuilder();
             for (Object i : array) {
-                if (i != null)
-                    sb.append("[" + i + "]");
-                else sb.append("[null]");
+                if (i != null) { sb.append("[" + i + "]"); } else sb.append("[null]");
             }
             return sb.toString();
         }
 
-        private final static Class<?>    intArrayClass     = int[].class;
-        private final static Class<?>    IntegerArrayClass = Integer[].class;
-        private final static Class<?>    shortArrayClass   = short[].class;
-        private final static Class<?>    ShortArrayClass   = Short[].class;
-        private final static Class<?>    byteArrayClass    = byte[].class;
-        private final static Class<?>    ByteArrayClass    = Byte[].class;
-        private final static Class<?>    floatArrayClass   = float[].class;
-        private final static Class<?>    FloatArrayClass   = Float[].class;
-        private final static Class<?>    longArrayClass    = long[].class;
-        private final static Class<?>    LongArrayClass    = Long[].class;
-        private final static Class<?>    doubleArrayClass  = double[].class;
-        private final static Class<?>    DoubleArrayClass  = Double[].class;
-        private final static Class<?>    booleanArrayClass = boolean[].class;
-        private final static Class<?>    BooleanArrayClass = Boolean[].class;
-        private final static Class<?>    StringArrayClass  = String[].class;
-        private final static Class<?>    ObjectArrayClass  = Object[].class;
-        private static HashSet<Class<?>> classSet          = new HashSet<Class<?>>();
+        private final static Class<?>          intArrayClass     = int[].class;
+        private final static Class<?>          IntegerArrayClass = Integer[].class;
+        private final static Class<?>          shortArrayClass   = short[].class;
+        private final static Class<?>          ShortArrayClass   = Short[].class;
+        private final static Class<?>          byteArrayClass    = byte[].class;
+        private final static Class<?>          ByteArrayClass    = Byte[].class;
+        private final static Class<?>          floatArrayClass   = float[].class;
+        private final static Class<?>          FloatArrayClass   = Float[].class;
+        private final static Class<?>          longArrayClass    = long[].class;
+        private final static Class<?>          LongArrayClass    = Long[].class;
+        private final static Class<?>          doubleArrayClass  = double[].class;
+        private final static Class<?>          DoubleArrayClass  = Double[].class;
+        private final static Class<?>          booleanArrayClass = boolean[].class;
+        private final static Class<?>          BooleanArrayClass = Boolean[].class;
+        private final static Class<?>          StringArrayClass  = String[].class;
+        private final static Class<?>          ObjectArrayClass  = Object[].class;
+        private static       HashSet<Class<?>> classSet          = new HashSet<Class<?>>();
         static {
             classSet.add(intArrayClass);
             classSet.add(IntegerArrayClass);
@@ -645,8 +672,9 @@ public class CacheProvider implements Opcodes {
 
         /**
          * 是否需要类型转换
-         * 
-         * @param descriptor
+         *
+         * @param clazz
+         *
          * @return
          */
         static Class<?> getCorrectType(Class<?> clazz) {

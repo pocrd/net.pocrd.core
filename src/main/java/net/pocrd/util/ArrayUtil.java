@@ -22,9 +22,9 @@ import java.lang.reflect.Array;
  * ArrayUtils contains some methods that you can call to find out the most efficient increments by which to grow arrays.
  */
 public class ArrayUtil {
-    private static Object[]  EMPTY      = new Object[0];
-    private static final int CACHE_SIZE = 73;
-    private static Object[]  sCache     = new Object[CACHE_SIZE];
+    private static       Object[] EMPTY      = new Object[0];
+    private static final int      CACHE_SIZE = 73;
+    private static       Object[] sCache     = new Object[CACHE_SIZE];
 
     private ArrayUtil() { /* cannot be instantiated */}
 
@@ -65,10 +65,11 @@ public class ArrayUtil {
 
     /**
      * Checks if the beginnings of two byte arrays are equal.
-     * 
+     *
      * @param array1 the first byte array
      * @param array2 the second byte array
      * @param length the number of bytes to check
+     *
      * @return true if they're equal, false otherwise
      */
     public static boolean equals(byte[] array1, byte[] array2, int length) {
@@ -111,9 +112,10 @@ public class ArrayUtil {
 
     /**
      * Checks that value is present as at least one of the elements of the array.
-     * 
+     *
      * @param array the array to check in
      * @param value the value to check for
+     *
      * @return true if the value is present in the array
      */
     public static <T> boolean contains(T[] array, T value) {

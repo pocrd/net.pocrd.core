@@ -1,12 +1,15 @@
 package net.pocrd.util;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
 
-import javax.servlet.http.HttpServletRequest;
-
 public class MiscUtil {
+    public static final String X_FORWARDED_FOR      = "x-forwarded-for";
+    public static final String HTTP_X_FORWARDED_FOR = "http-x-forwarded-for";
+    public static final String REMOTE_ADDR          = "remote-addr";
+
     public static String getLocalIP() {
         Enumeration<NetworkInterface> interfaces = null;
         StringBuilder sb = new StringBuilder(20);
@@ -38,11 +41,11 @@ public class MiscUtil {
 
     public static String getClientIP(HttpServletRequest request) {
         String ip;
-        ip = request.getHeader("x-forwarded-for");
+        ip = request.getHeader(X_FORWARDED_FOR);
         if (ip == null || ip.length() == 0) {
-            ip = request.getHeader("http-x-forwarded-for");
+            ip = request.getHeader(HTTP_X_FORWARDED_FOR);
             if (ip == null || ip.length() == 0) {
-                ip = request.getHeader("remote-addr");
+                ip = request.getHeader(REMOTE_ADDR);
                 if (ip == null || ip.length() == 0) {
                     ip = request.getRemoteAddr();
                 }

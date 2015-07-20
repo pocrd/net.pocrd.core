@@ -1,5 +1,7 @@
 package net.pocrd.util;
 
+import net.pocrd.define.ConstField;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -10,13 +12,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.pocrd.define.ConstField;
-
-import org.apache.logging.log4j.core.helpers.Loader;
-
 /**
  * 获取命名空间下的所有类
- * 
+ *
  * @author rendong
  */
 public class ClassUtil {
@@ -46,14 +44,40 @@ public class ClassUtil {
             return classes;
         }
         File[] files = directory.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                classes.addAll(findClasses(file, packageName + "." + file.getName()));
-            } else if (file.getName().endsWith(".class")) {
-                classes.add(Loader.loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+        if (files != null) {
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    classes.addAll(findClasses(file, packageName + "." + file.getName()));
+                } else if (file.getName().endsWith(".class")) {
+                    classes.add(loadClass(packageName + '.' + file.getName().substring(0, file.getName().length() - 6)));
+                }
             }
         }
         return classes;
+    }
+
+    private static ClassLoader getTCL() {
+        ClassLoader cl;
+        if (System.getSecurityManager() == null) {
+            cl = Thread.currentThread().getContextClassLoader();
+        } else {
+            cl = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<ClassLoader>() {
+                                                                 @Override
+                                                                 public ClassLoader run() {
+                                                                     return Thread.currentThread().getContextClassLoader();
+                                                                 }
+                                                             });
+        }
+
+        return cl;
+    }
+
+    public static Class<?> loadClass(final String className) throws ClassNotFoundException {
+        try {
+            return getTCL().loadClass(className);
+        } catch (final Throwable e) {
+            return Class.forName(className);
+        }
     }
 
     public static ConcurrentHashMap<String, String> getAllProtoInPackage(String packageName) {
@@ -84,11 +108,13 @@ public class ClassUtil {
         }
         File[] files = directory.listFiles();
         try {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    protos.putAll(findProtoFiles(file, packageName + "." + file.getName()));
-                } else if (file.getName().endsWith(".proto")) {
-                    protos.put(file.getName().substring(0, file.getName().length() - 6), readAllContent(file));
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        protos.putAll(findProtoFiles(file, packageName + "." + file.getName()));
+                    } else if (file.getName().endsWith(".proto")) {
+                        protos.put(file.getName().substring(0, file.getName().length() - 6), readAllContent(file));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -102,8 +128,8 @@ public class ClassUtil {
         try {
             fis = new FileInputStream(f);
             byte[] bs = new byte[fis.available()];
-            fis.read(bs);
-            return new String(bs, ConstField.UTF8);
+            int size = fis.read(bs);
+            return new String(bs, 0, size, ConstField.UTF8);
         } finally {
             if (fis != null) {
                 fis.close();

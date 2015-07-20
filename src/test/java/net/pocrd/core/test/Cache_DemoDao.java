@@ -1,22 +1,21 @@
 package net.pocrd.core.test;
 
-import java.util.List;
-
 import net.pocrd.util.CacheProvider;
 import net.pocrd.util.CacheProvider.CacheKeyUtil;
 import net.pocrd.util.ICacheManager;
 
+import java.util.List;
+
 public class Cache_DemoDao extends DemoDao {
     public DemoEntity getDemoEntity(int paramInt, String paramString, boolean paramBoolean, byte paramByte, short paramShort, char paramChar,
-            long paramLong, float paramFloat, double paramDouble) {
-        String str = "v1.0|getDemoEntity|" + paramInt + "|" + paramString + "|" + paramBoolean + "|" + paramByte + "|" + paramShort + "|" + paramChar
-                + "|" + paramLong + "|" + paramFloat + "|" + paramDouble + "|";
+                                    long paramLong, float paramFloat, double paramDouble) {
+        String str = "v1.0|getDemoEntity|" + paramInt + "|" + paramString + "|" + paramBoolean + "|" + paramByte + "|" + paramShort + "|" + paramChar + "|" + paramLong + "|" + paramFloat + "|" + paramDouble + "|";
         System.out.println(str);
         ICacheManager localICacheManager = CacheProvider.getCacheManager();
         Object localObject = localICacheManager.get(str);
         if (localObject == null) {
             DemoEntity localDemoEntity = super.getDemoEntity(paramInt, paramString, paramBoolean, paramByte, paramShort, paramChar, paramLong,
-                    paramFloat, paramDouble);
+                                                             paramFloat, paramDouble);
             if (localDemoEntity != null) {
                 localICacheManager.set(str, localDemoEntity, 100);
                 return localDemoEntity;
@@ -42,8 +41,8 @@ public class Cache_DemoDao extends DemoDao {
     }
 
     public int[] getDemoEntity(int[] paramArrayOfInt, DemoEntity[] paramArrayOfDemoEntity, DemoDao.TestEnum paramTestEnum, int paramInt) {
-        String str = "v1.0|getDemoEntity|" + CacheKeyUtil.toString(paramArrayOfInt) + "|" + CacheKeyUtil.toString(paramArrayOfDemoEntity) + "|"
-                + paramTestEnum + "|" + paramInt + "|";
+        String str = "v1.0|getDemoEntity|" + CacheKeyUtil.toString(paramArrayOfInt) + "|" + CacheKeyUtil.toString(
+                paramArrayOfDemoEntity) + "|" + paramTestEnum + "|" + paramInt + "|";
         System.out.println(str);
         ICacheManager localICacheManager = CacheProvider.getCacheManager();
         Object localObject = localICacheManager.get(str);

@@ -3,13 +3,13 @@ package net.pocrd.util;
 import java.util.concurrent.ConcurrentHashMap;
 
 class CacheManager4Redis implements ICacheManager {
-//    private static ICacheManager instance = new CacheManager4Redis();
-//
-//    private CacheManager4Redis() {}
-//
-//    public static ICacheManager getSingleton() {
-//        return instance;
-//    }
+    //    private static ICacheManager instance = new CacheManager4Redis();
+    //
+    //    private CacheManager4Redis() {}
+    //
+    //    public static ICacheManager getSingleton() {
+    //        return instance;
+    //    }
 
     /**
      * 模拟cache

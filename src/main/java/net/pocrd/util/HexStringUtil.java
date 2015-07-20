@@ -22,7 +22,7 @@ public class HexStringUtil {
         for (int i = 0; i < bs.length; i++) {
             char b1 = cs[i * 2];
             char b2 = cs[i * 2 + 1];
-            bs[i] = (byte)((b1 > 'a' ? b1 - 'a' : b1 - '0') << 4 + (b2 > 'a' ? b2 - 'a' : b2 - '0'));
+            bs[i] = (byte)(((b1 >= 'a' ? b1 - 'a' + 10 : b1 - '0') << 4) | (b2 >= 'a' ? b2 - 'a' + 10 : b2 - '0'));
         }
         return bs;
     }

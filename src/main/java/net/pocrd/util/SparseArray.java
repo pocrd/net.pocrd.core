@@ -22,8 +22,8 @@ package net.pocrd.util;
  * than using a HashMap to map Integers to Objects.
  */
 public class SparseArray<E> {
-    private static final Object DELETED = new Object();
-    private boolean mGarbage = false;
+    private static final Object  DELETED  = new Object();
+    private              boolean mGarbage = false;
 
     /**
      * Creates a new SparseArray containing no mappings.
@@ -64,7 +64,7 @@ public class SparseArray<E> {
         if (i < 0 || mValues[i] == DELETED) {
             return valueIfKeyNotFound;
         } else {
-            return (E) mValues[i];
+            return (E)mValues[i];
         }
     }
 
@@ -183,7 +183,7 @@ public class SparseArray<E> {
     /**
      * Given an index in the range <code>0...size()-1</code>, returns
      * the key from the <code>index</code>th key-value mapping that this
-     * SparseArray stores.  
+     * SparseArray stores.
      */
     public int keyAt(int index) {
         if (mGarbage) {
@@ -192,11 +192,11 @@ public class SparseArray<E> {
 
         return mKeys[index];
     }
-    
+
     /**
      * Given an index in the range <code>0...size()-1</code>, returns
      * the value from the <code>index</code>th key-value mapping that this
-     * SparseArray stores.  
+     * SparseArray stores.
      */
     @SuppressWarnings("unchecked")
     public E valueAt(int index) {
@@ -204,13 +204,13 @@ public class SparseArray<E> {
             gc();
         }
 
-        return (E) mValues[index];
+        return (E)mValues[index];
     }
 
     /**
      * Given an index in the range <code>0...size()-1</code>, sets a new
      * value for the <code>index</code>th key-value mapping that this
-     * SparseArray stores.  
+     * SparseArray stores.
      */
     public void setValueAt(int index, E value) {
         if (mGarbage) {
@@ -219,7 +219,7 @@ public class SparseArray<E> {
 
         mValues[index] = value;
     }
-    
+
     /**
      * Returns the index for which {@link #keyAt} would return the
      * specified key, or a negative number if the specified
@@ -247,8 +247,7 @@ public class SparseArray<E> {
         }
 
         for (int i = 0; i < mSize; i++)
-            if (mValues[i] == value)
-                return i;
+            if (mValues[i] == value) return i;
 
         return -1;
     }
@@ -301,28 +300,20 @@ public class SparseArray<E> {
         mValues[pos] = value;
         mSize = pos + 1;
     }
-    
+
     private static int binarySearch(int[] a, int start, int len, int key) {
         int high = start + len, low = start - 1, guess;
 
         while (high - low > 1) {
-            guess = (high + low) / 2;
+            guess = (high + low) >>> 1;
 
-            if (a[guess] < key)
-                low = guess;
-            else
-                high = guess;
+            if (a[guess] < key) { low = guess; } else high = guess;
         }
 
-        if (high == start + len)
-            return ~(start + len);
-        else if (a[high] == key)
-            return high;
-        else
-            return ~high;
+        if (high == start + len) { return ~(start + len); } else if (a[high] == key) { return high; } else return ~high;
     }
 
-    private int[] mKeys;
+    private int[]    mKeys;
     private Object[] mValues;
-    private int mSize;
+    private int      mSize;
 }

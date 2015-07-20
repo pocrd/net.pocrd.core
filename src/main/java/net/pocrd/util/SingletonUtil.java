@@ -4,9 +4,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Create and cache an single instance for input class.
- * 
- * @author rendong
+ *
  * @param <T>
+ *
+ * @author rendong
  */
 public class SingletonUtil {
     private static ConcurrentHashMap<Class<?>, Object> cache = new ConcurrentHashMap<Class<?>, Object>();
