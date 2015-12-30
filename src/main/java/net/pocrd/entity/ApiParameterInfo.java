@@ -65,4 +65,9 @@ public class ApiParameterInfo {
      * 参数的默认值是否需要在常量中定义
      */
     public boolean needDefaultValueConstDefined;
+
+    /**
+     * 由于安全原因需要在日志系统中忽略的参数
+     */
+    public boolean ignoreForSecurity;
 }

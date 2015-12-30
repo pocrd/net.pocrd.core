@@ -105,7 +105,7 @@ public class ApiGeneratorTest {
         prop.setProperty("net.pocrd.apiSdkObjcLocation", "/tmp/");
         prop.setProperty("net.pocrd.apiSdkObjcClassPrefix", "SF");
         CodeGenConfig.init(prop);
-        ApiSdkObjectiveCGenerator.getInstance().generateWithNetResource("http://115.28.145.123/info.api?raw");
+        ApiSdkObjectiveCGenerator.getInstance().generateWithNetResource("http://10.32.156.168/info.api?raw");
     }
 
     @Test
@@ -132,6 +132,6 @@ public class ApiGeneratorTest {
         ApiSdkJavaScriptGenerator instance = ApiSdkJavaScriptGenerator.getInstance();
         instance.setApiGroups(new String[] { "logistics", "order", "payment", "products", "shopcart", "user" });
         instance.setSecurityTypes(SecurityType.UserLogin, SecurityType.None, SecurityType.RegisteredDevice);
-        instance.generateWithNetResource("http://115.28.145.123/info.api?raw");
+        instance.generateWithNetResource("http://10.32.156.168/info.api?raw");
     }
 }

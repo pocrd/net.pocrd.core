@@ -33,7 +33,7 @@ public class DubboExtProperty {
     }
 
     //do value copy
-    static void addNotifications(Map<String, String> rpcMap) {
+    public static void addNotifications(Map<String, String> rpcMap) {
         if (rpcMap != null && !rpcMap.isEmpty()) {
             Map<String, String> map = notifications.get();
             if (map == null) {
@@ -115,18 +115,26 @@ public class DubboExtProperty {
     }
 
     /**
-     * 覆盖写入token信息
+     * 覆盖写入token信息 以及 stoken信息
      *
      * @param token
+     * @param stoken
      */
-    public static void setCookieToken(String token) {
+    public static void setCookieToken(String token, String stoken) {
         if (token != null) {
             addNotifications(ConstField.SET_COOKIE_TOKEN, token);
+        }
+        if (stoken != null) {
+            addNotifications(ConstField.SET_COOKIE_STOKEN, stoken);
         }
     }
 
     public static String getCookieToken() {
         return getValue(ConstField.SET_COOKIE_TOKEN);
+    }
+
+    public static String getSecretCookieToken() {
+        return getValue(ConstField.SET_COOKIE_STOKEN);
     }
 
     /**

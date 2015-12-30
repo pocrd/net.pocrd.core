@@ -23,8 +23,9 @@ public final class AccessLogger {
     public void logRequest() {
         ApiContext apiContext = ApiContext.getCurrent();
         accessFileLogger.info(
-                apiContext.requestInfo + ACCESS_SPLITTER + apiContext.agent + ACCESS_SPLITTER + apiContext.clientIP + ACCESS_SPLITTER
-                        + apiContext.token + ACCESS_SPLITTER + ACCESS_SPLITTER);
+                apiContext.getRequestString() + ACCESS_SPLITTER + apiContext.agent + ACCESS_SPLITTER + apiContext.clientIP + ACCESS_SPLITTER
+                        + apiContext.token + ACCESS_SPLITTER + ACCESS_SPLITTER + ACCESS_SPLITTER + "referer:" + apiContext.referer + ACCESS_SPLITTER
+                        + apiContext.costTime);
 
     }
 
@@ -37,8 +38,9 @@ public final class AccessLogger {
     public void logRequest(String errorMsg, String data) {
         ApiContext apiContext = ApiContext.getCurrent();
         accessFileLogger.info(
-                apiContext.requestInfo + ACCESS_SPLITTER + apiContext.agent + ACCESS_SPLITTER + apiContext.clientIP + ACCESS_SPLITTER
-                        + apiContext.token + ACCESS_SPLITTER + errorMsg + ACCESS_SPLITTER + data);
+                apiContext.getRequestString() + ACCESS_SPLITTER + apiContext.agent + ACCESS_SPLITTER + apiContext.clientIP + ACCESS_SPLITTER
+                        + apiContext.token + ACCESS_SPLITTER + errorMsg + ACCESS_SPLITTER + data + ACCESS_SPLITTER + "referer:" + apiContext.referer
+                        + ACCESS_SPLITTER + apiContext.costTime);
     }
 
     /**

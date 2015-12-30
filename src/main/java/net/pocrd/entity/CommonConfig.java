@@ -31,6 +31,7 @@ public class CommonConfig {
                 instance.setApigwVersion(prop.getProperty("net.pocrd.apigwVersion", "develop"));
                 instance.setApiInfoXslSite(prop.getProperty("net.pocrd.apiInfoXslSite"));
                 instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
+                instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync"));
             }
             instance.accessLogger = AccessLogger.getInstance();
             try {
@@ -59,7 +60,9 @@ public class CommonConfig {
 
     private void setAccessFileLoggerName(String accessFileLoggerName) {
         this.accessFileLoggerName = accessFileLoggerName;
-        logger.info("[CommonConfig.init]net.pocrd.accessLoggerName:{}", this.accessFileLoggerName);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.accessLoggerName:{}", this.accessFileLoggerName);
+        }
     }
 
     private Logger accessFileLogger = null;
@@ -85,7 +88,9 @@ public class CommonConfig {
 
     private void setAutogenPath(String autogenPath) {
         this.autogenPath = autogenPath;
-        logger.info("[CommonConfig.init]net.pocrd.autogenPath:{}", this.autogenPath);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.autogenPath:{}", this.autogenPath);
+        }
     }
 
     public String getAutogenPath() {
@@ -96,7 +101,9 @@ public class CommonConfig {
 
     private void setCacheVersion(String cacheVersion) {
         this.cacheVersion = cacheVersion;
-        logger.info("[CommonConfig.init]net.pocrd.cacheVersion:{}", this.cacheVersion);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.cacheVersion:{}", this.cacheVersion);
+        }
     }
 
     public String getCacheVersion() {
@@ -107,7 +114,9 @@ public class CommonConfig {
 
     private void setCacheType(String cacheType) {
         this.cacheType = cacheType;
-        logger.info("[CommonConfig.init]net.pocrd.cacheType:{}", this.cacheType);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.cacheType:{}", this.cacheType);
+        }
     }
 
     public String getCacheType() {
@@ -118,7 +127,9 @@ public class CommonConfig {
 
     private void setUseHttpGzip(boolean useHttpGzip) {
         this.useHttpGzip = useHttpGzip;
-        logger.info("[CommonConfig.init]net.pocrd.useHttpGzip:{}", this.useHttpGzip);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.useHttpGzip:{}", this.useHttpGzip);
+        }
     }
 
     public boolean getUseHttpGzip() {
@@ -141,7 +152,9 @@ public class CommonConfig {
 
     private void setApigwVersion(String apigwVersion) {
         this.apigwVersion = apigwVersion;
-        logger.info("[CommonConfig.init]net.pocrd.apigwVersion:{}", this.apigwVersion);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.apigwVersion:{}", this.apigwVersion);
+        }
     }
 
     public String getApigwVersion() {
@@ -155,7 +168,9 @@ public class CommonConfig {
 
     private void setApiInfoXslSite(String apiInfoXslSite) {
         this.apiInfoXslSite = apiInfoXslSite;
-        logger.info("[CommonConfig.init]net.pocrd.apiInfoXslSite:{}", this.apiInfoXslSite);
+        if (CompileConfig.isDebug) {
+            logger.info("[CommonConfig.init]net.pocrd.apiInfoXslSite:{}", this.apiInfoXslSite);
+        }
     }
 
     public String getApiInfoXslSite() {
@@ -173,6 +188,23 @@ public class CommonConfig {
                 originWhiteList.put(domain, domain.substring(index));
             }
         }
+    }
+
+    /**
+     * dubbo 以异步方式进行调用，会影响到接口执行时间统计
+     */
+    private boolean dubboAsync = false;
+
+    public boolean getDubboAsync() {
+        return this.dubboAsync;
+    }
+
+    private void setDubboAsyncString(String async) {
+        this.dubboAsync = "true".equalsIgnoreCase(async);
+    }
+
+    private void setDubboAsync(boolean async) {
+        this.dubboAsync = async;
     }
 
     public HashMap<String, String> getOriginWhiteList() {

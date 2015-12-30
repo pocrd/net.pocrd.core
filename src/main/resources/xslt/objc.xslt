@@ -413,7 +413,7 @@ typedef enum {
   <xsl:template name="ApiResponse">// Auto Generated.  DO NOT EDIT!
 
 <xsl:for-each select="fieldList/field"><xsl:if test="substring(type, 1, 4) = 'Api_'">
-#import "${prefix}<xsl:value-of select="type" />.h"</xsl:if></xsl:for-each>
+@class ${prefix}<xsl:value-of select="type" />;</xsl:if></xsl:for-each>
 
 @interface ${prefix}<xsl:value-of select="name" /> : NSObject
 <xsl:for-each select="fieldList/field">

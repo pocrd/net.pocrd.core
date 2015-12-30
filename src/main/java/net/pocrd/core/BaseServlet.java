@@ -1,6 +1,9 @@
 package net.pocrd.core;
 
+import com.alibaba.dubbo.remoting.exchange.ResponseCallback;
 import com.alibaba.dubbo.rpc.RpcContext;
+import com.alibaba.dubbo.rpc.RpcResult;
+import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import net.pocrd.define.*;
 import net.pocrd.document.CallState;
 import net.pocrd.document.Response;
@@ -11,6 +14,7 @@ import net.pocrd.responseEntity.RawString;
 import net.pocrd.util.Base64Util;
 import net.pocrd.util.MiscUtil;
 import net.pocrd.util.POJOSerializerProvider;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.slf4j.*;
 
@@ -21,11 +25,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Future;
 
 /**
  * api入口servlet的基础类实现，封装了基本的业务流程和参数解析过程，将签名验证，api解析，序列化输出等工作的具体实现交由子类处理。
@@ -56,6 +63,7 @@ public abstract class BaseServlet extends HttpServlet {
     private static final   String               REQ_TAG                  = "s:";
     private static final   String               CONTENT_TYPE_XML         = "application/xml; charset=utf-8";
     private static final   String               CONTENT_TYPE_JSON        = "application/json; charset=utf-8";
+    private static final   String               CONTENT_TYPE_JAVASCRIPT  = "application/javascript; charset=utf-8";
     private static final   String               CONTENT_TYPE_PLAINTEXT   = "text/plain";
     private static final   String               JSONARRAY_PREFIX         = "[";
     private static final   String               JSONARRAY_SURFIX         = "]";
@@ -98,7 +106,11 @@ public abstract class BaseServlet extends HttpServlet {
         {
             switch (context.format) {
                 case JSON:
-                    response.setContentType(CONTENT_TYPE_JSON);
+                    if (context.jsonpCallback == null) {
+                        response.setContentType(CONTENT_TYPE_JSON);
+                    } else {
+                        response.setContentType(CONTENT_TYPE_JAVASCRIPT);
+                    }
                     break;
                 case XML:
                     response.setContentType(CONTENT_TYPE_XML);
@@ -115,12 +127,12 @@ public abstract class BaseServlet extends HttpServlet {
                     long did = Long.parseLong(context.deviceIdStr);
                     context.deviceId = did;
 
-                    // user token 解析失败，删除 user token
+                    // user token 解析失败，删除 cookie 中的 user token
                     if (did < 0 && context.token != null && context.caller == null) {
                         context.clearUserToken = true;
                     }
                 } catch (Exception e) {
-                    logger.error(SERVLET_MARKER, "deviceId in cookie error " + context.deviceIdStr, e);
+                    logger.error(SERVLET_MARKER, "deviceId error " + context.deviceIdStr, e);
                     setDeviceIDinCookie(context, response);
                 }
             } else {
@@ -148,6 +160,7 @@ public abstract class BaseServlet extends HttpServlet {
      * 执行web请求
      */
     private void processRequest(HttpServletRequest request, HttpServletResponse response) {
+        CommonConfig config = CommonConfig.getInstance();
         boolean fatalError = false;
         AbstractReturnCode parseResult = null;
         ApiContext apiContext = ApiContext.getCurrent();
@@ -162,13 +175,8 @@ public abstract class BaseServlet extends HttpServlet {
             if (parseResult == ApiReturnCode.SUCCESS && apiContext.caller != null && SecurityType.UserLogin
                     .check(apiContext.requiredSecurity)) {
                 if (apiContext.caller.expire < current) {
-                    if (apiContext.appid == 4) {
-                        // TODO: remove this code.
-                        // 对于iOS设备暂时不做任何用户token超时判断
-                    } else {
-                        parseResult = ApiReturnCode.TOKEN_EXPIRE;
-                        apiContext.clearUserTokenFlag = true;
-                    }
+                    parseResult = ApiReturnCode.TOKEN_EXPIRE;
+                    apiContext.clearUserTokenFlag = true;
                 }
             }
         } catch (Exception e) {
@@ -176,24 +184,21 @@ public abstract class BaseServlet extends HttpServlet {
             fatalError = true;
         }
         try {
-            AccessLogger access = CommonConfig.getInstance().getAccessLogger();
+            AccessLogger access = config.getAccessLogger();
             // 参数解析失败
             if (fatalError) {
                 access.logRequest("with fatal error", String.valueOf(ApiReturnCode.FATAL_ERROR.getCode()));
             } else if (parseResult != ApiReturnCode.SUCCESS) {
                 access.logRequest("with error", String.valueOf(parseResult.getCode()));
             } else { // 参数解析成功
-                access.logRequest();
-                int count = 0;
+                try {
+                    executeAllApiCall(apiContext, request, response);
+                } finally {
+                    apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
+                    access.logRequest();
+                }
                 for (ApiMethodCall call : apiContext.apiCallInfos) {
-                    apiContext.currentCall = call;
-                    call.startTime = (count++ == 0) ? apiContext.startTime : System.currentTimeMillis();
-                    executeApiCall(call, request, response);
-                    call.costTime = (int)(System.currentTimeMillis() - call.startTime);
                     serializeCallResult(apiContext, call);
-                    //access log
-                    access.logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                            call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
                 }
             }
         } catch (SerializeException se) {
@@ -207,14 +212,21 @@ public abstract class BaseServlet extends HttpServlet {
                 // token 解析失败，删除 token 以及标志位
                 if (apiContext.clearUserToken) {
                     HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
-                    // 删除 cookie
+                    // 删除 cookie 中的 user token
                     Cookie tk_cookie = new Cookie(apiContext.appid + CommonParameter.token, "");
                     tk_cookie.setMaxAge(0);
                     tk_cookie.setHttpOnly(true);
                     tk_cookie.setSecure(false);
                     tk_cookie.setPath("/");
 
-                    // 删除 cookie 标志位
+                    // 删除 cookie 中的 user token
+                    Cookie stk_cookie = new Cookie(apiContext.appid + CommonParameter.stoken, "");
+                    stk_cookie.setMaxAge(0);
+                    stk_cookie.setHttpOnly(true);
+                    stk_cookie.setSecure(true);
+                    stk_cookie.setPath("/");
+
+                    // 删除 cookie 中的 登录标志位
                     Cookie ct_cookie = new Cookie(apiContext.appid + "_ct", "");
                     ct_cookie.setMaxAge(0);
                     ct_cookie.setHttpOnly(false);
@@ -234,6 +246,7 @@ public abstract class BaseServlet extends HttpServlet {
                         userInfo_cookie.setDomain(domain);
                     }
                     response.addCookie(tk_cookie);
+                    response.addCookie(stk_cookie);
                     response.addCookie(ct_cookie);
                     response.addCookie(userInfo_cookie);
                 } else if (apiContext.caller != null && apiContext.caller.deviceId < 0 && apiContext.clearUserTokenFlag) {
@@ -317,10 +330,11 @@ public abstract class BaseServlet extends HttpServlet {
         // 解析通用参数
         {
             context.agent = request.getHeader(HttpHeaders.USER_AGENT);
+            context.referer = request.getHeader(HttpHeaders.REFERER);
             context.clientIP = MiscUtil.getClientIP(request);
             context.cid = request.getParameter(CommonParameter.callId);
-            if (context.cid != null && context.cid.length() > 16) {
-                context.cid = null;
+            if (context.cid != null && context.cid.length() > 32) {
+                context.cid = context.cid.substring(0, 32);
             }
             if (context.cid == null) {
                 context.cid = REQ_TAG + context.startTime;
@@ -329,15 +343,17 @@ public abstract class BaseServlet extends HttpServlet {
             context.cid = SERVER_ADDRESS + CommonConfig.getInstance().getServerAddress() + SPLIT + THREADID + Thread.currentThread().getId() + SPLIT
                     + context.cid;
             context.versionCode = request.getParameter(CommonParameter.versionCode);
+            context.versionName = request.getParameter(CommonParameter.versionName);
             context.deviceIdStr = request.getParameter(CommonParameter.deviceId);
             context.deviceToken = request.getParameter(CommonParameter.deviceToken);
             context.uid = request.getParameter(CommonParameter.userId);
-            context.jsonpCallback = request.getParameter(CommonParameter.jsonpCallback);
+            String jsonpCallback = request.getParameter(CommonParameter.jsonpCallback);
             context.token = request.getParameter(CommonParameter.token);
-            if (context.jsonpCallback != null) {
-                if (!context.callbackRegex.matcher(context.jsonpCallback).matches()) {
-                    logger.error("unsupported callback name : " + context.jsonpCallback);
-                    context.jsonpCallback = null;
+            if (jsonpCallback != null) {
+                if (context.callbackRegex.matcher(jsonpCallback).matches()) {
+                    context.jsonpCallback = jsonpCallback.getBytes(ConstField.UTF8);
+                } else {
+                    logger.error("unsupported callback name : " + jsonpCallback);
                 }
             }
             MDC.clear();
@@ -360,6 +376,7 @@ public abstract class BaseServlet extends HttpServlet {
             Cookie[] cs = request.getCookies();
             if (cs != null) {
                 String tokenName = context.appid + CommonParameter.token;
+                String stokenName = context.appid + CommonParameter.stoken;
                 for (Cookie c : cs) {
                     if (tokenName.equals(c.getName())) {
                         try {
@@ -368,6 +385,15 @@ public abstract class BaseServlet extends HttpServlet {
                             }
                         } catch (Exception e) {
                             logger.error(SERVLET_MARKER, "token in cookie error " + c.getValue(), e);
+                            context.clearUserToken = true;
+                        }
+                    } else if (stokenName.equals(c.getName())) {
+                        try {
+                            if (context.stoken == null && c.getValue() != null && !c.getValue().isEmpty()) {
+                                context.stoken = URLDecoder.decode(c.getValue(), "utf-8");
+                            }
+                        } catch (Exception e) {
+                            logger.error(SERVLET_MARKER, "stoken in cookie error " + c.getValue(), e);
                             context.clearUserToken = true;
                         }
                     } else if (CommonParameter.cookieDeviceId.equals(c.getName())) {
@@ -380,6 +406,8 @@ public abstract class BaseServlet extends HttpServlet {
                     }
                 }
             }
+
+            // 优先使用url中覆写的 cookie 值
             String cookies = request.getParameter(CommonParameter.cookie);
             if (cookies != null && cookies.length() > 0) {
                 String[] cos = cookies.split(";");
@@ -432,38 +460,14 @@ public abstract class BaseServlet extends HttpServlet {
      * // 暂时先在debug模式下用URLEncode转义，正式环境考虑到性能损失不做处理。
      */
     private void parseRequestInfo(ApiContext context, HttpServletRequest request) {
-        String httpMethod = request.getMethod();
-        if (HTTPMETHOD_POST.equalsIgnoreCase(httpMethod)) {
-            StringBuilder sb = new StringBuilder(256);
-            Enumeration<String> keys = request.getParameterNames();
-            if (CompileConfig.isDebug) {  // 开发环境下用于将打印到日志的url还原成能够直接放到浏览器请求的编码格式。
-                try {
-                    while (keys.hasMoreElements()) {
-                        String key = keys.nextElement();
-                        if (key != null) {
-                            sb.append(key);
-                            sb.append("=");
-                            sb.append(URLEncoder.encode(request.getParameter(key), "UTF-8"));
-                            sb.append("&");
-                        }
-                    }
-                } catch (UnsupportedEncodingException e) {
-                    logger.error(SERVLET_MARKER, "URLEncoder encode the post data failad", e);
-                }
-            } else {
-                while (keys.hasMoreElements()) {
-                    String key = keys.nextElement();
-                    if (key != null) {
-                        sb.append(key);
-                        sb.append("=");
-                        sb.append(request.getParameter(key));
-                        sb.append("&");
-                    }
-                }
+        Map<String, String[]> map = request.getParameterMap();
+        context.requestInfo = new HashMap<String, String>();
+        for (String key : map.keySet()) {
+            String[] values = map.get(key);
+            if (values.length > 1) {
+                logger.error(SERVLET_MARKER, "parameter " + key + " has " + values.length + " values " + StringUtils.join(values, "|||"));
             }
-            context.requestInfo = sb.toString();
-        } else {
-            context.requestInfo = request.getQueryString();
+            context.requestInfo.put(key, (values == null || values.length == 0) ? "" : values[0]);
         }
     }
 
@@ -516,19 +520,102 @@ public abstract class BaseServlet extends HttpServlet {
      */
     protected abstract Object processCall(String name, String[] params);
 
+    private void executeAllApiCall(ApiContext apiContext, HttpServletRequest request, HttpServletResponse response) {
+        CommonConfig config = CommonConfig.getInstance();
+        AccessLogger access = config.getAccessLogger();
+        Future<?>[] futures = new Future[apiContext.apiCallInfos.size()];
+        for (int count = 0; count < futures.length; count++) {
+            ApiMethodCall call = apiContext.apiCallInfos.get(count);
+            apiContext.currentCall = call;
+            MDC.put(CommonParameter.method, call.method.methodName);
+            call.startTime = (count == 0) ? apiContext.startTime : System.currentTimeMillis();
+            // dubbo 在调用结束后不会清除 Future 为了避免拿到之前接口对应的 Future 在这里统一清除
+            RpcContext.getContext().setFuture(null);
+            executeApiCall(call, request, response, null);
+            // 接口可能被 mock 或被短路
+            if (config.getDubboAsync()) {
+                // 如果配置为异步执行时，该接口恰好短路结果或mock返回为空, 此处获得的future为null
+                futures[count] = RpcContext.getContext().getFuture();
+            } else {
+                call.costTime = (int)(System.currentTimeMillis() - call.startTime);
+            }
+        }
+        for (int count = 0; count < futures.length; count++) {
+            ApiMethodCall call = apiContext.apiCallInfos.get(count);
+            MDC.put(CommonParameter.method, call.method.methodName);
+            // 接口可能被 mock 或被短路
+            if (futures[count] != null) {
+                executeApiCall(call, request, response, futures[count]);
+                call.costTime = (int)(System.currentTimeMillis() - call.startTime);
+            }
+            int display = call.getReturnCode();
+            if (display > 0) {
+                if (call.method.errors == null) {
+                    call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
+                } else {
+                    // 异常编码过滤，保证接口只返回其声明过的异常编码给客户端
+                    if (Arrays.binarySearch(call.method.errors, display) < 0) {
+                        call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
+                    }
+                }
+            }
+            //access log
+            access.logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
+                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+            MDC.remove(CommonParameter.method);
+        }
+    }
+
     /**
      * 执行具体的api接口调用
      */
-    private void executeApiCall(ApiMethodCall call, HttpServletRequest request, HttpServletResponse response) {
+    private void executeApiCall(ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
         try {
             ApiContext context = ApiContext.getCurrent();
             // 下传调用ID
             RpcContext.getContext().setAttachment(CommonParameter.callId, context.cid);
+            RpcContext.getContext().setAttachment(CommonParameter.clientIp, context.clientIP);
+            RpcContext.getContext().setAttachment(CommonParameter.versionName, context.versionName);
+            if (context.referer != null && context.referer.length() < 1024) {
+                RpcContext.getContext().setAttachment(HttpHeaders.REFERER, context.referer);
+            }
+            if (context.caller == null) {
+                RpcContext.getContext().setAttachment(CommonParameter.cookieDeviceId, context.deviceIdStr);
+                RpcContext.getContext().setAttachment(CommonParameter.applicationId, String.valueOf(context.appid));
+            } else {
+                if (context.caller.uid != 0) {
+                    RpcContext.getContext().setAttachment(CommonParameter.userId, String.valueOf(context.caller.uid));
+                }
+                if (context.caller.deviceId != 0) {
+                    RpcContext.getContext().setAttachment(CommonParameter.deviceId, String.valueOf(context.caller.deviceId));
+                }
+                RpcContext.getContext().setAttachment(CommonParameter.applicationId, String.valueOf(context.caller.appid));
+            }
+            if (call.businessId != null && call.businessId.length() < 4096) {
+                RpcContext.getContext().setAttachment(CommonParameter.businessId, call.businessId);
+            }
 
             // 当接口声明了静态 mock 返回值或被标记为短路时
             if (call.method.staticMockValue != null) {
                 call.result = call.method.staticMockValue;
             } else {
+                if (future != null) {
+                    FutureAdapter<?> fa = (FutureAdapter<?>)future;
+                    final ResponseCallback callback = fa.getFuture().getCallback();
+                    fa.getFuture().setCallback(new ResponseCallback() {
+                        @Override public void done(Object response) {
+                            callback.done(response);
+                            if (RpcResult.class.isInstance(response)) {
+                                RpcResult rpcResult = (RpcResult)response;
+                                DubboExtProperty.addNotifications(rpcResult.getNotifications());
+                            }
+                        }
+
+                        @Override public void caught(Throwable exception) {
+                            callback.caught(exception);
+                        }
+                    });
+                }
                 // 调试情况下可以通过cookie指定处理该请求的dubbo服务实例
                 if (CompileConfig.isDebug) {
                     Cookie[] cs = request.getCookies();
@@ -554,12 +641,26 @@ public abstract class BaseServlet extends HttpServlet {
                             }
                         }
                     }
-                    call.result = processCall(call.method.methodName, parameters);
+                    if (future == null) {
+                        call.result = processCall(call.method.methodName, parameters);
+                        if (RpcContext.getContext().getFuture() != null) {
+                            return;
+                        }
+                    } else {
+                        call.result = call.method.wrapper.wrap(future.get());
+                    }
                 } else {
-                    call.result = processCall(call.method.methodName, call.parameters);
+                    if (future == null) {
+                        call.result = processCall(call.method.methodName, call.parameters);
+                        if (RpcContext.getContext().getFuture() != null) {
+                            return;
+                        }
+                    } else {
+                        call.result = call.method.wrapper.wrap(future.get());
+                    }
                 }
             }
-            //dubbo接口能够获取到RpcContext中的notification,device的接口errorCode不是通过RpcContext传递的。
+            //dubbo接口能够获取到RpcContext中的notification,非dubbo的接口errorCode不是通过RpcContext传递的。
             Map<String, String> notifications = DubboExtProperty.getCurrentNotifications();
             if (notifications != null && notifications.size() > 0) {
                 for (Entry<String, String> entry : notifications.entrySet()) {
@@ -572,6 +673,14 @@ public abstract class BaseServlet extends HttpServlet {
                             tk_cookie.setHttpOnly(true);
                             tk_cookie.setSecure(false);
                             tk_cookie.setPath("/");
+
+                            Cookie stk_cookie = new Cookie(context.appid + CommonParameter.stoken,
+                                    notifications.get(ConstField.SET_COOKIE_STOKEN) == null ? "" : URLEncoder.encode(
+                                            notifications.get(ConstField.SET_COOKIE_STOKEN), "utf-8"));
+                            stk_cookie.setMaxAge(-1);
+                            stk_cookie.setHttpOnly(true);
+                            stk_cookie.setSecure(true);
+                            stk_cookie.setPath("/");
 
                             // 用于提示客户端当前token是否存在
                             Cookie ct_cookie = new Cookie(context.appid + "_ct", "1");
@@ -587,9 +696,11 @@ public abstract class BaseServlet extends HttpServlet {
 
                             if (context.host != null && map.containsKey(context.host)) {
                                 tk_cookie.setDomain(map.get(context.host));
+                                stk_cookie.setDomain(map.get(context.host));
                                 ct_cookie.setDomain(map.get(context.host));
                             }
                             response.addCookie(tk_cookie);
+                            response.addCookie(stk_cookie);
                             response.addCookie(ct_cookie);
                             context.clearUserToken = false; // user token will be override.
                         } else { // 删除cookie
@@ -639,6 +750,10 @@ public abstract class BaseServlet extends HttpServlet {
                 ServiceException se = (ServiceException)t;
                 logger.error(SERVLET_MARKER, "service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
+            } else if (t.getCause() instanceof ServiceException) {
+                ServiceException se = (ServiceException)t.getCause();
+                logger.error(SERVLET_MARKER, "inner service exception. code:" + se.getCode() + " msg:" + se.getMsg());
+                call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.TimeoutException) {
                 logger.error(SERVLET_MARKER, "dubbo timeout.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_TIMEOUT_ERROR);
@@ -651,19 +766,6 @@ public abstract class BaseServlet extends HttpServlet {
             }
         } finally {
             DubboExtProperty.clearNotificaitons();
-        }
-
-        int display = call.getReturnCode();
-
-        if (display > 0) {
-            if (call.method.errors == null) {
-                call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
-            } else {
-                // 异常编码过滤，保证接口只返回其声明过的异常编码给客户端
-                if (Arrays.binarySearch(call.method.errors, display) < 0) {
-                    call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
-                }
-            }
         }
     }
 
@@ -730,7 +832,7 @@ public abstract class BaseServlet extends HttpServlet {
                         break;
                     case JSON:
                         if (apiContext.jsonpCallback != null) {
-                            output.write(apiContext.jsonpCallback.getBytes(ConstField.UTF8));
+                            output.write(apiContext.jsonpCallback);
                             output.write(ConstField.JSONP_START);
                         }
                         output.write(ConstField.JSON_START);

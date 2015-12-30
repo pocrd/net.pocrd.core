@@ -17,6 +17,11 @@ public enum SecurityType {
     None(0x00),
 
     /**
+     * 带有该标识的token只在ssl信道中传递, 用于处理跨domain的csrftoken同步. 该安全级别不能用于访问任何接口
+     */
+    SeceretUserToken(0x01),
+
+    /**
      * 设备认证, 验证设备签名. eg. 有一定安全风险但与用户无关的接口(发送下行短信密码)
      * 验证要素
      * 1. 设备token
@@ -90,7 +95,7 @@ public enum SecurityType {
     /**
      * 对于只需要生成文档不产生代理的接口,设置本安全级别(本安全级别无业务含义)
      */
-    Document(0x30000000);
+    Document(0x40000000);
 
     private int     code;
     private boolean needUserToken;

@@ -43,6 +43,11 @@ public @interface ApiParameter {
     String verifyMsg() default "";
 
     /**
+     * 由于安全原因需要在日志系统中忽略的参数
+     */
+    boolean ignoreForSecurity() default false;
+
+    /**
      * 枚举类型定义, 用于
      */
     Class<? extends Enum> enumDef() default EnumNull.class;

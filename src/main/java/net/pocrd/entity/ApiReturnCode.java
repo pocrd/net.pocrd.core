@@ -71,6 +71,12 @@ public class ApiReturnCode extends AbstractReturnCode {
     public final static int                _C_PARAMETER_ERROR = -140;
     public final static AbstractReturnCode PARAMETER_ERROR    = new ApiReturnCode("参数错误", _C_PARAMETER_ERROR);
 
+    /**
+     * 密文参数解密失败
+     */
+    public final static int                _C_PARAMETER_DECRYPT_ERROR = -141;
+    public final static AbstractReturnCode PARAMETER_DECRYPT_ERROR    = new ApiReturnCode(_C_PARAMETER_DECRYPT_ERROR, PARAMETER_ERROR);
+
     public final static int                _C_ACCESS_DENIED = -160;
     public final static AbstractReturnCode ACCESS_DENIED    = new ApiReturnCode("访问被拒绝", _C_ACCESS_DENIED);
 
@@ -91,6 +97,12 @@ public class ApiReturnCode extends AbstractReturnCode {
      */
     public final static int                _C_UNKNOW_ENCRYPTION_DENIED = -165;
     public final static AbstractReturnCode UNKNOW_ENCRYPTION_DENIED    = new ApiReturnCode(_C_UNKNOW_ENCRYPTION_DENIED, ACCESS_DENIED);
+
+    /**
+     * risk manager 返回要阻止相关调用, 对外显示为ACCESS_DENIED
+     */
+    public final static int                _C_RISK_MANAGER_DENIED = -166;
+    public final static AbstractReturnCode RISK_MANAGER_DENIED    = new ApiReturnCode(_C_RISK_MANAGER_DENIED, ACCESS_DENIED);
 
     public final static int                _C_SIGNATURE_ERROR = -180;
     public final static AbstractReturnCode SIGNATURE_ERROR    = new ApiReturnCode("签名错误", _C_SIGNATURE_ERROR);

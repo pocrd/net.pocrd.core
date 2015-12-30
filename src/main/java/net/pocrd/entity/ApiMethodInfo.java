@@ -1,6 +1,7 @@
 package net.pocrd.entity;
 
 import net.pocrd.define.ApiOpenState;
+import net.pocrd.define.ResponseWrapper;
 import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
 
@@ -24,11 +25,15 @@ public class ApiMethodInfo {
         UnknownMethod.proxyMethodInfo = null;
         UnknownMethod.securityLevel = SecurityType.None;
     }
-
     /**
      * 返回值类型
      */
     public Class<?> returnType;
+
+    /**
+     * 接口是否被mock
+     */
+    public boolean mocked;
 
     /**
      * 静态声明的返回值 mock 值
@@ -44,6 +49,11 @@ public class ApiMethodInfo {
      * 返回值类型对应的序列化工具
      */
     public Serializer<?> serializer;
+
+    /**
+     * 对返回的基本类型及其数组进行封装的封装器
+     */
+    public ResponseWrapper wrapper;
 
     /**
      * 方法名称

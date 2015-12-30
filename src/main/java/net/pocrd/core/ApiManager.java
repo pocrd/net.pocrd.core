@@ -32,7 +32,7 @@ public final class ApiManager {
     private static final Logger                       logger                  = LoggerFactory.getLogger(ApiManager.class);
     private              Map<String, HttpApiExecuter> nameToApi               = new ConcurrentHashMap<String, HttpApiExecuter>();
     private              Map<String, ApiMethodInfo>   apiInfos                = new ConcurrentHashMap<String, ApiMethodInfo>();
-    private static final String                       UNDERLINE               = "_";
+    private static final String                       UNDER_SCORE             = "_";
     private static final String                       DUBBO_INSTANCE_PKG_NAME = "com.alibaba.dubbo.common.bytecode";
 
     public ApiManager() {
@@ -127,15 +127,15 @@ public final class ApiManager {
                         if (code.getCode() < minCode || code.getCode() >= maxCode) {
                             throw new RuntimeException(
                                     "code " + f.getName() + " which value is " + code.getCode() + " not in the scope [" + minCode + "," + maxCode
-                                            + ")");
+                                            + ") in " + groupName);
                         }
-                        code.setName(f.getName() + UNDERLINE + code.getCode());
+                        code.setName(f.getName() + UNDER_SCORE + code.getCode());
                         code.setService(groupName);
                         ReturnCodeContainer.putReturnCodeSuper2Map(code);
                     }
                 }
             } catch (Exception e) {
-                throw new RuntimeException("parse code failed. " + returnCodeClass.getName(), e);
+                throw new RuntimeException("parse code failed. " + returnCodeClass.getName() + " in " + groupName, e);
             }
             List<ApiMethodInfo> apis = new LinkedList<ApiMethodInfo>();
             for (Method mInfo : clazz.getMethods()) {
@@ -146,7 +146,9 @@ public final class ApiManager {
                         ApiMockReturnObject aro = mInfo.getAnnotation(ApiMockReturnObject.class);
                         if (aro != null) {
                             apiInfo.staticMockValue = aro.value().newInstance();
-                            if (!mInfo.getReturnType().isInstance(apiInfo.staticMockValue) || !MockApiReturnObject.class.isInstance(apiInfo.staticMockValue)) {
+                            apiInfo.mocked = true;
+                            if (!mInfo.getReturnType().isInstance(apiInfo.staticMockValue) || !MockApiReturnObject.class
+                                    .isInstance(apiInfo.staticMockValue)) {
                                 throw new RuntimeException("mock data type error " + clazz.getName() + " " + api.name());
                             }
                         }
@@ -154,7 +156,9 @@ public final class ApiManager {
                     ApiShortCircuit asc = mInfo.getAnnotation(ApiShortCircuit.class);
                     if (asc != null) {
                         apiInfo.staticMockValue = asc.value().newInstance();
-                        if (!mInfo.getReturnType().isInstance(apiInfo.staticMockValue) || !MockApiReturnObject.class.isInstance(apiInfo.staticMockValue)) {
+                        apiInfo.mocked = true;
+                        if (!mInfo.getReturnType().isInstance(apiInfo.staticMockValue) || !MockApiReturnObject.class
+                                .isInstance(apiInfo.staticMockValue)) {
                             throw new RuntimeException("short circuit data type error " + clazz.getName() + " " + api.name());
                         }
                     }
@@ -200,19 +204,20 @@ public final class ApiManager {
                         }
                     }
                     apiInfo.proxyMethodInfo = mInfo;
-                    if (serviceInstance == null) {
-                        if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers())) {
-                            try {
-                                apiInfo.serviceInstance = clazz.newInstance();
-                            } catch (Exception e) {
-                                throw new RuntimeException("实例化失败", e);
+                    if(!CompileConfig.isDebug) {
+                        if (serviceInstance == null) {
+                            if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers())) {
+                                try {
+                                    apiInfo.serviceInstance = clazz.newInstance();
+                                } catch (Exception e) {
+                                    throw new RuntimeException("服务实例化失败" + clazz.getName(), e);
+                                }
+                            } else {
+                                throw new RuntimeException("服务实例不存在" + clazz.getName());
                             }
-                        } else {
-                            throw new RuntimeException("服务实例不存在");
                         }
-                    } else {
-                        apiInfo.serviceInstance = serviceInstance;
                     }
+                    apiInfo.serviceInstance = serviceInstance;
                     Class<?>[] parameterTypes = mInfo.getParameterTypes();
                     Annotation[][] parameterAnnotations = mInfo.getParameterAnnotations();
                     if (parameterTypes.length != parameterAnnotations.length) {
@@ -234,7 +239,7 @@ public final class ApiManager {
                                     try {
                                         genericType = ((ParameterizedTypeImpl)mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
                                     } catch (Throwable t) {
-                                        throw new RuntimeException("unsupported input type,get genericType failed,method name:" + mInfo.getName(), t);
+                                        throw new RuntimeException("unsupported input type,get genericType failed, method name:" + mInfo.getName(), t);
                                     }
                                     try {
                                         pInfo.actuallyGenericType = Class.forName(((Class)genericType).getName());
@@ -242,7 +247,7 @@ public final class ApiManager {
                                         throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
                                     }
                                 } else {
-                                    throw new RuntimeException("only list is support when using collection,method name:" + mInfo.getName());
+                                    throw new RuntimeException("only list is support when using collection, method name:" + mInfo.getName());
                                 }
                             }
                             if (a[0].annotationType() != ApiCookieAutowired.class || pInfo.type != Map.class) {
@@ -258,6 +263,7 @@ public final class ApiManager {
                                 pInfo.description = p.desc();
                                 pInfo.isRequired = p.required();
                                 pInfo.isRsaEncrypted = p.rsaEncrypted();
+                                pInfo.ignoreForSecurity = p.ignoreForSecurity();
                                 pInfo.name = p.name();
                                 if (p.enumDef() != null && p.enumDef() != EnumNull.class) {
                                     if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
@@ -266,15 +272,13 @@ public final class ApiManager {
                                     }
                                 }
                                 if (CompileConfig.isDebug) {
-                                    if (CommonParameter.contains(pInfo.name)) {
-                                        throw new RuntimeException(
-                                                "api parameter name conflict with common parameter. " + mInfo.getName() + "  " + pInfo.name);
-                                    }
-                                    if (pInfo.name.startsWith("_")) {
-                                        throw new RuntimeException("api parameter name cannot start with '_'" + mInfo.getName() + "  " + pInfo.name);
-                                    }
-                                    if (pInfo.name.equals("scm")) {
-                                        throw new RuntimeException("api parameter name cannot be 'scm'" + mInfo.getName() + "  " + pInfo.name);
+                                    // '_'前缀被用于标识本系统的通用参数
+                                    // 除了第三方接口外, 其余接口不能使用'_'打头的参数名
+                                    if (!SecurityType.Integrated.check(api.security())) {
+                                        if (pInfo.name.startsWith("_")) {
+                                            throw new RuntimeException(
+                                                    "api parameter name cannot start with '_'" + mInfo.getName() + "  " + pInfo.name);
+                                        }
                                     }
                                 }
                                 pInfo.verifyRegex = p.verifyRegex();
@@ -312,7 +316,7 @@ public final class ApiManager {
                             } else if (n.annotationType() == ApiCookieAutowired.class) {
                                 ApiCookieAutowired p = (ApiCookieAutowired)n;
                                 if (p.value() == null || p.value().length == 0) {
-                                    throw new RuntimeException("cookie名不能为空");
+                                    throw new RuntimeException("cookie名不能为空 " + api.name() + "  " + clazz.getName());
                                 }
                                 pInfo.name = CommonParameter.cookie;
                                 pInfo.names = p.value();
@@ -321,7 +325,7 @@ public final class ApiManager {
                             }
                             j++;
                             if (j == a.length) {
-                                throw new RuntimeException("api参数未被标记" + clazz.getName());
+                                throw new RuntimeException("api参数未被标记" + api.name() + "  " + clazz.getName());
                             }
                         }
                         pInfos[i] = pInfo;
@@ -372,6 +376,12 @@ public final class ApiManager {
                     }
                     apiInfo.state = api.state();
                     apis.add(apiInfo);
+                }
+            }
+            ApiMockInterfaceImpl amii = clazz.getAnnotation(ApiMockInterfaceImpl.class);
+            if (amii != null) {
+                for (ApiMethodInfo info : apis) {
+                    info.mocked = true;
                 }
             }
             if (apis.size() == 0) {
@@ -473,62 +483,100 @@ public final class ApiManager {
      */
     private static void parseReturnType(ApiMethodInfo apiInfo, Method mInfo, Class clazz) {
         apiInfo.returnType = mInfo.getReturnType();
+        apiInfo.wrapper = ResponseWrapper.objectWrapper;
         //返回结果分析
         if (String.class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(StringResp.class);
+            apiInfo.wrapper = ResponseWrapper.stringWrapper;
         } else if (String[].class == apiInfo.returnType) {//不适用ObjectArrayResp，考虑到代码生成的时候会生成重复代码
             apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.stringArrayWrapper;
         } else if (boolean.class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(BoolResp.class);
+            apiInfo.wrapper = ResponseWrapper.boolWrapper;
         } else if (boolean[].class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(BoolArrayResp.class);
-        } else if (byte.class == apiInfo.returnType || short.class == apiInfo.returnType || char.class == apiInfo.returnType
-                || int.class == apiInfo.returnType) {
+            apiInfo.wrapper = ResponseWrapper.boolArrayWrapper;
+        } else if (byte.class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberResp.class);
-        } else if (byte[].class == apiInfo.returnType || short[].class == apiInfo.returnType || char[].class == apiInfo.returnType
-                || int[].class == apiInfo.returnType) {
+            apiInfo.wrapper = ResponseWrapper.byteWrapper;
+        } else if (short.class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberResp.class);
+            apiInfo.wrapper = ResponseWrapper.shortWrapper;
+        } else if (char.class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberResp.class);
+            apiInfo.wrapper = ResponseWrapper.charWrapper;
+        } else if (int.class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberResp.class);
+            apiInfo.wrapper = ResponseWrapper.intWrapper;
+        } else if (byte[].class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.byteArrayWrapper;
+        } else if (short[].class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.shotArrayWrapper;
+        } else if (char[].class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.charArrayWrapper;
+        } else if (int[].class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(NumberArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.intArrayWrapper;
         } else if (long.class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(LongResp.class);
+            apiInfo.wrapper = ResponseWrapper.longWrapper;
         } else if (long[].class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(LongArrayResp.class);
-        } else if (double.class == apiInfo.returnType || float.class == apiInfo.returnType) {
+            apiInfo.wrapper = ResponseWrapper.longArrayWrapper;
+        } else if (double.class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(DoubleResp.class);
-        } else if (double[].class == apiInfo.returnType || float[].class == apiInfo.returnType) {
+            apiInfo.wrapper = ResponseWrapper.doubleWrapper;
+        } else if (float.class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(DoubleResp.class);
+            apiInfo.wrapper = ResponseWrapper.floatWrapper;
+        } else if (double[].class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(DoubleArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.doubleArrayWrapper;
+        } else if (float[].class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(DoubleArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.floatArrayWrapper;
         } else if (JSONString.class == apiInfo.returnType) {
             apiInfo.serializer = Serializer.jsonStringSerializer;
+            apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (RawString.class == apiInfo.returnType) {
             apiInfo.serializer = Serializer.rawStringSerializer;
+            apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (Collection.class.isAssignableFrom(apiInfo.returnType)) {//增加对Collection自定义Object的支持+Collection<String>的支持
             Type genericType;
             try {
                 genericType = ((ParameterizedTypeImpl)mInfo.getGenericReturnType()).getActualTypeArguments()[0];
             } catch (Throwable t) {
-                throw new RuntimeException("unsupported return type,get genericType failed,method name:" + mInfo.getName(), t);
+                throw new RuntimeException("unsupported return type, get genericType failed, method name:" + mInfo.getName(), t);
             }
             Class<?> genericClazz;
             try {
                 genericClazz = Class.forName(((Class)genericType).getName());
             } catch (Exception e) {
-                throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
+                throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(), e);
             }
             if (String.class == genericClazz) {//如果要支持更多的jdk中已有类型的序列化
                 apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
+                apiInfo.wrapper = ResponseWrapper.stringCollectionWrapper;
             } else if (genericClazz.getAnnotation(Description.class) != null) {
                 apiInfo.serializer = Serializer.objectArrayRespSerializer;
+                apiInfo.wrapper = ResponseWrapper.collectionWrapper;
             } else {
-                throw new RuntimeException("unsupported return type,genericType:" + genericClazz.getName());
+                throw new RuntimeException("unsupported return type, genericType:" + genericClazz.getName() + " method name:" + mInfo.getName());
             }
             apiInfo.actuallyGenericReturnType = genericClazz;
         } else if (apiInfo.returnType.isArray()) {//TODO 自定义数组的支持
-            throw new RuntimeException("unsupported return type");
+            throw new RuntimeException("unsupported return type, method name:" + mInfo.getName());
         } else {
             Description desc = apiInfo.returnType.getAnnotation(Description.class);
             if (desc == null) {
-                throw new RuntimeException("unsupported return type:" + apiInfo.returnType.getName() + ",miss description");
+                throw new RuntimeException("unsupported return type:" + apiInfo.returnType.getName() + ", miss description method name:" + mInfo.getName());
             }
             apiInfo.serializer = POJOSerializerProvider.getSerializer(apiInfo.returnType);
+            apiInfo.wrapper = ResponseWrapper.objectWrapper;
         }
     }
 

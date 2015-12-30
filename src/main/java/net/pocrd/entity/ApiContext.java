@@ -3,9 +3,13 @@ package net.pocrd.entity;
 import net.pocrd.core.LocalException;
 import net.pocrd.define.SerializeType;
 import net.pocrd.responseEntity.KeyValuePair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,10 +20,11 @@ import java.util.regex.Pattern;
  * Api请求上下文信息
  */
 public class ApiContext {
+    private static final Logger                  logger      = LoggerFactory.getLogger(ApiContext.class);
     /**
      * 当前线程的ApiContext对象
      */
-    private static ThreadLocal<ApiContext> threadLocal = new ThreadLocal<ApiContext>();
+    private static       ThreadLocal<ApiContext> threadLocal = new ThreadLocal<ApiContext>();
 
     /**
      * 获取当前Api上下文
@@ -36,12 +41,17 @@ public class ApiContext {
     private ApiContext() {
     }
 
-    public Pattern callbackRegex = Pattern.compile("^[A-Za-z]\\w{0,7}$");
+    public final Pattern callbackRegex = Pattern.compile("^[A-Za-z]\\w{5,64}$");
 
     /**
      * 调用资源描述
      */
     public ArrayList<ApiMethodCall> apiCallInfos = null;
+
+    /**
+     * 是否为ssl链接
+     */
+    public boolean isSSL = false;
 
     /**
      * 当前调用资源描述
@@ -51,7 +61,46 @@ public class ApiContext {
     /**
      * 访问信息
      */
-    public String requestInfo;
+    public Map<String, String> requestInfo;
+
+    public final void ignoreParameterForSecurity(String key) {
+        if (requestInfo != null) {
+            requestInfo.remove(key);
+        }
+    }
+
+    public final String getRequestString() {
+        StringBuilder sb = new StringBuilder(100);
+        sb.append(isSSL ? "https://" : "http://");
+        sb.append(host);
+        sb.append("/m.api?");
+        if (requestInfo != null) {
+            if (CompileConfig.isDebug) {  // 开发环境下用于将打印到日志的url还原成能够直接放到浏览器请求的编码格式。
+                try {
+                    for (String key : requestInfo.keySet()) {
+                        if (key != null) {
+                            sb.append(key);
+                            sb.append("=");
+                            sb.append(URLEncoder.encode(requestInfo.get(key), "UTF-8"));
+                            sb.append("&");
+                        }
+                    }
+                } catch (UnsupportedEncodingException e) {
+                    logger.error("URLEncoder encode the post data failad", e);
+                }
+            } else {
+                for (String key : requestInfo.keySet()) {
+                    if (key != null) {
+                        sb.append(key);
+                        sb.append("=");
+                        sb.append(requestInfo.get(key));
+                        sb.append("&");
+                    }
+                }
+            }
+        }
+        return sb.toString();
+    }
 
     /**
      * 用户账号,日志用
@@ -79,6 +128,11 @@ public class ApiContext {
     public String versionCode;
 
     /**
+     * 客户端应用版本名 例:1.6.0
+     */
+    public String versionName;
+
+    /**
      * 应用编号,显示传参的_aid
      */
     public int appid;
@@ -104,9 +158,19 @@ public class ApiContext {
     public long startTime = 0;
 
     /**
+     * 时间开销
+     */
+    public int costTime;
+
+    /**
      * 客户端信息
      */
     public String agent;
+
+    /**
+     * http referer
+     */
+    public String referer;
 
     /**
      * 访问站点
@@ -139,6 +203,11 @@ public class ApiContext {
     public String token;
 
     /**
+     * secret token 用于在不同domian间传递csrftoken, 只能在https协议下传入
+     */
+    public String stoken;
+
+    /**
      * Security Level 本次调用所需的综合安全级别
      */
     public int requiredSecurity;
@@ -166,7 +235,7 @@ public class ApiContext {
     /**
      * jsonp回调信息
      */
-    public String jsonpCallback = null;
+    public byte[] jsonpCallback = null;
 
     /**
      * 返回给客户端的额外消息
@@ -226,30 +295,36 @@ public class ApiContext {
         this.agent = null;
         this.apiCallInfos = null;
         this.appid = 0;
-        this.thirdPartyId = 0;
         this.caller = null;
         this.cid = null;
         this.clearUserToken = false;
         this.clearUserTokenFlag = false;
         this.clientIP = null;
+        this.cookies.clear();
+        this.costTime=0;
         this.currentCall = null;
         this.deviceId = 0;
         this.deviceIdStr = null;
+        this.deviceToken = null;
         this.format = SerializeType.JSON;
+        this.host = null;
+        this.isSSL = false;
+        this.jsonpCallback = null;
+        this.localException = null;
         this.location = null;
+        this.notifications.clear();
+        this.outputStream.reset();
+        this.referer = null;
+        this.requiredSecurity = 0;
         this.requestInfo = null;
         this.serializeCount = 0;
         this.startTime = 0;
+        this.stoken = null;
+        this.thirdPartyId = 0;
         this.token = null;
-        this.deviceToken = null;
         this.uid = null;
         this.versionCode = null;
-        this.outputStream.reset();
-        this.notifications.clear();
-        this.requiredSecurity = 0;
-        this.localException = null;
-        this.host = null;
-        this.cookies.clear();
+        this.versionName = null;
         MDC.clear();
     }
 }

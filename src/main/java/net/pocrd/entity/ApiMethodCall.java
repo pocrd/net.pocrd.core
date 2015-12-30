@@ -24,6 +24,11 @@ public class ApiMethodCall {
     public ApiMethodInfo method;
 
     /**
+     * 客户端上传的业务id
+     */
+    public String businessId;
+
+    /**
      * 调用结果(序列化前)
      */
     public Object result;
@@ -86,7 +91,7 @@ public class ApiMethodCall {
         }
     }
 
-    public void setReturnCode(int code, int displayCode, String message){
+    public void setReturnCode(int code, int displayCode, String message) {
         if (returnCode == ApiReturnCode.NO_ASSIGN.getCode()) {
             returnCode = displayCode;
             originCode = code;
