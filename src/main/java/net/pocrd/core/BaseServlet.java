@@ -40,34 +40,34 @@ import java.util.concurrent.Future;
  * @author rendong
  */
 public abstract class BaseServlet extends HttpServlet {
-    private static final   long                 serialVersionUID         = 1L;
-    private static final   Logger               logger                   = LoggerFactory.getLogger(BaseServlet.class);
-    protected static final Marker               SERVLET_MARKER           = MarkerFactory.getMarker("servlet");
+    private static final long serialVersionUID = 1L;
+    private static final Logger logger = LoggerFactory.getLogger(BaseServlet.class);
+    protected static final Marker SERVLET_MARKER = MarkerFactory.getMarker("servlet");
     //debug 模式下识别http header中dubbo.version参数,将请求路由到指定的dubbo服务上
-    public static final    String               DEBUG_DUBBOVERSION       = "DUBBO-VERSION";
+    public static final String DEBUG_DUBBOVERSION = "DUBBO-VERSION";
     //debug 模式下识别http header中dubbo.service.ip参数,将请求路由到指定的dubbo服务上
-    public static final    String               DEBUG_DUBBOSERVICE_URL   = "DUBBO-SERVICE-URL";
-    protected static final ApiMethodCall[]      EMPTY_METHOD_CALL_ARRAY  = new ApiMethodCall[0];
-    private static final   String               HEADER_ORGIN             = "Access-Control-Allow-Origin";
-    private static final   String               HEADER_METHOD            = "Access-Control-Allow-Method";
-    private static final   String               HEADER_CREDENTIALS       = "Access-Control-Allow-Credentials";
-    private static final   String               HEADER_METHOD_VALUE      = "POST, GET, OPTIONS, PUT, DELETE, HEAD";
-    private static final   String               HEADER_CREDENTIALS_VALUE = "true";
-    public static final    String               HTTPMETHOD_POST          = "POST";
-    public static final    String               FORMAT_XML               = "xml";
-    public static final    String               FORMAT_JSON              = "json";
-    public static final    String               FORMAT_PLAINTEXT         = "plaintext";
-    private static final   String               SERVER_ADDRESS           = "a:";
-    private static final   String               THREADID                 = "t:";
-    private static final   String               SPLIT                    = "|";
-    private static final   String               REQ_TAG                  = "s:";
-    private static final   String               CONTENT_TYPE_XML         = "application/xml; charset=utf-8";
-    private static final   String               CONTENT_TYPE_JSON        = "application/json; charset=utf-8";
-    private static final   String               CONTENT_TYPE_JAVASCRIPT  = "application/javascript; charset=utf-8";
-    private static final   String               CONTENT_TYPE_PLAINTEXT   = "text/plain";
-    private static final   String               JSONARRAY_PREFIX         = "[";
-    private static final   String               JSONARRAY_SURFIX         = "]";
-    private static final   Serializer<Response> apiResponseSerializer    = POJOSerializerProvider.getSerializer(Response.class);
+    public static final String DEBUG_DUBBOSERVICE_URL = "DUBBO-SERVICE-URL";
+    protected static final ApiMethodCall[] EMPTY_METHOD_CALL_ARRAY = new ApiMethodCall[0];
+    private static final String HEADER_ORGIN = "Access-Control-Allow-Origin";
+    private static final String HEADER_METHOD = "Access-Control-Allow-Method";
+    private static final String HEADER_CREDENTIALS = "Access-Control-Allow-Credentials";
+    private static final String HEADER_METHOD_VALUE = "POST, GET, OPTIONS, PUT, DELETE, HEAD";
+    private static final String HEADER_CREDENTIALS_VALUE = "true";
+    public static final String HTTPMETHOD_POST = "POST";
+    public static final String FORMAT_XML = "xml";
+    public static final String FORMAT_JSON = "json";
+    public static final String FORMAT_PLAINTEXT = "plaintext";
+    private static final String SERVER_ADDRESS = "a:";
+    private static final String THREADID = "t:";
+    private static final String SPLIT = "|";
+    private static final String REQ_TAG = "s:";
+    private static final String CONTENT_TYPE_XML = "application/xml; charset=utf-8";
+    private static final String CONTENT_TYPE_JSON = "application/json; charset=utf-8";
+    private static final String CONTENT_TYPE_JAVASCRIPT = "application/javascript; charset=utf-8";
+    private static final String CONTENT_TYPE_PLAINTEXT = "text/plain";
+    private static final String JSONARRAY_PREFIX = "[";
+    private static final String JSONARRAY_SURFIX = "]";
+    private static final Serializer<Response> apiResponseSerializer = POJOSerializerProvider.getSerializer(Response.class);
 
     private ApiManager apiManager;
 
@@ -142,7 +142,7 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     private void setDeviceIDinCookie(ApiContext context, HttpServletResponse response) {
-        context.deviceId = -(100000000000000L + ((long)(Math.random() * 900000000000000L)));
+        context.deviceId = -(100000000000000L + ((long) (Math.random() * 900000000000000L)));
         context.deviceIdStr = String.valueOf(context.deviceId);
         MDC.put(CommonParameter.deviceId, context.deviceIdStr);
         HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
@@ -194,16 +194,18 @@ public abstract class BaseServlet extends HttpServlet {
                 try {
                     executeAllApiCall(apiContext, request, response);
                 } finally {
-                    apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
+                    apiContext.costTime = (int) (System.currentTimeMillis() - apiContext.startTime);
                     access.logRequest();
                 }
                 for (ApiMethodCall call : apiContext.apiCallInfos) {
+                    MDC.put(CommonParameter.method, call.method.methodName);
                     serializeCallResult(apiContext, call);
+                    // access log
+                    access.logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
+                            call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
                 }
+                MDC.remove(CommonParameter.method);
             }
-        } catch (SerializeException se) {
-            logger.error(SERVLET_MARKER, "output failed.", se.getException());
-            fatalError = true;
         } catch (Throwable t) {
             logger.error(SERVLET_MARKER, "api execute error.", t);
             fatalError = true;
@@ -289,9 +291,9 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     @SuppressWarnings("unchecked")
-    private void serializeCallResult(ApiContext apiContext, ApiMethodCall call) throws SerializeException {
+    private void serializeCallResult(ApiContext apiContext, ApiMethodCall call) throws IOException {
+        int oldSize = apiContext.outputStream.size();
         try {
-            int oldSize = apiContext.outputStream.size();
             switch (apiContext.format) {
                 case XML:
                     if (call.result == null) {
@@ -299,7 +301,7 @@ public abstract class BaseServlet extends HttpServlet {
                             apiContext.outputStream.write(ConstField.XML_EMPTY);
                         }
                     } else {
-                        ((Serializer<Object>)call.method.serializer).toXml(call.result, apiContext.outputStream, true);
+                        ((Serializer<Object>) call.method.serializer).toXml(call.result, apiContext.outputStream, true);
                     }
                     break;
                 case JSON:
@@ -311,13 +313,30 @@ public abstract class BaseServlet extends HttpServlet {
                             apiContext.outputStream.write(ConstField.JSON_EMPTY);
                         }
                     } else {
-                        ((Serializer<Object>)call.method.serializer).toJson(call.result, apiContext.outputStream, true);
+                        ((Serializer<Object>) call.method.serializer).toJson(call.result, apiContext.outputStream, true);
                     }
                     break;
             }
             call.resultLen = apiContext.outputStream.size() - oldSize;
         } catch (Exception e) {
-            throw new SerializeException(e);
+            //序列化失败,重置输出流（Tips：writeTo函数实现 out.write(this.buffer, 0, this.count)，故重置index即完成重置）
+            apiContext.outputStream.setWriteIndex(oldSize);
+            //回写空数据节点
+            switch (apiContext.format) {
+                case XML:
+                    apiContext.outputStream.write(ConstField.XML_EMPTY);
+                    break;
+                case JSON:
+                    if (apiContext.serializeCount > 0) {
+                        apiContext.outputStream.write(ConstField.JSON_SPLIT);
+                    }
+                    apiContext.outputStream.write(ConstField.JSON_EMPTY);
+                    break;
+            }
+            //设置序列化异常错误码
+            call.resultLen = 0;
+            call.replaceReturnCode(ApiReturnCode.SERIALIZE_FAILED);
+            logger.error(SERVLET_MARKER, "serialize object failed.", e);
         } finally {
             apiContext.serializeCount++;
         }
@@ -522,7 +541,6 @@ public abstract class BaseServlet extends HttpServlet {
 
     private void executeAllApiCall(ApiContext apiContext, HttpServletRequest request, HttpServletResponse response) {
         CommonConfig config = CommonConfig.getInstance();
-        AccessLogger access = config.getAccessLogger();
         Future<?>[] futures = new Future[apiContext.apiCallInfos.size()];
         for (int count = 0; count < futures.length; count++) {
             ApiMethodCall call = apiContext.apiCallInfos.get(count);
@@ -537,7 +555,7 @@ public abstract class BaseServlet extends HttpServlet {
                 // 如果配置为异步执行时，该接口恰好短路结果或mock返回为空, 此处获得的future为null
                 futures[count] = RpcContext.getContext().getFuture();
             } else {
-                call.costTime = (int)(System.currentTimeMillis() - call.startTime);
+                call.costTime = (int) (System.currentTimeMillis() - call.startTime);
             }
         }
         for (int count = 0; count < futures.length; count++) {
@@ -546,7 +564,7 @@ public abstract class BaseServlet extends HttpServlet {
             // 接口可能被 mock 或被短路
             if (futures[count] != null) {
                 executeApiCall(call, request, response, futures[count]);
-                call.costTime = (int)(System.currentTimeMillis() - call.startTime);
+                call.costTime = (int) (System.currentTimeMillis() - call.startTime);
             }
             int display = call.getReturnCode();
             if (display > 0) {
@@ -559,10 +577,6 @@ public abstract class BaseServlet extends HttpServlet {
                     }
                 }
             }
-            //access log
-            access.logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
-            MDC.remove(CommonParameter.method);
         }
     }
 
@@ -578,6 +592,9 @@ public abstract class BaseServlet extends HttpServlet {
             RpcContext.getContext().setAttachment(CommonParameter.versionName, context.versionName);
             if (context.referer != null && context.referer.length() < 1024) {
                 RpcContext.getContext().setAttachment(HttpHeaders.REFERER, context.referer);
+            }
+            if (context.location != null) {
+                RpcContext.getContext().setAttachment(CommonParameter.location, context.location);
             }
             if (context.caller == null) {
                 RpcContext.getContext().setAttachment(CommonParameter.cookieDeviceId, context.deviceIdStr);
@@ -600,18 +617,20 @@ public abstract class BaseServlet extends HttpServlet {
                 call.result = call.method.staticMockValue;
             } else {
                 if (future != null) {
-                    FutureAdapter<?> fa = (FutureAdapter<?>)future;
+                    FutureAdapter<?> fa = (FutureAdapter<?>) future;
                     final ResponseCallback callback = fa.getFuture().getCallback();
                     fa.getFuture().setCallback(new ResponseCallback() {
-                        @Override public void done(Object response) {
+                        @Override
+                        public void done(Object response) {
                             callback.done(response);
                             if (RpcResult.class.isInstance(response)) {
-                                RpcResult rpcResult = (RpcResult)response;
+                                RpcResult rpcResult = (RpcResult) response;
                                 DubboExtProperty.addNotifications(rpcResult.getNotifications());
                             }
                         }
 
-                        @Override public void caught(Throwable exception) {
+                        @Override
+                        public void caught(Throwable exception) {
                             callback.caught(exception);
                         }
                     });
@@ -747,11 +766,11 @@ public abstract class BaseServlet extends HttpServlet {
             }
         } catch (Throwable t) {
             if (t instanceof ServiceException) {
-                ServiceException se = (ServiceException)t;
+                ServiceException se = (ServiceException) t;
                 logger.error(SERVLET_MARKER, "service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof ServiceException) {
-                ServiceException se = (ServiceException)t.getCause();
+                ServiceException se = (ServiceException) t.getCause();
                 logger.error(SERVLET_MARKER, "inner service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.TimeoutException) {
@@ -799,9 +818,6 @@ public abstract class BaseServlet extends HttpServlet {
                 Response apiResponse = new Response();
                 apiResponse.systime = System.currentTimeMillis();
                 apiResponse.code = code.getDisplay().getCode();
-                if (apiContext.localException != null) {
-                    apiResponse.data = apiContext.localException.getData();
-                }
                 apiResponse.stateList = new ArrayList<CallState>(calls.length);
                 if (apiContext.cid != null) {
                     apiResponse.cid = apiContext.cid;

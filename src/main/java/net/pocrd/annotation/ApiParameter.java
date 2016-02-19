@@ -53,6 +53,12 @@ public @interface ApiParameter {
     Class<? extends Enum> enumDef() default EnumNull.class;
 
     /**
+     * 该参数在接口中的次序, 与类型相关. 当前可能的取值有 int0, int1...int9 str0, str1...str9
+     * 目前被用在etl处理接口调用日志时按照该顺序放置各个参数
+     */
+    String sequence() default "";
+
+    /**
      * 参数注释
      */
     String desc();

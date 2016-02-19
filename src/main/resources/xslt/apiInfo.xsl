@@ -763,10 +763,11 @@
                                             <xsl:if test="parameterInfoList/child::*">
                                                 <table class="tbl_border_collapse">
                                                     <tr>
-                                                        <th style="width:15%">必要性</th>
-                                                        <th style="width:15%">参数名</th>
-                                                        <th style="width:15%">类型</th>
-                                                        <th style="width:55%">描述</th>
+                                                        <th style="width:10%">必要性</th>
+                                                        <th style="width:10%">参数名</th>
+                                                        <th style="width:10%">类型</th>
+                                                        <th style="width:10%">seq.</th>
+                                                        <th style="width:60%">描述</th>
                                                     </tr>
                                                     <xsl:for-each select="parameterInfoList/parameterInfo">
                                                         <tr>
@@ -796,6 +797,9 @@
                                                                         <xsl:value-of select="type"/>
                                                                     </xsl:otherwise>
                                                                 </xsl:choose>
+                                                            </td>
+                                                            <td style="text-align:center">
+                                                                <xsl:value-of select="sequence"/>
                                                             </td>
                                                             <td style="text-align:left">
                                                                 <xsl:value-of select="description"/>

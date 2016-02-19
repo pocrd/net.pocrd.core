@@ -70,4 +70,10 @@ public class ApiParameterInfo {
      * 由于安全原因需要在日志系统中忽略的参数
      */
     public boolean ignoreForSecurity;
+
+    /**
+     * 该参数在接口中的次序, 与类型相关. 当前可能的取值有 int0, int1...int9 str0, str1...str9
+     * 目前被用在etl处理接口调用日志时按照该顺序放置各个参数
+     */
+    public String sequence;
 }

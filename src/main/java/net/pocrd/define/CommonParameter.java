@@ -73,8 +73,11 @@ public final class CommonParameter {
     @Description("第三方集成的身份标识(第三方集成情景下使用)")
     public static final String thirdPartyId = "_tpid";
 
-    @Description("cookie注入 研发专用")
+    @Description("cookie注入 不支持在url中使用该参数")
     public static final String cookie = "_cookie";
+
+    @Description("user agent注入 不支持在url中使用该参数")
+    public static final String userAgent = "_userAgent";
 
     @Description("传入参数字符集(参数需要被urlencode). 支持通过Cookie注入获取url中的值")
     public static final String inputCharset = "_input_charset";
@@ -105,7 +108,7 @@ public final class CommonParameter {
                     for (Field f : fs) {
                         if (ApiManager.isConstField(f) && f.getType() == String.class && Modifier.isPublic(f.getModifiers())) {
                             String name = (String)f.get(null);
-                            if(!name.startsWith("_")){
+                            if (!name.startsWith("_")) {
                                 throw new RuntimeException("Common parameter name should start with '_'. error name:" + name);
                             }
                             names.add(name);

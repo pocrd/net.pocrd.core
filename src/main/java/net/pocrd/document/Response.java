@@ -19,6 +19,10 @@ public class Response {
     @Description("调用标识符")
     public String cid;
 
+    /**
+     * 暂时无使用场景
+     */
+    @Deprecated
     @Description("用作特定场景使用")
     public String data;
 

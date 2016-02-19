@@ -3,15 +3,7 @@ package net.pocrd.core;
 import net.pocrd.annotation.Description;
 import net.pocrd.annotation.EnumDef;
 import net.pocrd.define.CommonParameter;
-import net.pocrd.document.CodeInfo;
-import net.pocrd.document.Document;
-import net.pocrd.document.FieldInfo;
-import net.pocrd.document.MethodInfo;
-import net.pocrd.document.ParameterInfo;
-import net.pocrd.document.ReqStruct;
-import net.pocrd.document.RespStruct;
-import net.pocrd.document.Response;
-import net.pocrd.document.SystemParameterInfo;
+import net.pocrd.document.*;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
@@ -24,14 +16,7 @@ import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ApiDocumentationHelper {
@@ -81,7 +66,8 @@ public class ApiDocumentationHelper {
                     methodInfo.respStructList = getRespTypeStruct(info.groupName, StringResp.class, null);
                 } else if (info.returnType.isEnum()) {
                     throw new RuntimeException(
-                            "unsupport return type, can not return enum without wrapper, type:" + info.returnType.getName() + " method:" + methodInfo.methodName);
+                            "unsupport return type, can not return enum without wrapper, type:" + info.returnType.getName() + " method:"
+                                    + methodInfo.methodName);
                 } else if (String[].class == info.returnType) {
                     methodInfo.returnType = getEntityName(info.groupName, StringArrayResp.class);
                     methodInfo.respStructList = getRespTypeStruct(info.groupName, StringArrayResp.class, null);
@@ -91,10 +77,12 @@ public class ApiDocumentationHelper {
                 } else if (boolean[].class == info.returnType) {
                     methodInfo.returnType = getEntityName(info.groupName, BoolArrayResp.class);
                     methodInfo.respStructList = getRespTypeStruct(info.groupName, BoolArrayResp.class, null);
-                } else if (byte.class == info.returnType || short.class == info.returnType || char.class == info.returnType || int.class == info.returnType) {
+                } else if (byte.class == info.returnType || short.class == info.returnType || char.class == info.returnType
+                        || int.class == info.returnType) {
                     methodInfo.returnType = getEntityName(info.groupName, NumberResp.class);
                     methodInfo.respStructList = getRespTypeStruct(info.groupName, NumberResp.class, null);
-                } else if (byte[].class == info.returnType || short[].class == info.returnType || char[].class == info.returnType || int[].class == info.returnType) {
+                } else if (byte[].class == info.returnType || short[].class == info.returnType || char[].class == info.returnType
+                        || int[].class == info.returnType) {
                     methodInfo.returnType = getEntityName(info.groupName, NumberArrayResp.class);
                     methodInfo.respStructList = getRespTypeStruct(info.groupName, NumberArrayResp.class, null);
                 } else if (long.class == info.returnType) {
@@ -189,7 +177,9 @@ public class ApiDocumentationHelper {
         String name;
         if (clazz.isPrimitive() || clazz == String.class || clazz.isEnum()) {
             return null;
-        } else if ((List.class == clazz && actuallyGenericType == String.class) || String[].class == clazz || char[].class == clazz || byte[].class == clazz || short[].class == clazz || boolean[].class == clazz || int[].class == clazz || float[].class == clazz || long[].class == clazz || double[].class == clazz) {
+        } else if ((List.class == clazz && actuallyGenericType == String.class) || String[].class == clazz || char[].class == clazz
+                || byte[].class == clazz || short[].class == clazz || boolean[].class == clazz || int[].class == clazz || float[].class == clazz
+                || long[].class == clazz || double[].class == clazz) {
             return null;
         } else if (clazz.isArray()) {
             if (!clazz.getComponentType().isEnum()) {
@@ -207,7 +197,8 @@ public class ApiDocumentationHelper {
             }
             if (!hasPublicFields(actuallyGenericType)) {
                 throw new RuntimeException(
-                        "get public field failed, actuallyGenericType has no public field. groupName:" + groupName + ",actuallyGenericType:" + actuallyGenericType.getName());
+                        "get public field failed, actuallyGenericType has no public field. groupName:" + groupName + ",actuallyGenericType:"
+                                + actuallyGenericType.getName());
             }
             if (!actuallyGenericType.isEnum()) {
                 name = getEntityName(groupName, actuallyGenericType);
@@ -252,7 +243,8 @@ public class ApiDocumentationHelper {
             }
             if (!hasPublicFields(actuallyGenericType)) {
                 throw new RuntimeException(
-                        "get public field failed, actuallyGenericType has not public field. groupName:" + groupName + "actuallyGenericType:" + actuallyGenericType.getName());
+                        "get public field failed, actuallyGenericType has not public field. groupName:" + groupName + "actuallyGenericType:"
+                                + actuallyGenericType.getName());
             }
             String objectArrayName = getEntityName4CollectionAndArray(groupName, actuallyGenericType);//构建虚假类Api_Xxx_Array
             list.add(getVirtualListRespStruct(objectArrayName, groupName, actuallyGenericType));//构建虚假类Api_Xxx_Array
@@ -282,6 +274,7 @@ public class ApiDocumentationHelper {
 
     private List<ParameterInfo> getParamInfoList(String groupName, ApiParameterInfo[] paramters) {
         List<ParameterInfo> list = new ArrayList<ParameterInfo>(paramters.length);
+        HashSet<String> sequenceSet = new HashSet<String>();
         for (ApiParameterInfo p : paramters) {
             if (!p.isAutowired) {
                 ParameterInfo b = new ParameterInfo();
@@ -294,6 +287,10 @@ public class ApiDocumentationHelper {
                     b.defaultValue = null;
                 }
                 b.description = p.description;
+                if (p.sequence != null && p.sequence.trim().length() > 0) {
+                    b.sequence = p.sequence;
+                    sequenceSet.add(b.sequence);
+                }
                 if (p.isRsaEncrypted) {
                     b.description += rsaEncDescription;
                     b.isRsaEncrypt = true;
@@ -379,6 +376,22 @@ public class ApiDocumentationHelper {
                     b.verifyRegex = p.verifyRegex;
                 }
                 list.add(b);
+            }
+        }
+
+        int intIndex = 0;
+        int strIndex = 0;
+        // 为尚未初始化的sequence赋值
+        for (ParameterInfo info : list) {
+            if (info.sequence == null && !info.isList && (int.class.getSimpleName().equals(info.type)
+                    || long.class.getSimpleName().equals(info.type))) {
+                do {
+                    info.sequence = "int" + intIndex++;
+                } while (sequenceSet.contains(info.sequence));
+            } else {
+                do {
+                    info.sequence = "str" + strIndex++;
+                } while (sequenceSet.contains(info.sequence));
             }
         }
 
@@ -789,7 +802,9 @@ public class ApiDocumentationHelper {
 
     private String getEntityName4CollectionAndArray(String group, Class<?> type) {
         return (group == null || group.length() == 0 || type.getName().startsWith(
-                "net.pocrd.")) ? "Api_" + type.getSimpleName() + "_ArrayResp" : "Api_" + group.toUpperCase() + "_" + type.getSimpleName() + "_ArrayResp";
+                "net.pocrd.")) ?
+                "Api_" + type.getSimpleName() + "_ArrayResp" :
+                "Api_" + group.toUpperCase() + "_" + type.getSimpleName() + "_ArrayResp";
     }
 
     private boolean hasPublicFields(Class<?> clazz) {

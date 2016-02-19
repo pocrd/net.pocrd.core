@@ -25,4 +25,6 @@ public class ParameterInfo {
     public boolean isList;
     @Description("是否需要rsa加密")
     public boolean isRsaEncrypt;
+    @Description("参数在接口中的次序, 当前可能的取值有 int0, int1...int9 str0, str1...str9")
+    public String sequence;
 }

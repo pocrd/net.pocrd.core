@@ -1,5 +1,6 @@
 package net.pocrd.entity;
 
+import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStream;
 import net.pocrd.core.LocalException;
 import net.pocrd.define.SerializeType;
 import net.pocrd.responseEntity.KeyValuePair;
@@ -7,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
-import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -230,7 +230,7 @@ public class ApiContext {
     /**
      * 线程相关的序列化数据缓冲池，用于暂存序列化数据
      */
-    public ByteArrayOutputStream outputStream = new ByteArrayOutputStream(4096);
+    public RandomAccessByteArrayOutputStream outputStream = new RandomAccessByteArrayOutputStream(4096);
 
     /**
      * jsonp回调信息
@@ -301,7 +301,7 @@ public class ApiContext {
         this.clearUserTokenFlag = false;
         this.clientIP = null;
         this.cookies.clear();
-        this.costTime=0;
+        this.costTime = 0;
         this.currentCall = null;
         this.deviceId = 0;
         this.deviceIdStr = null;

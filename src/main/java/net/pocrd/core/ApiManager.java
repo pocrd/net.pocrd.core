@@ -204,7 +204,7 @@ public final class ApiManager {
                         }
                     }
                     apiInfo.proxyMethodInfo = mInfo;
-                    if(!CompileConfig.isDebug) {
+                    if (!CompileConfig.isDebug) {
                         if (serviceInstance == null) {
                             if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers())) {
                                 try {
@@ -239,7 +239,8 @@ public final class ApiManager {
                                     try {
                                         genericType = ((ParameterizedTypeImpl)mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
                                     } catch (Throwable t) {
-                                        throw new RuntimeException("unsupported input type,get genericType failed, method name:" + mInfo.getName(), t);
+                                        throw new RuntimeException("unsupported input type,get genericType failed, method name:" + mInfo.getName(),
+                                                t);
                                     }
                                     try {
                                         pInfo.actuallyGenericType = Class.forName(((Class)genericType).getName());
@@ -261,6 +262,7 @@ public final class ApiManager {
                             if (n.annotationType() == ApiParameter.class) {
                                 ApiParameter p = (ApiParameter)n;
                                 pInfo.description = p.desc();
+                                pInfo.sequence = p.sequence();
                                 pInfo.isRequired = p.required();
                                 pInfo.isRsaEncrypted = p.rsaEncrypted();
                                 pInfo.ignoreForSecurity = p.ignoreForSecurity();
@@ -272,6 +274,20 @@ public final class ApiManager {
                                     }
                                 }
                                 if (CompileConfig.isDebug) {
+                                    // 检查sequence属性合法性
+                                    if (pInfo.sequence != null) {
+                                        try {
+                                            if (pInfo.sequence.startsWith("int") || pInfo.sequence.startsWith("str")) {
+                                                Integer.parseInt(pInfo.sequence.substring(4));
+                                            } else {
+                                                throw new RuntimeException("invalid sequence value("
+                                                        + pInfo.sequence + ") of api parameter " + mInfo.getName() + "  " + pInfo.name);
+                                            }
+                                        } catch (Exception e) {
+                                            throw new RuntimeException("invalid sequence value("
+                                                    + pInfo.sequence + ") of api parameter " + mInfo.getName() + "  " + pInfo.name, e);
+                                        }
+                                    }
                                     // '_'前缀被用于标识本系统的通用参数
                                     // 除了第三方接口外, 其余接口不能使用'_'打头的参数名
                                     if (!SecurityType.Integrated.check(api.security())) {
@@ -556,7 +572,8 @@ public final class ApiManager {
             try {
                 genericClazz = Class.forName(((Class)genericType).getName());
             } catch (Exception e) {
-                throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(), e);
+                throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(),
+                        e);
             }
             if (String.class == genericClazz) {//如果要支持更多的jdk中已有类型的序列化
                 apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
@@ -573,7 +590,8 @@ public final class ApiManager {
         } else {
             Description desc = apiInfo.returnType.getAnnotation(Description.class);
             if (desc == null) {
-                throw new RuntimeException("unsupported return type:" + apiInfo.returnType.getName() + ", miss description method name:" + mInfo.getName());
+                throw new RuntimeException(
+                        "unsupported return type:" + apiInfo.returnType.getName() + ", miss description method name:" + mInfo.getName());
             }
             apiInfo.serializer = POJOSerializerProvider.getSerializer(apiInfo.returnType);
             apiInfo.wrapper = ResponseWrapper.objectWrapper;
