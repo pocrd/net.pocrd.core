@@ -31,7 +31,7 @@ public class HttpApiProvider implements Opcodes {
             String className = "net/pocrd/autogen/ApiExecuter_" + name.replace('.', '_');
             className = className.replace('$', '_');
             String classDesc = "L" + className + ";";
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
             FieldVisitor fv;
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", new String[] { Type.getInternalName(HttpApiExecuter.class) });
             {
@@ -122,7 +122,7 @@ public class HttpApiProvider implements Opcodes {
                 mv.visitEnd();
             }
             {
-                PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_PUBLIC, "execute", "([Ljava/lang/String;)Ljava/lang/Object;", null, null);
+                PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_PUBLIC, "execute", "([Ljava/lang/String;)Ljava/lang/Object;", null, null);
                 pmv.visitCode();
                 if (parameterInfos.length > 0) {
                     for (int i = 0; i < parameterInfos.length; i++) {
@@ -378,7 +378,7 @@ public class HttpApiProvider implements Opcodes {
                     }
                 }
             }
-            HttpApiExecuter e = (HttpApiExecuter)new PocClassLoader(HttpApiProvider.class.getClassLoader()).defineClass(className.replace('/', '.'),
+            HttpApiExecuter e = (HttpApiExecuter)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className.replace('/', '.'),
                     cw.toByteArray()).newInstance();
             e.setInstance(method.serviceInstance);
             return e;

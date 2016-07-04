@@ -178,14 +178,14 @@ public class ApiContext {
     public String host;
 
     /**
-     * 是否清除用戶 token
+     * 清除用戶cookie中的token信息
      */
     public boolean clearUserToken = false;
 
     /**
-     * 是否清除用戶 token 标志位
+     * 清除已经过期的token
      */
-    public boolean clearUserTokenFlag = false;
+    public boolean clearExpiredUserToken = false;
 
     /**
      * 客户端IP
@@ -194,6 +194,7 @@ public class ApiContext {
 
     /**
      * Device Token
+     * TODO:to be removed, token需要做归一化处理
      */
     public String deviceToken;
 
@@ -206,6 +207,12 @@ public class ApiContext {
      * secret token 用于在不同domian间传递csrftoken, 只能在https协议下传入
      */
     public String stoken;
+
+    /**
+     * oauth token 用于存放第三方授权信息
+     * TODO:to be removed, token需要做归一化处理
+     */
+    public String otoken;
 
     /**
      * Security Level 本次调用所需的综合安全级别
@@ -298,7 +305,7 @@ public class ApiContext {
         this.caller = null;
         this.cid = null;
         this.clearUserToken = false;
-        this.clearUserTokenFlag = false;
+        this.clearExpiredUserToken = false;
         this.clientIP = null;
         this.cookies.clear();
         this.costTime = 0;
@@ -313,6 +320,7 @@ public class ApiContext {
         this.localException = null;
         this.location = null;
         this.notifications.clear();
+        this.otoken = null;
         this.outputStream.reset();
         this.referer = null;
         this.requiredSecurity = 0;

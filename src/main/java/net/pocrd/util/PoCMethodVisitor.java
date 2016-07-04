@@ -8,7 +8,7 @@ import org.objectweb.asm.Type;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 
-public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
+public class PocMethodVisitor extends MethodVisitor implements Opcodes {
     private boolean[]                      slotFlags = new boolean[256];
     private LocalVariable[]                args      = null;
     private HashMap<String, LocalVariable> lvs       = new HashMap<String, LocalVariable>();
@@ -41,8 +41,8 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
     /**
      * 根据签名创建method visitor
      */
-    PoCMethodVisitor(final ClassWriter cw, final int access, final String name, final String desc, final String signature,
-                     final String[] exceptions) {
+    PocMethodVisitor(final ClassWriter cw, final int access, final String name, final String desc, final String signature,
+            final String[] exceptions) {
         super(ASM4);
         mv = cw.visitMethod(access, name, desc, signature, exceptions);
         declareArgs(access, desc);
@@ -51,7 +51,7 @@ public class PoCMethodVisitor extends MethodVisitor implements Opcodes {
     /**
      * 根据method模板创建method visitor
      */
-    PoCMethodVisitor(final ClassWriter cw, final Method method) {
+    PocMethodVisitor(final ClassWriter cw, final Method method) {
         super(ASM4);
         int mod = method.getModifiers();
         String desc = Type.getMethodDescriptor(method);

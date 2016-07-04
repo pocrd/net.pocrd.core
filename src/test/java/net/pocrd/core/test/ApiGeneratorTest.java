@@ -3,7 +3,6 @@ package net.pocrd.core.test;
 import net.pocrd.annotation.ApiGroup;
 import net.pocrd.annotation.ApiParameter;
 import net.pocrd.annotation.HttpApi;
-import net.pocrd.core.ApiDocumentationHelper;
 import net.pocrd.core.ApiManager;
 import net.pocrd.core.generator.ApiSdkJavaGenerator;
 import net.pocrd.core.generator.ApiSdkJavaScriptGenerator;
@@ -11,22 +10,15 @@ import net.pocrd.core.generator.ApiSdkObjectiveCGenerator;
 import net.pocrd.core.generator.HtmlApiDocGenerator;
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
-import net.pocrd.define.Serializer;
-import net.pocrd.document.Document;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.entity.ApiMethodInfo;
-import net.pocrd.entity.CodeGenConfig;
-import net.pocrd.responseEntity.RawString;
-import net.pocrd.util.POJOSerializerProvider;
+import net.pocrd.util.RawString;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Created by guankaiqiang521 on 2014/9/24.
@@ -45,7 +37,7 @@ public class ApiGeneratorTest {
     @ApiGroup(name = "apitest", minCode = 0, maxCode = 3000000, codeDefine = ApiTestReturnCode.class, owner = "sunji180")
     public abstract interface ApiFunctionTestService {
         @HttpApi(name = "apitest.testWeiXin", desc = "微信接口测试", security = SecurityType.Integrated, owner = "guankaiqiang",
-                state = ApiOpenState.OPEN)
+                 state = ApiOpenState.OPEN)
         public abstract RawString testWeiXin(
                 @ApiParameter(required = false, name = "msg", desc = "test")
                 String paramString);
@@ -53,85 +45,48 @@ public class ApiGeneratorTest {
 
     @Test
     public void testHtmlDocGenertor() {
-        Properties prop = new Properties();
-        prop.setProperty("net.pocrd.htmlApiDocLocation", "/tmp/test.html");
-        prop.setProperty("net.pocrd.apiInfoXslSite", "http://115.29.16.189/xslt/java.xsl");
-        CodeGenConfig.init(prop);
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        ApiMethodInfo[] array = new ApiMethodInfo[infoList.size()];
-        infoList.toArray(array);
-        Document document = new ApiDocumentationHelper().getDocument(array);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
-        docs.toXml(document, outputStream, true);
-        ByteArrayInputStream swapStream = new ByteArrayInputStream(outputStream.toByteArray());
-        HtmlApiDocGenerator.getInstance().generate(swapStream);
+        new HtmlApiDocGenerator.Builder().setOutputPath("/home/admin/tmp/").setXsltPath("http://dl.fengqucdn.com/tmp/java.xslt").build()
+                .generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testJavaGenertor() throws ParserConfigurationException, IOException, SAXException {
-        Properties prop = new Properties();
-        prop.setProperty("net.pocrd.apiSdkJavaLocation", "/tmp/");
-        CodeGenConfig.init(prop);
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        ApiMethodInfo[] array = new ApiMethodInfo[infoList.size()];
-        infoList.toArray(array);
-        Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        docs.toXml(new ApiDocumentationHelper().getDocument(array), outputStream, true);
-        ByteArrayInputStream swapStream = new ByteArrayInputStream(outputStream.toByteArray());
-        ApiSdkJavaGenerator.getInstance().generate(swapStream);
+        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build().generateViaApiMethodInfo(infoList);
+    }
+
+    @Test
+    public void testJavaGenertorViaJar() throws ParserConfigurationException, IOException, SAXException {
+        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build().generateViaJar("/home/admin/api/tmp/discovery-api-0.2.5-SNAPSHOT.jar");
     }
 
     @Test
     public void testObjcGenertor() throws ParserConfigurationException, IOException, SAXException {
-        Properties prop = new Properties();
-        prop.setProperty("net.pocrd.apiSdkObjcLocation", "/tmp/");
-        prop.setProperty("net.pocrd.apiSdkObjcClassPrefix", "SF");
-        CodeGenConfig.init(prop);
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        ApiMethodInfo[] array = new ApiMethodInfo[infoList.size()];
-        infoList.toArray(array);
-        Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        docs.toXml(new ApiDocumentationHelper().getDocument(array), outputStream, true);
-        ByteArrayInputStream swapStream = new ByteArrayInputStream(outputStream.toByteArray());
-        ApiSdkObjectiveCGenerator.getInstance().generate(swapStream);
+        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/tmp/").setClassPrefix("SF").build().generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testGenerateFromNetResource() {
-        Properties prop = new Properties();
-        prop.setProperty("net.pocrd.apiSdkObjcLocation", "/tmp/");
-        prop.setProperty("net.pocrd.apiSdkObjcClassPrefix", "SF");
-        CodeGenConfig.init(prop);
-        ApiSdkObjectiveCGenerator.getInstance().generateWithNetResource("http://10.32.156.168/info.api?raw");
+        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/autogen/oc").setClassPrefix("SF").build().generateWithNetResource(
+                "http://localhost:8080/info.api?raw");
+        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/autogen/java").setPackagePrefix("com.sfht.m.app.client").build()
+                .generateWithNetResource("http://localhost:8080/info.api?raw");
     }
 
     @Test
     public void testJsGenertor() throws ParserConfigurationException, IOException, SAXException {
-        Properties prop = new Properties();
-        prop.setProperty("net.pocrd.apiSdkJsLocation", "/tmp/js/");
-        CodeGenConfig.init(prop);
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        ApiMethodInfo[] array = new ApiMethodInfo[infoList.size()];
-        infoList.toArray(array);
-        Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        docs.toXml(new ApiDocumentationHelper().getDocument(array), outputStream, true);
-        ByteArrayInputStream swapStream = new ByteArrayInputStream(outputStream.toByteArray());
-        ApiSdkJavaScriptGenerator.getInstance().generate(swapStream);
+        new ApiSdkJavaScriptGenerator.Builder().setOutputPath("/home/admin/autogen/js/").build().generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testGenerateJsSdkFromNetResource() {
-        Properties prop = new Properties();
-        prop.setProperty("net.pocrd.apiSdkJsLocation", "/tmp/js/");
-        prop.setProperty("net.pocrd.apiSdkJsPkgName", "sf.b2c.mall");
-        CodeGenConfig.init(prop);
-        ApiSdkJavaScriptGenerator instance = ApiSdkJavaScriptGenerator.getInstance();
+        ApiSdkJavaScriptGenerator instance = new ApiSdkJavaScriptGenerator.Builder().setOutputPath("/home/admin/autogen/js")
+                .setPackagePrefix("sf.b2c.mall").build();
         instance.setApiGroups(new String[] { "logistics", "order", "payment", "products", "shopcart", "user" });
         instance.setSecurityTypes(SecurityType.UserLogin, SecurityType.None, SecurityType.RegisteredDevice);
-        instance.generateWithNetResource("http://10.32.156.168/info.api?raw");
+        instance.generateWithNetResource("http://115.28.160.84/info.api?raw");
     }
 }

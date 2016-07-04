@@ -14,7 +14,7 @@ public class Document {
     @Description("通用异常信息")
     public List<CodeInfo>            codeList;
     @Description("通用返回值结构描述")
-    public List<RespStruct>          respStructList;
+    public List<TypeStruct>          respStructList;
     @Description("系统级参数列表描述")
     public List<SystemParameterInfo> systemParameterInfoList;
 }

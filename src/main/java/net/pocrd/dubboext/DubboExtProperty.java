@@ -115,6 +115,22 @@ public class DubboExtProperty {
     }
 
     /**
+     * 覆盖写入token信息 以及 stoken信息 和 stoken的过期时间
+     *
+     * @param token
+     * @param stoken
+     * @param stkDuration
+     */
+    public static void setCookieToken(String token, String stoken, int stkDuration) {
+        if (token != null) {
+            addNotifications(ConstField.SET_COOKIE_TOKEN, token);
+        }
+        if (stoken != null) {
+            addNotifications(ConstField.SET_COOKIE_STOKEN, stoken + "|" + stkDuration);
+        }
+    }
+
+    /**
      * 覆盖写入token信息 以及 stoken信息
      *
      * @param token

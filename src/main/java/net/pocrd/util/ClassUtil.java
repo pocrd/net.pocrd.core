@@ -62,11 +62,11 @@ public class ClassUtil {
             cl = Thread.currentThread().getContextClassLoader();
         } else {
             cl = java.security.AccessController.doPrivileged(new java.security.PrivilegedAction<ClassLoader>() {
-                                                                 @Override
-                                                                 public ClassLoader run() {
-                                                                     return Thread.currentThread().getContextClassLoader();
-                                                                 }
-                                                             });
+                @Override
+                public ClassLoader run() {
+                    return Thread.currentThread().getContextClassLoader();
+                }
+            });
         }
 
         return cl;
@@ -76,7 +76,7 @@ public class ClassUtil {
         try {
             return getTCL().loadClass(className);
         } catch (final Throwable e) {
-            return Class.forName(className);
+            return Class.forName(className, true, Thread.currentThread().getContextClassLoader());
         }
     }
 

@@ -1,8 +1,13 @@
 package net.pocrd.core.generator;
 
+import net.pocrd.core.ApiDocumentationHelper;
+import net.pocrd.core.ApiManager;
 import net.pocrd.define.SecurityType;
-import net.pocrd.entity.CodeGenConfig;
+import net.pocrd.define.Serializer;
+import net.pocrd.document.Document;
+import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.CommonConfig;
+import net.pocrd.util.POJOSerializerProvider;
 import net.pocrd.util.WebRequestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,11 +15,12 @@ import org.slf4j.LoggerFactory;
 import javax.xml.transform.Source;
 import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.*;
+import java.util.jar.JarFile;
 
 /**
  * Created by guankaiqiang521 on 2014/9/26.
@@ -26,7 +32,9 @@ public abstract class ApiCodeGenerator {
      */
     private static String DEFAULT_API_EVALUATE_CONDITION;
     private Set<SecurityType> securityTypeSetToGen = null;
-    private Set<String>       apiGroupToGen        = null;
+    private Set<String> apiGroupToGen = null;
+    private Set<String> rejectApis = null;
+
     static {
         StringBuilder sb = new StringBuilder("(securityLevel =");
         for (SecurityType securityType : SecurityType.values()) {
@@ -40,7 +48,7 @@ public abstract class ApiCodeGenerator {
     }
 
     protected String getApiEvaluate() {
-        String apiEvaluate = null, seTmp = null, groupTmp = null;
+        String apiEvaluate = null, seTmp = null, groupTmp = null, rejectApiTmp = null;
         if (securityTypeSetToGen != null && securityTypeSetToGen.size() > 0) {
             StringBuilder sb = new StringBuilder("(securityLevel =");
             for (SecurityType securityType : securityTypeSetToGen) {
@@ -59,14 +67,24 @@ public abstract class ApiCodeGenerator {
             groupTmp = groupTmp.substring(0, groupTmp.lastIndexOf(" or groupName = "));
             groupTmp = groupTmp + ")";
         }
-        if (seTmp == null && groupTmp == null) {
-            apiEvaluate = "//Document/apiList/api[" + DEFAULT_API_EVALUATE_CONDITION + "]";
-        } else if (seTmp != null && groupTmp == null) {
+        if (rejectApis != null && rejectApis.size() > 0) {
+            StringBuilder sb = new StringBuilder("(methodName !=");
+            for (String api : rejectApis) {
+                sb.append("'").append(api).append("' and methodName != ");
+            }
+            rejectApiTmp = sb.toString();
+            rejectApiTmp = rejectApiTmp.substring(0, rejectApiTmp.lastIndexOf(" and methodName != "));
+            rejectApiTmp = rejectApiTmp + ")";
+        }
+        seTmp = seTmp == null ? DEFAULT_API_EVALUATE_CONDITION : seTmp;
+        if (groupTmp == null && rejectApiTmp == null) {
             apiEvaluate = "//Document/apiList/api[" + seTmp + "]";
-        } else if (groupTmp != null && seTmp == null) {
-            apiEvaluate = "//Document/apiList/api[" + DEFAULT_API_EVALUATE_CONDITION + " and " + groupTmp + "]";
-        } else {
+        } else if (groupTmp != null && rejectApiTmp == null) {
             apiEvaluate = "//Document/apiList/api[" + seTmp + " and " + groupTmp + "]";
+        } else if (groupTmp == null) {
+            apiEvaluate = "//Document/apiList/api[" + seTmp + " and " + rejectApiTmp + "]";
+        } else {
+            apiEvaluate = "//Document/apiList/api[" + seTmp + " and " + groupTmp + " and " + rejectApiTmp + "]";
         }
         System.out.println("[API EVALUATE] " + apiEvaluate);
         return apiEvaluate;
@@ -83,6 +101,7 @@ public abstract class ApiCodeGenerator {
             securityTypeSetToGen.addAll(Arrays.asList(securityTypes));
         }
     }
+
     public void setSecurityTypes(List<SecurityType> securityTypes) {
         if (securityTypes != null && securityTypes.size() > 0) {
             securityTypeSetToGen = new HashSet<SecurityType>();
@@ -104,6 +123,24 @@ public abstract class ApiCodeGenerator {
         }
     }
 
+    public Set<String> getRejectApis() {
+        return rejectApis;
+    }
+
+    public void setRejectApis(List<String> rejectApis) {
+        if (rejectApis != null && rejectApis.size() > 0) {
+            this.rejectApis = new HashSet<String>();
+            this.rejectApis.addAll(rejectApis);
+        }
+    }
+
+    public void setRejectApis(String[] rejectApis) {
+        if (rejectApis != null && rejectApis.length > 0) {
+            this.rejectApis = new HashSet<String>();
+            this.rejectApis.addAll(Arrays.asList(rejectApis));
+        }
+    }
+
     public Source getXsltSource(String targetSite, Source defaultSource) {
         Source xslSource = defaultSource;
         InputStream swapStream = null;
@@ -115,19 +152,18 @@ public abstract class ApiCodeGenerator {
             } catch (Exception e) {
                 logger.warn("get xslt failed from site:{},will use default xslt to generate doc", CommonConfig.getInstance().getApiInfoXslSite());
                 System.out.println("get xslt failed from site:" +
-                                           CommonConfig.getInstance().getApiInfoXslSite() + ",will use default xslt to generate doc");
+                        CommonConfig.getInstance().getApiInfoXslSite() + ", will use default xslt to generate doc");
             }
         }
         return xslSource;
     }
+
     /**
      * 转换模板，替换xslt中的定制元素
      *
      * @param inputStream
-     *
-     * @return
      */
-    public abstract InputStream transformInputStream(InputStream inputStream);
+    protected abstract InputStream transformInputStream(InputStream inputStream);
 
     /**
      * 使用xslt进行代码生成
@@ -150,5 +186,55 @@ public abstract class ApiCodeGenerator {
             logger.error("generate code failed with resource form " + website);
             throw new RuntimeException("generate code failed with resource form " + website);
         }
+    }
+
+    public void generateViaJar(String jarFilePath) {
+        JarFile jf = null;
+        List<ApiMethodInfo> infoList = new LinkedList<ApiMethodInfo>();
+        try {
+            jf = new JarFile(jarFilePath);
+            ClassLoader loader = URLClassLoader.newInstance(
+                    new URL[]{new URL("file:" + jarFilePath)},
+                    getClass().getClassLoader()
+            );
+            Thread.currentThread().setContextClassLoader(loader);
+            if ("dubbo".equals(jf.getManifest().getMainAttributes().getValue("Api-Dependency-Type"))) {
+                String ns = jf.getManifest().getMainAttributes().getValue("Api-Export");
+                String[] names = ns.split(" ");
+                for (String name : names) {
+                    if (name != null) {
+                        name = name.trim();
+                        if (name.length() > 0) {
+                            Class<?> clazz = Class.forName(name, true, loader);
+                            infoList.addAll(ApiManager.parseApi(clazz, new Object()));
+                        }
+                    }
+                }
+            }
+            if (infoList.size() > 0) {
+                ApiMethodInfo[] array = new ApiMethodInfo[infoList.size()];
+                infoList.toArray(array);
+                Document document = new ApiDocumentationHelper().getDocument(array);
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
+                docs.toXml(document, outputStream, true);
+                ByteArrayInputStream swapStream = new ByteArrayInputStream(outputStream.toByteArray());
+                generate(swapStream);
+            } else {
+                logger.warn("info list is empty.");
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("generateViaJar failed.", e);
+        }
+    }
+
+    public void generateViaApiMethodInfo(List<ApiMethodInfo> methods) {
+        ApiMethodInfo[] array = new ApiMethodInfo[methods.size()];
+        methods.toArray(array);
+        Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        docs.toXml(new ApiDocumentationHelper().getDocument(array), outputStream, true);
+        ByteArrayInputStream swapStream = new ByteArrayInputStream(outputStream.toByteArray());
+        generate(swapStream);
     }
 }

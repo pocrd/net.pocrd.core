@@ -1,18 +1,16 @@
 package net.pocrd.util;
 
 import net.pocrd.annotation.NotThreadSafe;
+import net.pocrd.define.ConstField;
 import net.pocrd.entity.CallerInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * 处理使用AES秘钥加密用户信息而产生的token
+ * TODO: 增加token前缀用于客户端可以直接判断该token的适用场景, 由此可以不再有deviceToken, userToken, oauthToken 等区别
  *
  * @author rendong
  */
@@ -21,11 +19,14 @@ public class AESTokenHelper {
     private static final Logger logger                   = LoggerFactory.getLogger(AESTokenHelper.class);
     private static final short  DEVICE_TOKEN_VERSION_1_0 = 10;
     private AesHelper aes;
+
     public AESTokenHelper(String pwd) {
         aes = new AesHelper(Base64Util.decode(pwd), null);
     }
 
-    public AESTokenHelper(AesHelper helper) {aes = helper;}
+    public AESTokenHelper(AesHelper helper) {
+        aes = helper;
+    }
 
     /**
      * 从base64编码的字符串中解析调用者信息
@@ -65,6 +66,19 @@ public class AESTokenHelper {
                     return null;
                 }
             }
+            if (dis.available() > 0) {
+                len = dis.readShort();
+                if (len > 0) {
+                    byte[] bs = new byte[len];
+                    if (len != dis.read(bs)) {
+                        return null;
+                    }
+                    caller.oauthid = new String(bs, ConstField.UTF8);
+                }
+            }
+            if (dis.available() > 0) {
+                return null;
+            }
         } catch (Exception e) {
             logger.error("token parse failed.", e);
         } finally {
@@ -98,6 +112,11 @@ public class AESTokenHelper {
             if (caller.key != null) {
                 dos.write(caller.key);
             }
+            byte[] oauthid = caller.oauthid == null ? null : caller.oauthid.getBytes(ConstField.UTF8);
+            if (oauthid != null) {
+                dos.writeShort(oauthid.length);
+                dos.write(oauthid);
+            }
             byte[] bs = baos.toByteArray();
             token = aes.encrypt(bs);
         } catch (IOException e) {
@@ -111,33 +130,30 @@ public class AESTokenHelper {
         }
         return token;
     }
+
     /**
      * 生成设备token
      *
      * @param caller
-     *
-     * @return
      */
     public byte[] generateDeviceToken(CallerInfo caller) {
         caller.uid = 0;
         return generateUserToken(caller);
     }
+
     /**
      * 生成用户token
      *
      * @param caller
-     *
-     * @return
      */
     public String generateStringUserToken(CallerInfo caller) {
         return Base64Util.encodeToString(this.generateUserToken(caller));
     }
+
     /**
      * 生成设备token
      *
      * @param caller
-     *
-     * @return
      */
     public String generateStringDeviceToken(CallerInfo caller) {
         return Base64Util.encodeToString(this.generateDeviceToken(caller));

@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
+
 public class ORMProvider implements Opcodes {
     private static final ConcurrentHashMap<String, ResultSetMapper<?>> mappers = new ConcurrentHashMap<String, ResultSetMapper<?>>();
     private static final Object                                        locker  = new Object();
@@ -41,7 +42,7 @@ public class ORMProvider implements Opcodes {
                     if (sql.contains("*")) {
                         throw new RuntimeException("Never use '*' in SQL statement.");
                     }
-                    ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+                    ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
                     String[] ps = sql.substring(sql.indexOf("select ") + 7, sql.indexOf(" from ")).trim().split(",");
                     HashMap<String, Integer> pmap = new HashMap<String, Integer>(ps.length);
                     for (int i = 0; i < ps.length; i++) {
@@ -79,7 +80,7 @@ public class ORMProvider implements Opcodes {
                             mv.visitEnd();
                         }
                         {
-                            PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_PUBLIC, "getData", "(Ljava/sql/ResultSet;)" + p_desc, null,
+                            PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_PUBLIC, "getData", "(Ljava/sql/ResultSet;)" + p_desc, null,
                                                                         new String[]{"java/sql/SQLException"});
                             pmv.visitCode();
                             pmv.declareLocal("result", clazz);
@@ -156,7 +157,7 @@ public class ORMProvider implements Opcodes {
                                 }
                             }
                         }
-                        mapper = (ResultSetMapper<T>)new PocClassLoader(ORMProvider.class.getClassLoader()).defineClass(className.replace('/', '.'),
+                        mapper = (ResultSetMapper<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className.replace('/', '.'),
                                                                                                                         cw.toByteArray()).newInstance();
                     } catch (Exception e) {
                         throw new RuntimeException(className, e);

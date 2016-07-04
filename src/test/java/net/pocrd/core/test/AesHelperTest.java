@@ -3,6 +3,7 @@ package net.pocrd.core.test;
 import net.pocrd.define.ConstField;
 import net.pocrd.util.AesHelper;
 import net.pocrd.util.Base64Util;
+import net.pocrd.util.HexStringUtil;
 import org.junit.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -16,9 +17,24 @@ public class AesHelperTest {
     @Test
     public void testAesHelper() {
         byte[] key = AesHelper.randomKey(256);
-        AesHelper aes = new AesHelper(key, null);
+        AesHelper aes = new AesHelper(key, true);
         assertTrue(aes != null);
+        for (int i = 0; i < 10; i++) {
+            System.out.println(HexStringUtil.toHexString(aes.encrypt("12345678".getBytes())));
+        }
         System.out.println(Base64Util.encodeToString(key));
+        AesHelper h = new AesHelper(Base64Util.decode("bY7813NzNt548KAC4QI+PwpK1khDkWPQC+SHbT1njRs="), true);
+        System.out.println(HexStringUtil.toHexString(h.encrypt("2683".getBytes(ConstField.UTF8))));
+        System.out.println(Long.parseLong(new String(h.decrypt(HexStringUtil.toByteArray("f1bb1ff3")), ConstField.UTF8)));
+
+        try {
+            String s = "123u4uuuyt人生就是一颗菠菜56ed7c8v90b98.76|54321";
+            System.out.println(s.getBytes("GBK").length);
+            System.out.println(s.getBytes("UTF8").length);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Test

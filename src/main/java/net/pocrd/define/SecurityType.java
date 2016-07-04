@@ -1,9 +1,5 @@
 package net.pocrd.define;
 
-import net.pocrd.entity.CompileConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public enum SecurityType {
 
     /**
@@ -17,9 +13,17 @@ public enum SecurityType {
     None(0x00),
 
     /**
-     * 带有该标识的token只在ssl信道中传递, 用于处理跨domain的csrftoken同步. 该安全级别不能用于访问任何接口
+     * 不是独立的认证方式, 带有该标识的token只在ssl信道中传递, 用于处理跨domain的csrftoken同步. 该安全级别不能用于访问任何接口
      */
     SeceretUserToken(0x01),
+
+    /**
+     * 第三方平台OAuth认证, token中携带平台名和平台id
+     * 验证要素
+     * 1. 包含三方平台信息的设备token
+     * 2. 设备签名
+     */
+    OAuthVerified(0x02),
 
     /**
      * 设备认证, 验证设备签名. eg. 有一定安全风险但与用户无关的接口(发送下行短信密码)
@@ -30,7 +34,7 @@ public enum SecurityType {
     RegisteredDevice(0x0100),
 
     /**
-     * 用户认证, 验证用户token, 不建议使用这个安全级别, 用户相关请使用 UserLogin
+     * 用户认证，已拥有用户id 但尚未完成用户注册的完整流程(未绑定手机号或其他原因)
      * 验证要素
      * 1. 用户token
      * 2. 设备签名
@@ -97,16 +101,13 @@ public enum SecurityType {
      */
     Document(0x40000000);
 
-    private int     code;
-    private boolean needUserToken;
-    private static final Logger logger = LoggerFactory.getLogger(SecurityType.class);
+    private int code;
 
     /**
      * @param code security16进制编码
      */
     private SecurityType(int code) {
         this.code = code;
-        this.needUserToken = needUserToken;
     }
 
     /**
@@ -114,6 +115,13 @@ public enum SecurityType {
      */
     public boolean check(int auth) {
         return (auth & code) == code;
+    }
+
+    /**
+     * 检查当前权限是否包含auth权限
+     */
+    public boolean contains(int auth) {
+        return (auth & code) != 0;
     }
 
     /**
@@ -135,5 +143,20 @@ public enum SecurityType {
      */
     public static boolean isNone(int auth) {
         return auth == 0;
+    }
+
+    /**
+     * 判断auth是否会过期, 包含 OAuthVerified, User, UserTrustedDevice, MobileOwner, MobileOwnerTrustedDevice, UserLogin
+     * 其中之一的auth都可能会过期
+     */
+    public static boolean expirable(int auth) {
+        return (auth & 0x3E02) != 0;
+    }
+
+    /**
+     * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserTrustedDevice, MobileOwner, MobileOwnerTrustedDevice, UserLogin
+     */
+    public static boolean requireToken(int auth){
+        return (auth & 0x3F02) != 0;
     }
 }

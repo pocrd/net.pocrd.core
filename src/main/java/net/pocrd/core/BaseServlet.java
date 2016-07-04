@@ -10,10 +10,10 @@ import net.pocrd.document.Response;
 import net.pocrd.dubboext.DubboExtProperty;
 import net.pocrd.entity.*;
 import net.pocrd.responseEntity.KeyValuePair;
-import net.pocrd.responseEntity.RawString;
 import net.pocrd.util.Base64Util;
 import net.pocrd.util.MiscUtil;
 import net.pocrd.util.POJOSerializerProvider;
+import net.pocrd.util.RawString;
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHeaders;
 import org.slf4j.*;
@@ -40,34 +40,34 @@ import java.util.concurrent.Future;
  * @author rendong
  */
 public abstract class BaseServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-    private static final Logger logger = LoggerFactory.getLogger(BaseServlet.class);
-    protected static final Marker SERVLET_MARKER = MarkerFactory.getMarker("servlet");
+    private static final   long                 serialVersionUID         = 1L;
+    private static final   Logger               logger                   = LoggerFactory.getLogger(BaseServlet.class);
+    protected static final Marker               SERVLET_MARKER           = MarkerFactory.getMarker("servlet");
     //debug 模式下识别http header中dubbo.version参数,将请求路由到指定的dubbo服务上
-    public static final String DEBUG_DUBBOVERSION = "DUBBO-VERSION";
+    public static final    String               DEBUG_DUBBOVERSION       = "DUBBO-VERSION";
     //debug 模式下识别http header中dubbo.service.ip参数,将请求路由到指定的dubbo服务上
-    public static final String DEBUG_DUBBOSERVICE_URL = "DUBBO-SERVICE-URL";
-    protected static final ApiMethodCall[] EMPTY_METHOD_CALL_ARRAY = new ApiMethodCall[0];
-    private static final String HEADER_ORGIN = "Access-Control-Allow-Origin";
-    private static final String HEADER_METHOD = "Access-Control-Allow-Method";
-    private static final String HEADER_CREDENTIALS = "Access-Control-Allow-Credentials";
-    private static final String HEADER_METHOD_VALUE = "POST, GET, OPTIONS, PUT, DELETE, HEAD";
-    private static final String HEADER_CREDENTIALS_VALUE = "true";
-    public static final String HTTPMETHOD_POST = "POST";
-    public static final String FORMAT_XML = "xml";
-    public static final String FORMAT_JSON = "json";
-    public static final String FORMAT_PLAINTEXT = "plaintext";
-    private static final String SERVER_ADDRESS = "a:";
-    private static final String THREADID = "t:";
-    private static final String SPLIT = "|";
-    private static final String REQ_TAG = "s:";
-    private static final String CONTENT_TYPE_XML = "application/xml; charset=utf-8";
-    private static final String CONTENT_TYPE_JSON = "application/json; charset=utf-8";
-    private static final String CONTENT_TYPE_JAVASCRIPT = "application/javascript; charset=utf-8";
-    private static final String CONTENT_TYPE_PLAINTEXT = "text/plain";
-    private static final String JSONARRAY_PREFIX = "[";
-    private static final String JSONARRAY_SURFIX = "]";
-    private static final Serializer<Response> apiResponseSerializer = POJOSerializerProvider.getSerializer(Response.class);
+    public static final    String               DEBUG_DUBBOSERVICE_URL   = "DUBBO-SERVICE-URL";
+    protected static final ApiMethodCall[]      EMPTY_METHOD_CALL_ARRAY  = new ApiMethodCall[0];
+    private static final   String               HEADER_ORGIN             = "Access-Control-Allow-Origin";
+    private static final   String               HEADER_METHOD            = "Access-Control-Allow-Method";
+    private static final   String               HEADER_CREDENTIALS       = "Access-Control-Allow-Credentials";
+    private static final   String               HEADER_METHOD_VALUE      = "POST, GET, OPTIONS, PUT, DELETE, HEAD";
+    private static final   String               HEADER_CREDENTIALS_VALUE = "true";
+    public static final    String               HTTPMETHOD_POST          = "POST";
+    public static final    String               FORMAT_XML               = "xml";
+    public static final    String               FORMAT_JSON              = "json";
+    public static final    String               FORMAT_PLAINTEXT         = "plaintext";
+    private static final   String               SERVER_ADDRESS           = "a:";
+    private static final   String               THREADID                 = "t:";
+    private static final   String               SPLIT                    = "|";
+    private static final   String               REQ_TAG                  = "s:";
+    private static final   String               CONTENT_TYPE_XML         = "application/xml; charset=utf-8";
+    private static final   String               CONTENT_TYPE_JSON        = "application/json; charset=utf-8";
+    private static final   String               CONTENT_TYPE_JAVASCRIPT  = "application/javascript; charset=utf-8";
+    private static final   String               CONTENT_TYPE_PLAINTEXT   = "text/plain";
+    private static final   String               JSONARRAY_PREFIX         = "[";
+    private static final   String               JSONARRAY_SURFIX         = "]";
+    private static final   Serializer<Response> apiResponseSerializer    = POJOSerializerProvider.getSerializer(Response.class);
 
     private ApiManager apiManager;
 
@@ -128,7 +128,7 @@ public abstract class BaseServlet extends HttpServlet {
                     context.deviceId = did;
 
                     // user token 解析失败，删除 cookie 中的 user token
-                    if (did < 0 && context.token != null && context.caller == null) {
+                    if (context.token != null && context.caller == null) {
                         context.clearUserToken = true;
                     }
                 } catch (Exception e) {
@@ -142,7 +142,10 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     private void setDeviceIDinCookie(ApiContext context, HttpServletResponse response) {
-        context.deviceId = -(100000000000000L + ((long) (Math.random() * 900000000000000L)));
+        if (context.appid == 0) {
+            return;
+        }
+        context.deviceId = -(100000000000000L + ((long)(Math.random() * 900000000000000L)));
         context.deviceIdStr = String.valueOf(context.deviceId);
         MDC.put(CommonParameter.deviceId, context.deviceIdStr);
         HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
@@ -171,12 +174,12 @@ public abstract class BaseServlet extends HttpServlet {
             parseParameter(apiContext, request, response);
             setResponseHeader(request, response, apiContext);
             parseResult = parseMethodInfo(apiContext, request);
-            // 验证token是否过期, 只对安全级别为 UserLogin 的访问进行此种检查
-            if (parseResult == ApiReturnCode.SUCCESS && apiContext.caller != null && SecurityType.UserLogin
-                    .check(apiContext.requiredSecurity)) {
+            // 验证token是否过期
+            if (parseResult == ApiReturnCode.SUCCESS && apiContext.caller != null
+                    && SecurityType.expirable(apiContext.requiredSecurity)) {
                 if (apiContext.caller.expire < current) {
                     parseResult = ApiReturnCode.TOKEN_EXPIRE;
-                    apiContext.clearUserTokenFlag = true;
+                    apiContext.clearExpiredUserToken = true;
                 }
             }
         } catch (Exception e) {
@@ -184,7 +187,7 @@ public abstract class BaseServlet extends HttpServlet {
             fatalError = true;
         }
         try {
-            AccessLogger access = config.getAccessLogger();
+            AccessLogger access = AccessLogger.getInstance();
             // 参数解析失败
             if (fatalError) {
                 access.logRequest("with fatal error", String.valueOf(ApiReturnCode.FATAL_ERROR.getCode()));
@@ -194,7 +197,7 @@ public abstract class BaseServlet extends HttpServlet {
                 try {
                     executeAllApiCall(apiContext, request, response);
                 } finally {
-                    apiContext.costTime = (int) (System.currentTimeMillis() - apiContext.startTime);
+                    apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
                     access.logRequest();
                 }
                 for (ApiMethodCall call : apiContext.apiCallInfos) {
@@ -251,7 +254,7 @@ public abstract class BaseServlet extends HttpServlet {
                     response.addCookie(stk_cookie);
                     response.addCookie(ct_cookie);
                     response.addCookie(userInfo_cookie);
-                } else if (apiContext.caller != null && apiContext.caller.deviceId < 0 && apiContext.clearUserTokenFlag) {
+                } else if (apiContext.clearExpiredUserToken) {
                     // token 过期，删除标志位，将客户端 token 标记为失效
                     HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
                     // 删除 cookie 标志位
@@ -297,11 +300,11 @@ public abstract class BaseServlet extends HttpServlet {
             switch (apiContext.format) {
                 case XML:
                     if (call.result == null) {
-                        if (call.method.returnType != RawString.class) {
+                        if (call.method.returnType != RawString.class && call.method.returnType != net.pocrd.responseEntity.RawString.class) {
                             apiContext.outputStream.write(ConstField.XML_EMPTY);
                         }
                     } else {
-                        ((Serializer<Object>) call.method.serializer).toXml(call.result, apiContext.outputStream, true);
+                        ((Serializer<Object>)call.method.serializer).toXml(call.result, apiContext.outputStream, true);
                     }
                     break;
                 case JSON:
@@ -309,11 +312,11 @@ public abstract class BaseServlet extends HttpServlet {
                         apiContext.outputStream.write(ConstField.JSON_SPLIT);
                     }
                     if (call.result == null) {
-                        if (call.method.returnType != RawString.class) {
+                        if (call.method.returnType != RawString.class && call.method.returnType != net.pocrd.responseEntity.RawString.class) {
                             apiContext.outputStream.write(ConstField.JSON_EMPTY);
                         }
                     } else {
-                        ((Serializer<Object>) call.method.serializer).toJson(call.result, apiContext.outputStream, true);
+                        ((Serializer<Object>)call.method.serializer).toJson(call.result, apiContext.outputStream, true);
                     }
                     break;
             }
@@ -359,8 +362,9 @@ public abstract class BaseServlet extends HttpServlet {
                 context.cid = REQ_TAG + context.startTime;
             }
             context.host = request.getHeader("host");
-            context.cid = SERVER_ADDRESS + CommonConfig.getInstance().getServerAddress() + SPLIT + THREADID + Thread.currentThread().getId() + SPLIT
-                    + context.cid;
+            context.cid = SERVER_ADDRESS + CommonConfig.getInstance().getServerAddress()
+                    + SPLIT + THREADID + Thread.currentThread().getId()
+                    + SPLIT + context.cid;
             context.versionCode = request.getParameter(CommonParameter.versionCode);
             context.versionName = request.getParameter(CommonParameter.versionName);
             context.deviceIdStr = request.getParameter(CommonParameter.deviceId);
@@ -368,6 +372,7 @@ public abstract class BaseServlet extends HttpServlet {
             context.uid = request.getParameter(CommonParameter.userId);
             String jsonpCallback = request.getParameter(CommonParameter.jsonpCallback);
             context.token = request.getParameter(CommonParameter.token);
+            context.otoken = request.getParameter(CommonParameter.oauthToken);
             if (jsonpCallback != null) {
                 if (context.callbackRegex.matcher(jsonpCallback).matches()) {
                     context.jsonpCallback = jsonpCallback.getBytes(ConstField.UTF8);
@@ -516,9 +521,20 @@ public abstract class BaseServlet extends HttpServlet {
     private void parseToken(ApiContext context, HttpServletRequest request) {
         try {
             // user token存在时解析出调用者信息
-            if (context.token != null && context.token.length() > 0) {
+            if (context.token != null) {
                 context.caller = parseCallerInfo(context, Base64Util.decode(context.token));
             }
+            if (context.otoken != null) {
+                CallerInfo oauth = parseCallerInfo(context, Base64Util.decode(context.otoken));
+                if (oauth != null) {
+                    if (context.caller == null) {
+                        context.caller = oauth;
+                    } else {
+                        context.caller.oauthid = oauth.oauthid;
+                    }
+                }
+            }
+
             // 查看是否可以根据dtk确认设备身份
             if (context.caller == null) {
                 if (context.deviceToken != null) {
@@ -535,6 +551,7 @@ public abstract class BaseServlet extends HttpServlet {
      *
      * @param name   请求名称
      * @param params 参数列表
+     *
      * @return 返回结果
      */
     protected abstract Object processCall(String name, String[] params);
@@ -547,6 +564,28 @@ public abstract class BaseServlet extends HttpServlet {
             apiContext.currentCall = call;
             MDC.put(CommonParameter.method, call.method.methodName);
             call.startTime = (count == 0) ? apiContext.startTime : System.currentTimeMillis();
+            // 下传调用ID
+            RpcContext.getContext().setAttachment(CommonParameter.callId, apiContext.cid);
+            RpcContext.getContext().setAttachment(CommonParameter.clientIp, apiContext.clientIP);
+            RpcContext.getContext().setAttachment(CommonParameter.versionName, apiContext.versionName);
+            RpcContext.getContext().setAttachment(CommonParameter.location, apiContext.location);
+            RpcContext.getContext().setAttachment(CommonParameter.cookieDeviceId, apiContext.deviceIdStr);
+            RpcContext.getContext().setAttachment(HttpHeaders.REFERER, apiContext.referer != null ?
+                    apiContext.referer.length() < 1024 ? apiContext.referer : apiContext.referer.substring(0, 1024) : null);
+            RpcContext.getContext().setAttachment(CommonParameter.businessId,
+                    (call.businessId != null && call.businessId.length() < 4096) ? call.businessId : null);
+
+            if (apiContext.caller == null) {
+                RpcContext.getContext().setAttachment(CommonParameter.applicationId, String.valueOf(apiContext.appid));
+                RpcContext.getContext().setAttachment(CommonParameter.deviceId, null);
+                RpcContext.getContext().setAttachment(CommonParameter.userId, null);
+            } else {
+                RpcContext.getContext().setAttachment(CommonParameter.applicationId, String.valueOf(apiContext.caller.appid));
+                RpcContext.getContext().setAttachment(CommonParameter.deviceId,
+                        apiContext.caller.deviceId != 0 ? String.valueOf(apiContext.caller.deviceId) : null);
+                RpcContext.getContext().setAttachment(CommonParameter.userId,
+                        apiContext.caller.uid != 0 ? String.valueOf(apiContext.caller.uid) : null);
+            }
             // dubbo 在调用结束后不会清除 Future 为了避免拿到之前接口对应的 Future 在这里统一清除
             RpcContext.getContext().setFuture(null);
             executeApiCall(call, request, response, null);
@@ -555,7 +594,7 @@ public abstract class BaseServlet extends HttpServlet {
                 // 如果配置为异步执行时，该接口恰好短路结果或mock返回为空, 此处获得的future为null
                 futures[count] = RpcContext.getContext().getFuture();
             } else {
-                call.costTime = (int) (System.currentTimeMillis() - call.startTime);
+                call.costTime = (int)(System.currentTimeMillis() - call.startTime);
             }
         }
         for (int count = 0; count < futures.length; count++) {
@@ -564,7 +603,7 @@ public abstract class BaseServlet extends HttpServlet {
             // 接口可能被 mock 或被短路
             if (futures[count] != null) {
                 executeApiCall(call, request, response, futures[count]);
-                call.costTime = (int) (System.currentTimeMillis() - call.startTime);
+                call.costTime = (int)(System.currentTimeMillis() - call.startTime);
             }
             int display = call.getReturnCode();
             if (display > 0) {
@@ -581,50 +620,25 @@ public abstract class BaseServlet extends HttpServlet {
     }
 
     /**
-     * 执行具体的api接口调用
+     * 执行具体的api接口调用, 本接口可能被执行两次，不要在其中加入任何状态相关的操作
      */
     private void executeApiCall(ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
         try {
             ApiContext context = ApiContext.getCurrent();
-            // 下传调用ID
-            RpcContext.getContext().setAttachment(CommonParameter.callId, context.cid);
-            RpcContext.getContext().setAttachment(CommonParameter.clientIp, context.clientIP);
-            RpcContext.getContext().setAttachment(CommonParameter.versionName, context.versionName);
-            if (context.referer != null && context.referer.length() < 1024) {
-                RpcContext.getContext().setAttachment(HttpHeaders.REFERER, context.referer);
-            }
-            if (context.location != null) {
-                RpcContext.getContext().setAttachment(CommonParameter.location, context.location);
-            }
-            if (context.caller == null) {
-                RpcContext.getContext().setAttachment(CommonParameter.cookieDeviceId, context.deviceIdStr);
-                RpcContext.getContext().setAttachment(CommonParameter.applicationId, String.valueOf(context.appid));
-            } else {
-                if (context.caller.uid != 0) {
-                    RpcContext.getContext().setAttachment(CommonParameter.userId, String.valueOf(context.caller.uid));
-                }
-                if (context.caller.deviceId != 0) {
-                    RpcContext.getContext().setAttachment(CommonParameter.deviceId, String.valueOf(context.caller.deviceId));
-                }
-                RpcContext.getContext().setAttachment(CommonParameter.applicationId, String.valueOf(context.caller.appid));
-            }
-            if (call.businessId != null && call.businessId.length() < 4096) {
-                RpcContext.getContext().setAttachment(CommonParameter.businessId, call.businessId);
-            }
 
             // 当接口声明了静态 mock 返回值或被标记为短路时
             if (call.method.staticMockValue != null) {
                 call.result = call.method.staticMockValue;
             } else {
                 if (future != null) {
-                    FutureAdapter<?> fa = (FutureAdapter<?>) future;
+                    FutureAdapter<?> fa = (FutureAdapter<?>)future;
                     final ResponseCallback callback = fa.getFuture().getCallback();
                     fa.getFuture().setCallback(new ResponseCallback() {
                         @Override
                         public void done(Object response) {
                             callback.done(response);
                             if (RpcResult.class.isInstance(response)) {
-                                RpcResult rpcResult = (RpcResult) response;
+                                RpcResult rpcResult = (RpcResult)response;
                                 DubboExtProperty.addNotifications(rpcResult.getNotifications());
                             }
                         }
@@ -684,7 +698,9 @@ public abstract class BaseServlet extends HttpServlet {
             if (notifications != null && notifications.size() > 0) {
                 for (Entry<String, String> entry : notifications.entrySet()) {
                     String value = entry.getValue();
-                    if (ConstField.SET_COOKIE_TOKEN.equals(entry.getKey())) {
+                    if (ConstField.SET_COOKIE_STOKEN.equals(entry.getKey())) {
+                        // do nothing
+                    } else if (ConstField.SET_COOKIE_TOKEN.equals(entry.getKey())) {
                         HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
                         if (value != null && value.length() > 0) {
                             Cookie tk_cookie = new Cookie(context.appid + CommonParameter.token, URLEncoder.encode(value, "utf-8"));
@@ -693,10 +709,22 @@ public abstract class BaseServlet extends HttpServlet {
                             tk_cookie.setSecure(false);
                             tk_cookie.setPath("/");
 
+                            String stk = notifications.get(ConstField.SET_COOKIE_STOKEN);
+                            int duration = -1;
+                            try {
+                                int index = stk.lastIndexOf("|");
+                                if (index > 0) {
+                                    stk = stk.substring(0, index);
+                                    duration = Integer.valueOf(stk.substring(index + 1));
+                                }
+
+                            } catch (Exception e) {
+                                logger.error("parse stk expire time error." + stk);
+                            }
                             Cookie stk_cookie = new Cookie(context.appid + CommonParameter.stoken,
                                     notifications.get(ConstField.SET_COOKIE_STOKEN) == null ? "" : URLEncoder.encode(
-                                            notifications.get(ConstField.SET_COOKIE_STOKEN), "utf-8"));
-                            stk_cookie.setMaxAge(-1);
+                                            stk, "utf-8"));
+                            stk_cookie.setMaxAge(duration);
                             stk_cookie.setHttpOnly(true);
                             stk_cookie.setSecure(true);
                             stk_cookie.setPath("/");
@@ -766,11 +794,11 @@ public abstract class BaseServlet extends HttpServlet {
             }
         } catch (Throwable t) {
             if (t instanceof ServiceException) {
-                ServiceException se = (ServiceException) t;
+                ServiceException se = (ServiceException)t;
                 logger.error(SERVLET_MARKER, "service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof ServiceException) {
-                ServiceException se = (ServiceException) t.getCause();
+                ServiceException se = (ServiceException)t.getCause();
                 logger.error(SERVLET_MARKER, "inner service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.TimeoutException) {
@@ -805,7 +833,8 @@ public abstract class BaseServlet extends HttpServlet {
         Exception outputException = null;
 
         try {
-            if (calls.length == 1 && calls[0].method.returnType == RawString.class) {// rawString的处理，将dubbo service返回的结果直接输出
+            if (calls.length == 1 && (calls[0].method.returnType == RawString.class
+                    || calls[0].method.returnType == net.pocrd.responseEntity.RawString.class)) {// rawString的处理，将dubbo service返回的结果直接输出
                 OutputStream output = response.getOutputStream();
                 if (code == ApiReturnCode.SUCCESS && calls[0].getReturnCode() == ApiReturnCode.SUCCESS.getCode()) {
                     apiContext.outputStream.writeTo(output);

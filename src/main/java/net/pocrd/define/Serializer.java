@@ -6,7 +6,7 @@ import net.pocrd.entity.ApiReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.responseEntity.JSONString;
 import net.pocrd.responseEntity.ObjectArrayResp;
-import net.pocrd.responseEntity.RawString;
+import net.pocrd.util.RawString;
 import net.pocrd.util.POJOSerializerProvider;
 
 import java.io.IOException;
@@ -84,10 +84,41 @@ public interface Serializer<T> {
     };
 
     /**
+     * TODO remove,RawString不应对外暴露
+     *
+     * @see rawStringSerializer
+     * @deprecated
+     */
+    public static final Serializer<net.pocrd.responseEntity.RawString> deprecatedRawStringSerializer = new Serializer<net.pocrd.responseEntity.RawString>() {
+
+        @Override
+        public void toXml(net.pocrd.responseEntity.RawString instance, OutputStream out, boolean isRoot) {
+            try {
+                if (instance.value != null) {
+                    out.write(instance.value.getBytes(ConstField.UTF8));
+                }
+            } catch (Exception e) {
+                throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, e);
+            }
+        }
+
+        @Override
+        public void toJson(net.pocrd.responseEntity.RawString instance, OutputStream out, boolean isRoot) {
+            try {
+                if (instance.value != null) {
+                    out.write(instance.value.getBytes(ConstField.UTF8));
+                }
+            } catch (Exception e) {
+                throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, e);
+            }
+        }
+    };
+    /**
      * note:PojoSerializer不支持动态类型，要让SerializerProvider支持要写很多恶心的代码，还是直接写java代码了
      */
     public static final Serializer<ObjectArrayResp> objectArrayRespSerializer = new Serializer<ObjectArrayResp>() {
         byte[][] bs = new byte[8][];
+
         {
             bs[0] = "<ObjectArrayResp>".getBytes(ConstField.UTF8);
             bs[1] = "<value>".getBytes(ConstField.UTF8);
@@ -98,6 +129,7 @@ public interface Serializer<T> {
             bs[6] = "<![CDATA[".getBytes(ConstField.UTF8);
             bs[7] = "]]>".getBytes(ConstField.UTF8);
         }
+
         @Override
         public void toXml(ObjectArrayResp instance, OutputStream out, boolean isRoot) {
             if (instance == null) {
@@ -118,7 +150,7 @@ public interface Serializer<T> {
                                 out.write(bs[7]);
                             } else if (obj.getClass().isEnum()) {
                                 out.write(bs[6]);
-                                out.write(((Enum)obj).name().getBytes(ConstField.UTF8));
+                                out.write(((Enum) obj).name().getBytes(ConstField.UTF8));
                                 out.write(bs[7]);
                             } else {
                                 Serializer localSerializer = POJOSerializerProvider.getSerializer(obj.getClass());
@@ -136,6 +168,7 @@ public interface Serializer<T> {
                 throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, localIOException);
             }
         }
+
         @Override
         public void toJson(ObjectArrayResp instance, OutputStream out, boolean isRoot) {
             try {

@@ -2,6 +2,7 @@ package net.pocrd.core.test;
 
 import net.pocrd.core.PocClassLoader;
 import net.pocrd.util.MethodVisitorWrapper;
+import net.pocrd.util.PocClassWriter;
 import org.junit.Test;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
@@ -12,7 +13,7 @@ import java.lang.reflect.Method;
 public class MethodVisitorWrapperTest implements Opcodes {
     @Test
     public void TestGen() throws Exception {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
         MethodVisitorWrapper mv;
         cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, "net/pocrd/test/core/util/MethodVisitorWrapperTest", null, "java/lang/Object", null);
         cw.visitSource("MethodVisitorWrapperTest.java", null);
@@ -66,7 +67,7 @@ public class MethodVisitorWrapperTest implements Opcodes {
         // byte[] content = cw.toByteArray();
         // output.write(content, 0, content.length);
         // output.close();
-        PocClassLoader pocClassLoader = new PocClassLoader(MethodVisitorWrapperTest.class.getClassLoader());
+        PocClassLoader pocClassLoader = new PocClassLoader(Thread.currentThread().getContextClassLoader());
         Class<?> testClass = pocClassLoader.defineClass("net.pocrd.test.core.util.MethodVisitorWrapperTest", cw.toByteArray());
         Method main = testClass.getMethod("main", String.class);// invoke method of instance
         main.invoke(testClass.newInstance(), "Tim.Guan");

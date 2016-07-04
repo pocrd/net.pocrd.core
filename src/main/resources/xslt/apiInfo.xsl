@@ -9,279 +9,279 @@
                 <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.1.min.js"></script>
                 <style type="text/css">
                     table, td, th {
-                        margin: 5px;
-                        padding: 5px;
+                    margin: 5px;
+                    padding: 5px;
                     }
 
                     .hide, .detail {
-                        display: none;
+                    display: none;
                     }
 
                     .title {
-                        text-align: left;
-                        display: block;
-                        font-weight: bold;
+                    text-align: left;
+                    display: block;
+                    font-weight: bold;
                     }
 
                     .title p {
-                        font-size: 32px;
-                        font-style: normal;
-                        font-weight: bold;
-                        text-align: center
+                    font-size: 32px;
+                    font-style: normal;
+                    font-weight: bold;
+                    text-align: center
                     }
 
                     .div_resp {
-                        border: solid 1px #D4E2F1;
-                        padding: 5px;
-                        margin: 5px;
+                    border: solid 1px #D4E2F1;
+                    padding: 5px;
+                    margin: 5px;
                     }
 
                     .div_resp table {
-                        margin: 0px;
-                        padding: 0px
+                    margin: 0px;
+                    padding: 0px
                     }
 
                     .div_resp td, .div_resp th {
-                        padding: 2px 10px 2px 5px;
-                        vertical-align: super;
+                    padding: 2px 10px 2px 5px;
+                    vertical-align: super;
                     }
 
                     .tbl_err_code table {
-                        border-right: 1px solid #D4E2F1;
-                        border-bottom: 1px solid #D4E2F1;
-                        border-spacing: 0px;
-                        padding: 0px;
-                        width: 980px;
+                    border-right: 1px solid #D4E2F1;
+                    border-bottom: 1px solid #D4E2F1;
+                    border-spacing: 0px;
+                    padding: 0px;
+                    width: 980px;
                     }
 
                     .tbl_err_code table td, .tbl_err_code table th {
-                        border-left: 1px solid #D4E2F1;
-                        border-top: 1px solid #D4E2F1
+                    border-left: 1px solid #D4E2F1;
+                    border-top: 1px solid #D4E2F1
                     }
 
                     .div_detail_resp {
-                        border: solid 1px #D4E2F1;
-                        padding: 5px;
-                        margin: 5px;
+                    border: solid 1px #D4E2F1;
+                    padding: 5px;
+                    margin: 5px;
                     }
 
                     .div_detail_resp table {
-                        margin: 0px;
-                        padding: 0px
+                    margin: 0px;
+                    padding: 0px
                     }
 
                     .div_detail_resp td, .div_detail_resp th {
-                        padding: 2px 10px 2px 5px;
-                        vertical-align: super;
+                    padding: 2px 10px 2px 5px;
+                    vertical-align: super;
                     }
 
                     .div_left_groups {
-                        width: 150px;
-                        float: left;
-                        display: block;
+                    width: 150px;
+                    float: left;
+                    display: block;
                     }
 
                     .div_main_content {
-                        width: 810px;
-                        float: right;
+                    width: 810px;
+                    float: right;
                     }
 
                     .div_comm_err, .div_comm_return, .div_comm_sys_param {
-                        float: left;
-                        width: inherit;
-                        padding: 2px;
-                        padding-bottom: 8px;
-                        margin-bottom: 10px;
-                        border-bottom: solid 1px #D4E2F1;
+                    float: left;
+                    width: inherit;
+                    padding: 2px;
+                    padding-bottom: 8px;
+                    margin-bottom: 10px;
+                    border-bottom: solid 1px #D4E2F1;
                     }
 
                     .main {
-                        width: 990px;
-                        height: inherit;
-                        min-height: 558px;
-                        margin: 0 auto;
+                    width: 990px;
+                    height: inherit;
+                    min-height: 558px;
+                    margin: 0 auto;
                     }
 
                     ul {
-                        list-style: none;
-                        padding: 0px;
-                        margin: 0px;
-                        border-bottom: 1px solid #D4E2F1;
-                        border-left: 1px solid #D4E2F1;
+                    list-style: none;
+                    padding: 0px;
+                    margin: 0px;
+                    border-bottom: 1px solid #D4E2F1;
+                    border-left: 1px solid #D4E2F1;
                     }
 
                     ul li {
-                        display: list-item;
-                        text-decoration: none;
-                        text-align: left;
-                        padding: 3px 3px 3px 5px;
-                        font-size: 16px;
-                        font-style: normal;
-                        font-variant: normal;
-                        font-weight: normal;
-                        border-top: 1px solid #D4E2F1;
-                        border-right: 1px solid #D4E2F1;
-                        cursor: pointer;
+                    display: list-item;
+                    text-decoration: none;
+                    text-align: left;
+                    padding: 3px 3px 3px 5px;
+                    font-size: 16px;
+                    font-style: normal;
+                    font-variant: normal;
+                    font-weight: normal;
+                    border-top: 1px solid #D4E2F1;
+                    border-right: 1px solid #D4E2F1;
+                    cursor: pointer;
                     }
 
                     ul li:hover {
-                        background-color: #D4E2F1;
-                        text-align: left;
-                        padding: 3px 3px 3px 5px;
+                    background-color: #D4E2F1;
+                    text-align: left;
+                    padding: 3px 3px 3px 5px;
                     }
 
                     ul li.visited {
-                        background-color: #D4E2F1;
-                        text-align: left;
-                        padding: 3px 3px 3px 5px;
-                        font-weight: bold;
+                    background-color: #D4E2F1;
+                    text-align: left;
+                    padding: 3px 3px 3px 5px;
+                    font-weight: bold;
                     }
 
                     .div_detail_toggle {
-                        margin: 5px 1px 0px 1px;
-                        cursor: pointer;
-                        padding: 0px 2px 0px 2px;
+                    margin: 5px 1px 0px 1px;
+                    cursor: pointer;
+                    padding: 0px 2px 0px 2px;
                     }
 
                     .div_detail_toggle span.api_name {
-                        font-size: 17px;
-                        width: 370px;
-                        text-align: left;
-                        display: inline-block;
+                    font-size: 17px;
+                    width: 370px;
+                    text-align: left;
+                    display: inline-block;
                     }
 
                     .div_detail_toggle span.api_name:hover {
-                        font-size: 17px;
-                        width: 370px;
-                        text-align: left;
-                        display: inline-block;
-                        color: #f60;
+                    font-size: 17px;
+                    width: 370px;
+                    text-align: left;
+                    display: inline-block;
+                    color: #f60;
                     }
 
                     .div_detail_toggle span.api_desc {
-                        font-size: 17px;
+                    font-size: 17px;
                     }
 
                     .div_detail_toggle:hover {
-                        background-color: #D4E2F1;
+                    background-color: #D4E2F1;
                     }
 
                     .div_detail_toggle.detail_visited {
-                        background-color: #D4E2F1;
-                        font-weight: bold;
+                    background-color: #D4E2F1;
+                    font-weight: bold;
                     }
 
                     .detail {
-                        padding: 1px 0px 0px 10px;
-                        margin: 0px 1px 1px 1px;
-                        border-bottom: solid 1px #D4E2F1;
+                    padding: 1px 0px 0px 10px;
+                    margin: 0px 1px 1px 1px;
+                    border-bottom: solid 1px #D4E2F1;
                     }
 
                     .detail.detail_visited {
-                        background-color: #FFFFFF;
+                    background-color: #FFFFFF;
                     }
 
                     .top {
-                        float: left;
-                        width: inherit;
-                        padding: 0px 0px 10px 0px;
-                        margin: 0px 0px 10px 0px;
-                        border-bottom: solid 1px #D4E2F1;
+                    float: left;
+                    width: inherit;
+                    padding: 0px 0px 10px 0px;
+                    margin: 0px 0px 10px 0px;
+                    border-bottom: solid 1px #D4E2F1;
                     }
 
                     .tbl_border_collapse {
-                        border: solid 1px #D4E2F1;
-                        border-collapse: collapse;
-                        padding: 5px;
-                        margin: 5px;
-                        width: 788px;
+                    border: solid 1px #D4E2F1;
+                    border-collapse: collapse;
+                    padding: 5px;
+                    margin: 5px;
+                    width: 788px;
                     }
 
                     .tbl_border_collapse td, .tbl_border_collapse th {
-                        border: solid 1px #D4E2F1;
+                    border: solid 1px #D4E2F1;
                     }
 
                     .div_busi_err {
-                        padding-bottom: 10px;
+                    padding-bottom: 10px;
                     }
 
                     .tbl_title_tr {
-                        background-color: rgb(216, 229, 244);
+                    background-color: rgb(216, 229, 244);
                     }
 
                     .tbl_even_backgroud {
-                        background-color: rgb(255, 255, 255);
+                    background-color: rgb(255, 255, 255);
                     }
 
                     .tbl_odd_backgroud {
-                        background-color: rgb(241, 247, 251);
+                    background-color: rgb(241, 247, 251);
                     }
 
                     .div_detail_resp table.tbl_no_border_collapse {
-                        width: 776px;
+                    width: 776px;
                     }
 
                     .tbl_no_border_collapse {
-                        width: 970px;
-                        border-spacing: 0px;
-                        margin-top: 3px;
+                    width: 970px;
+                    border-spacing: 0px;
+                    margin-top: 3px;
                     }
 
                     .tbl_no_border_collapse tr.tbl_even_backgroud {
-                        background-color: rgb(255, 255, 255);
+                    background-color: rgb(255, 255, 255);
                     }
 
                     .tbl_no_border_collapse tr.tbl_odd_backgroud {
-                        background-color: rgb(241, 247, 251);
-                        border-right: solid 1px #D4E2F1;
+                    background-color: rgb(241, 247, 251);
+                    border-right: solid 1px #D4E2F1;
                     }
 
                     .tbl_no_border_collapse tr.tbl_odd_backgroud td {
-                        background-color: rgb(241, 247, 251);
+                    background-color: rgb(241, 247, 251);
                     }
 
                     .highlight {
-                        background: yellow;
-                        color: red;
+                    background: yellow;
+                    color: red;
                     }
 
                     #search_box {
-                        background: white;
-                        opacity: 0.8;
-                        text-align: right
+                    background: white;
+                    opacity: 0.8;
+                    text-align: right
                     }
 
                     #search_btn {
-                        background: #0f79be;
-                        border: 0px;
-                        margin-top: 10px;
-                        width: 120px;
-                        line-height: 26px;
-                        height: 28px;
-                        color: white;
+                    background: #0f79be;
+                    border: 0px;
+                    margin-top: 10px;
+                    width: 120px;
+                    line-height: 26px;
+                    height: 28px;
+                    color: white;
                     }
 
                     #searchstr {
-                        font-size: 14px;
-                        height: 24px;
-                        width: 180px;
-                        margin-top: 10px;
+                    font-size: 14px;
+                    height: 24px;
+                    width: 180px;
+                    margin-top: 10px;
                     }
 
                     .underline {
-                        border-bottom: solid 1px #D4E2F1;
-                        padding-bottom: 4px;
-                        margin-bottom: 2px;
+                    border-bottom: solid 1px #D4E2F1;
+                    padding-bottom: 4px;
+                    margin-bottom: 2px;
                     }
 
                     #internal_apis, #integrated_apis, #none_apis, #registereddevice_apis, #userlogin_apis, #other_apis, #doc_apis {
-                        margin: 0px 0px 5px 0px;
-                        padding: 0px;
-                        border: solid 1px #D4E2F1;
+                    margin: 0px 0px 5px 0px;
+                    padding: 0px;
+                    border: solid 1px #D4E2F1;
                     }
 
                     #doc_apis span.state_title, #internal_apis span.state_title, #integrated_apis span.state_title, #none_apis span.state_title, #registereddevice_apis span.state_title, #userlogin_apis span.state_title, #other_apis span.state_title {
-                        font-weight: bold;
+                    font-weight: bold;
                     }
 
                 </style>
@@ -290,6 +290,22 @@
                     $(document).ready(function(){
                     var groups = new Array();
                     var last_group = "";
+                    $(".i18n").each(function(index) {
+                    var source = '\nzh-cn:'+$(this).text();
+                    var lo = 'zh-cn';
+                    if(location.search){
+                    var index = location.search.indexOf('lo=');
+                    if(index>0){
+                    if(location.search.length>=index+8){
+                    lo = location.search.substr(index+3, 5);
+                    }
+                    }
+                    }
+                    var regExp = new RegExp('\\n\\s{0,4}'+lo+':([^\\n]+)', 'i');
+                    if(regExp.test(source)){
+                    $(this).text(regExp.exec(source)[1]);
+                    }
+                    });
                     $("a.hide").each(function(index) {
                     var current_group = $(this).text();
                     if(last_group != current_group) {
@@ -717,7 +733,7 @@
                                         <span class="api_name">
                                             <xsl:value-of select="methodName"/>
                                         </span>
-                                        <span class="api_desc">
+                                        <span class="api_desc i18n">
                                             <xsl:value-of select="description"/>
                                         </span>
                                     </div>
@@ -764,10 +780,10 @@
                                                 <table class="tbl_border_collapse">
                                                     <tr>
                                                         <th style="width:10%">必要性</th>
-                                                        <th style="width:10%">参数名</th>
-                                                        <th style="width:10%">类型</th>
+                                                        <th style="width:15%">参数名</th>
+                                                        <th style="width:15%">类型</th>
                                                         <th style="width:10%">seq.</th>
-                                                        <th style="width:60%">描述</th>
+                                                        <th style="width:50%">描述</th>
                                                     </tr>
                                                     <xsl:for-each select="parameterInfoList/parameterInfo">
                                                         <tr>
@@ -777,7 +793,7 @@
                                                                     <xsl:otherwise>可选</xsl:otherwise>
                                                                 </xsl:choose>
                                                             </td>
-                                                            <td style="text-align:center">
+                                                            <td style="text-align:center" class="i18n">
                                                                 <xsl:value-of select="name"/>
                                                             </td>
                                                             <td style="text-align:center">
@@ -801,7 +817,7 @@
                                                             <td style="text-align:center">
                                                                 <xsl:value-of select="sequence"/>
                                                             </td>
-                                                            <td style="text-align:left">
+                                                            <td style="text-align:left" class="i18n">
                                                                 <xsl:value-of select="description"/>
                                                                 <xsl:if test="verifyRegex != ''">
                                                                     <font color="red">
@@ -849,8 +865,7 @@
                                                                 <td style="width:15%;text-align:left">
                                                                     <xsl:value-of select="name"/>
                                                                 </td>
-                                                                <td style="width:65%;text-align:left">//
-                                                                    <xsl:value-of select="desc"/>
+                                                                <td style="width:65%;text-align:left" class="i18n">//<xsl:value-of select="desc"/>
                                                                 </td>
                                                             </tr>
                                                         </xsl:for-each>
@@ -891,8 +906,7 @@
                                                                 <td style="width:15%;text-align:left">
                                                                     <xsl:value-of select="name"/>
                                                                 </td>
-                                                                <td style="width:65%;text-align:left">//
-                                                                    <xsl:value-of select="desc"/>
+                                                                <td style="width:65%;text-align:left" class="i18n">//<xsl:value-of select="desc"/>
                                                                 </td>
                                                             </tr>
                                                         </xsl:for-each>
@@ -917,7 +931,7 @@
                                                             <td>
                                                                 <xsl:value-of select="name"/>
                                                             </td>
-                                                            <td>
+                                                            <td class="i18n">
                                                                 <xsl:value-of select="desc"/>
                                                             </td>
                                                         </tr>
@@ -947,7 +961,7 @@
                                     <td>
                                         <xsl:value-of select="name"/>
                                     </td>
-                                    <td>
+                                    <td class="i18n">
                                         <xsl:value-of select="desc"/>
                                     </td>
                                 </tr>
@@ -974,8 +988,7 @@
                                             <td style="width:15%;text-align:left">
                                                 <xsl:value-of select="name"/>
                                             </td>
-                                            <td style="width:65%;text-align:left">//
-                                                <xsl:value-of select="desc"/>
+                                            <td style="width:65%;text-align:left" class="i18n">//<xsl:value-of select="desc"/>
                                             </td>
                                         </tr>
                                     </xsl:for-each>
@@ -1003,7 +1016,7 @@
                                                 <td>
                                                     <xsl:value-of select="name"/>
                                                 </td>
-                                                <td>
+                                                <td class="i18n">
                                                     <xsl:value-of select="desc"/>
                                                 </td>
                                             </tr>
@@ -1048,7 +1061,7 @@
                                                 <td name="name">
                                                     <xsl:value-of select="name"/>
                                                 </td>
-                                                <td name="desc">
+                                                <td name="desc" class="i18n">
                                                     <xsl:value-of select="desc"/>
                                                 </td>
                                             </tr>

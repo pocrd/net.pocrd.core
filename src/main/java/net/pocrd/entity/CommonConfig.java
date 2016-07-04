@@ -23,17 +23,12 @@ public class CommonConfig {
             if (prop == null) {
                 throw new RuntimeException("common config init failed.");
             } else {
-                instance.setAccessFileLoggerName(prop.getProperty("net.pocrd.accessLoggerName", "net.pocrd.api.access"));
                 instance.setAutogenPath(prop.getProperty("net.pocrd.autogenPath", "/tmp/autogen"));
-                instance.setCacheVersion(prop.getProperty("net.pocrd.cacheVersion", "v1"));
-                instance.setCacheType(prop.getProperty("net.pocrd.cacheType", "memcache"));
-                instance.setUseHttpGzip(Boolean.valueOf(prop.getProperty("net.pocrd.useHttpGzip", "false")));
                 instance.setApigwVersion(prop.getProperty("net.pocrd.apigwVersion", "develop"));
                 instance.setApiInfoXslSite(prop.getProperty("net.pocrd.apiInfoXslSite"));
                 instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
                 instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync"));
             }
-            instance.accessLogger = AccessLogger.getInstance();
             try {
                 InetAddress addr = InetAddress.getLocalHost();
                 instance.serverAddress = Md5Util.computeToHex(addr.getHostAddress().getBytes("UTF-8")).substring(0, 6);
@@ -65,25 +60,6 @@ public class CommonConfig {
         }
     }
 
-    private Logger accessFileLogger = null;
-
-    public Logger getAccessFileLogger() {
-        if (accessFileLogger == null) {
-            synchronized (CommonConfig.class) {
-                if (accessFileLogger == null) {
-                    accessFileLogger = LoggerFactory.getLogger(CommonConfig.getInstance().accessFileLoggerName);
-                }
-            }
-        }
-        return accessFileLogger;
-    }
-
-    private AccessLogger accessLogger;
-
-    public AccessLogger getAccessLogger() {
-        return accessLogger;
-    }
-
     private String autogenPath;
 
     private void setAutogenPath(String autogenPath) {
@@ -95,45 +71,6 @@ public class CommonConfig {
 
     public String getAutogenPath() {
         return autogenPath;
-    }
-
-    private String cacheVersion;
-
-    private void setCacheVersion(String cacheVersion) {
-        this.cacheVersion = cacheVersion;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.cacheVersion:{}", this.cacheVersion);
-        }
-    }
-
-    public String getCacheVersion() {
-        return cacheVersion;
-    }
-
-    private String cacheType;
-
-    private void setCacheType(String cacheType) {
-        this.cacheType = cacheType;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.cacheType:{}", this.cacheType);
-        }
-    }
-
-    public String getCacheType() {
-        return cacheType;
-    }
-
-    private boolean useHttpGzip = true;
-
-    private void setUseHttpGzip(boolean useHttpGzip) {
-        this.useHttpGzip = useHttpGzip;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.useHttpGzip:{}", this.useHttpGzip);
-        }
-    }
-
-    public boolean getUseHttpGzip() {
-        return useHttpGzip;
     }
 
     /**

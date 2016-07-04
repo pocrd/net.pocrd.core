@@ -54,7 +54,7 @@
 
 /*
  * <xsl:value-of select="description"/>
- * @author CodeGenerator@jk.pingan.com
+ * @author CodeGenerator@pocrd.net
  */
 @implementation ${prefix}<xsl:call-template name="getClassName"><xsl:with-param name="name" select="methodName" /></xsl:call-template>
 
@@ -241,46 +241,49 @@
     <xsl:param name="desc"/>
     <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
     <xsl:if test="$isList = 'true'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, strong) NSMutableArray *<xsl:value-of select="$objcName"/>;
     </xsl:if>
     <xsl:if test="$isList = 'false'">
       <xsl:choose>
         <xsl:when test="$type = 'boolean'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) BOOL <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'byte'">
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) char <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'char'">
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) unsigned short <xsl:value-of select="$objcName"/>;
 </xsl:when>
-        <xsl:when test="$type = 'short'">short
+        <xsl:when test="$type = 'short'">
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) short <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'double'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) double <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'float'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) float <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'int'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) NSInteger <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'long'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, assign) long long <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = 'string'">
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, strong) NSString *<xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:otherwise>
-// <xsl:value-of select="$desc" />
+/* <xsl:value-of select="$desc" /> */
 @property (nonatomic, strong) ${prefix}<xsl:value-of select="$type"/> *<xsl:value-of select="$objcName"/>;
 </xsl:otherwise>
       </xsl:choose>
@@ -371,7 +374,7 @@
     </xsl:if>
   </xsl:template>
   <xsl:template name="ErrorCode">
-        // <xsl:value-of select="desc"/>
+        /* <xsl:value-of select="desc" /> */
         case ${prefix}ApiCode_<xsl:value-of select="name"/>: {
             break;
         }</xsl:template>
@@ -401,7 +404,12 @@ typedef enum {
     switch (code)
     {<xsl:for-each select="code">
         case ${prefix}ApiCode_<xsl:value-of select="name"/>: {
-            return @"<xsl:value-of select="desc"/>";
+          <xsl:choose>
+              <xsl:when test="contains(desc,'&#xA;')">            return @"<xsl:value-of select="substring-before(desc, '&#xA;')"/>";
+              </xsl:when>
+              <xsl:otherwise>            return @"<xsl:value-of select="desc"/>";
+              </xsl:otherwise>
+          </xsl:choose>
         }</xsl:for-each>
     }
     return nil;
@@ -524,7 +532,7 @@ typedef enum {
     <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList='true'">
-        // <xsl:value-of select="desc" />
+        /* <xsl:value-of select="desc" /> */
         NSArray *<xsl:value-of select="$objcName" />Array = [json objectForKey:@"<xsl:value-of select="name" />"];
         if (<xsl:value-of select="$objcName" />Array<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![<xsl:value-of select="$objcName" />Array isKindOfClass:[NSNull class]]) {
             for (NSInteger i =0; i<xsl:text disable-output-escaping="yes"><![CDATA[ < ]]></xsl:text>[<xsl:value-of select="$objcName" />Array count]; i++){
@@ -537,7 +545,7 @@ typedef enum {
         }
       </xsl:when>
       <xsl:otherwise>
-        // <xsl:value-of select="desc" /><xsl:text disable-output-escaping="yes">&#xD;&#xA;<![CDATA[    ]]></xsl:text>
+        /* <xsl:value-of select="desc" /> */<xsl:text disable-output-escaping="yes">&#xD;&#xA;<![CDATA[    ]]></xsl:text>
         <xsl:call-template name="JsonGetter">
           <xsl:with-param name="type" select="type" />
           <xsl:with-param name="name" select="name" />
@@ -585,10 +593,10 @@ typedef enum {
               <xsl:when test="$type = 'long'">    result.<xsl:value-of select="$objcName" /> = [[json objectForKey:@"<xsl:value-of select="name" />"] longLongValue];
               </xsl:when>
               <xsl:when test="$type = 'string'">    result.<xsl:value-of select="$objcName" /> = [json objectForKey:@"<xsl:value-of select="name" />"];
-            if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { result.<xsl:value-of select="$objcName" /> = nil; }
+        if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { result.<xsl:value-of select="$objcName" /> = nil; }
               </xsl:when>
               <xsl:otherwise>    result.<xsl:value-of select="$objcName" /> = [${prefix}<xsl:value-of select="type" /> deserialize:[json objectForKey:@"<xsl:value-of select="name" />"]];
-            if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { result.<xsl:value-of select="$objcName" /> = nil; }
+        if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { result.<xsl:value-of select="$objcName" /> = nil; }
               </xsl:otherwise>
         </xsl:choose>
       </xsl:otherwise>
@@ -600,7 +608,7 @@ typedef enum {
     <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList='true'">
-    // <xsl:value-of select="desc" />
+    /* <xsl:value-of select="desc" /> */
     if (self.<xsl:value-of select="$objcName" />
           <xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![self.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) {
         NSMutableArray *<xsl:value-of select="$objcName" />Array = [NSMutableArray array];
@@ -629,7 +637,7 @@ typedef enum {
     }
       </xsl:when>
       <xsl:otherwise>
-    // <xsl:value-of select="desc" /><xsl:text disable-output-escaping="yes">&#xD;&#xA;<![CDATA[    ]]></xsl:text>
+    /* <xsl:value-of select="desc" /> */<xsl:text disable-output-escaping="yes">&#xD;&#xA;<![CDATA[    ]]></xsl:text>
         <xsl:call-template name="JsonSetter">
           <xsl:with-param name="type" select="type" />
           <xsl:with-param name="name" select="name" />

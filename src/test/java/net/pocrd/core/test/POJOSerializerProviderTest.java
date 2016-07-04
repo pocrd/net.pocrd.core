@@ -1,6 +1,5 @@
 package net.pocrd.core.test;
 
-import net.pocrd.core.test.DemoDao.TestEnum;
 import net.pocrd.core.test.model.KVData;
 import net.pocrd.core.test.model.TestObj2;
 import net.pocrd.define.ConstField;
@@ -15,7 +14,7 @@ public class POJOSerializerProviderTest {
     public void test() {
         POJOSerializerProvider.getSerializer(KVData.class);
         TestObj2 t = new TestObj2();
-        t.testEnum = TestEnum.a;
+//        t.testEnum = TestEnum.a;
         t.c = 'a';
         t.b = true;
         t.bs = new boolean[]{false, true, false, true};

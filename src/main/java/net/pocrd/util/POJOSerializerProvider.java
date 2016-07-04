@@ -71,7 +71,7 @@ public class POJOSerializerProvider implements Opcodes {
                 fds.add(f);
             }
 
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+            ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
             MethodVisitor mv;
 
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name, "Ljava/lang/Object;Lnet/pocrd/define/Serializer<" + t_classDesc + ">;", "java/lang/Object",
@@ -99,13 +99,13 @@ public class POJOSerializerProvider implements Opcodes {
                 mv.visitEnd();
             }
             {
-                PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_PUBLIC, "toXml", "(" + t_classDesc + "Ljava/io/OutputStream;Z)V", null, null);
+                PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_PUBLIC, "toXml", "(" + t_classDesc + "Ljava/io/OutputStream;Z)V", null, null);
                 buildToXml(c_name, pmv, clazz, fds, c_desc, t_className, t_classDesc, map, list);
                 mv.visitEnd();
             }
             //pojo fastjson
             {
-                PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_PUBLIC, "toJson", "(" + t_classDesc + "Ljava/io/OutputStream;Z)V", null, null);
+                PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_PUBLIC, "toJson", "(" + t_classDesc + "Ljava/io/OutputStream;Z)V", null, null);
                 buildToJsonWithFastJson(c_name, pmv, clazz, fds, c_desc, t_className, t_classDesc, map, list);
                 mv.visitEnd();
             }
@@ -148,7 +148,7 @@ public class POJOSerializerProvider implements Opcodes {
                 mv.visitEnd();
             }
             {
-                PoCMethodVisitor pmv = new PoCMethodVisitor(cw, ACC_STATIC, "<clinit>", "()V", null, null);
+                PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_STATIC, "<clinit>", "()V", null, null);
                 pmv.visitCode();
                 pmv.visitIntInsn(BIPUSH, list.size());
                 pmv.visitTypeInsn(ANEWARRAY, "[B");
@@ -184,7 +184,7 @@ public class POJOSerializerProvider implements Opcodes {
                 }
             }
 
-            return (Serializer<T>)new PocClassLoader(POJOSerializerProvider.class.getClassLoader()).defineClass(className,
+            return (Serializer<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
                                                                                                                 cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(c_name, e);
@@ -192,7 +192,7 @@ public class POJOSerializerProvider implements Opcodes {
     }
 
     //TODO refactor,支持动态类型的风险是无法在编译期获取到接口信息,暂不打算支持。未来会支持对象数组
-    private static void buildToXml(String cn, PoCMethodVisitor pmv, Class<?> clazz, List<Field> fds, String classDesc, String t_className,
+    private static void buildToXml(String cn, PocMethodVisitor pmv, Class<?> clazz, List<Field> fds, String classDesc, String t_className,
                                    String t_classDesc, HashMap<String, Integer> map,
                                    LinkedList<String> list) throws SecurityException, NoSuchMethodException {
         pmv.visitCode();
@@ -224,7 +224,7 @@ public class POJOSerializerProvider implements Opcodes {
                     throw new RuntimeException("can not get generic type of list in " + clazz.getName(), throwable);
                 }
                 try {
-                    t = Class.forName(((Class)genericType).getName());
+                    t = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
                 } catch (Exception e) {
                     throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
                 }
@@ -515,7 +515,7 @@ public class POJOSerializerProvider implements Opcodes {
         pmv.visitMaxs(0, 0);
     }
 
-    private static void buildToJsonWithFastJson(String cn, PoCMethodVisitor pmv, Class<?> clazz, List<Field> fds, String classDesc,
+    private static void buildToJsonWithFastJson(String cn, PocMethodVisitor pmv, Class<?> clazz, List<Field> fds, String classDesc,
                                                 String t_className, String t_classDesc, HashMap<String, Integer> map, LinkedList<String> list) {
         pmv.visitCode();
         Label l0 = new Label();
@@ -547,7 +547,7 @@ public class POJOSerializerProvider implements Opcodes {
         pmv.visitMaxs(0, 0);
     }
 
-    private static void writeString(String cn, PoCMethodVisitor mv, String str, int local_out, HashMap<String, Integer> map,
+    private static void writeString(String cn, PocMethodVisitor mv, String str, int local_out, HashMap<String, Integer> map,
                                     LinkedList<String> list) {
         int index = 0;
         if (map.containsKey(str)) {
@@ -564,22 +564,22 @@ public class POJOSerializerProvider implements Opcodes {
         mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/OutputStream", "write", "([B)V");
     }
 
-    private static void writeXmlStart(String cn, PoCMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
+    private static void writeXmlStart(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
                                       LinkedList<String> list) {
         writeString(cn, mv, "<" + name + ">", local_out, map, list);
     }
 
-    private static void writeXmlEnd(String cn, PoCMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
+    private static void writeXmlEnd(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
                                     LinkedList<String> list) {
         writeString(cn, mv, "</" + name + ">", local_out, map, list);
     }
 
-    private static void writeCDATAStart(String cn, PoCMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
+    private static void writeCDATAStart(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
                                         LinkedList<String> list) {
         writeString(cn, mv, "<" + name + "><![CDATA[", local_out, map, list);
     }
 
-    private static void writeCDATAEnd(String cn, PoCMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
+    private static void writeCDATAEnd(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
                                       LinkedList<String> list) {
         writeString(cn, mv, "]]></" + name + ">", local_out, map, list);
     }

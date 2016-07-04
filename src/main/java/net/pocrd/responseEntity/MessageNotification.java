@@ -5,7 +5,7 @@ import net.pocrd.annotation.Description;
 import java.io.Serializable;
 
 /**
- * @author guankaiqiang@jk.cn
+ * @author guankaiqiang
  */
 @Description("消息通知")
 public class MessageNotification implements Serializable {

@@ -12,6 +12,7 @@ import java.io.Serializable;
 public class CallerInfo implements Serializable {
 
     public static final CallerInfo TESTER = new CallerInfo();
+
     static {
         if (CompileConfig.isDebug) {
             TESTER.deviceId = -1;
@@ -34,4 +35,5 @@ public class CallerInfo implements Serializable {
     public long   deviceId;
     public long   uid;
     public byte[] key;                      // 设备身份公钥
+    public String oauthid;
 }

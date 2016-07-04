@@ -7,6 +7,7 @@ import net.pocrd.entity.*;
 import net.pocrd.responseEntity.*;
 import net.pocrd.util.HttpApiProvider;
 import net.pocrd.util.POJOSerializerProvider;
+import net.pocrd.util.RawString;
 import net.pocrd.util.TypeCheckUtil;
 import net.pocrd.util.TypeCheckUtil.DescriptionAnnotationChecker;
 import net.pocrd.util.TypeCheckUtil.PublicFieldChecker;
@@ -29,11 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author rendong
  */
 public final class ApiManager {
-    private static final Logger                       logger                  = LoggerFactory.getLogger(ApiManager.class);
-    private              Map<String, HttpApiExecuter> nameToApi               = new ConcurrentHashMap<String, HttpApiExecuter>();
-    private              Map<String, ApiMethodInfo>   apiInfos                = new ConcurrentHashMap<String, ApiMethodInfo>();
-    private static final String                       UNDER_SCORE             = "_";
-    private static final String                       DUBBO_INSTANCE_PKG_NAME = "com.alibaba.dubbo.common.bytecode";
+    private static final Logger logger = LoggerFactory.getLogger(ApiManager.class);
+    private Map<String, HttpApiExecuter> nameToApi = new ConcurrentHashMap<String, HttpApiExecuter>();
+    private Map<String, ApiMethodInfo> apiInfos = new ConcurrentHashMap<String, ApiMethodInfo>();
+    private static final String UNDER_SCORE = "_";
+    private static final String DUBBO_INSTANCE_PKG_NAME = "com.alibaba.dubbo.common.bytecode";
 
     public ApiManager() {
     }
@@ -123,7 +124,7 @@ public final class ApiManager {
             try {
                 for (Field f : returnCodeClass.getDeclaredFields()) {
                     if (isConstField(f) && AbstractReturnCode.class.isAssignableFrom(f.getType())) {
-                        AbstractReturnCode code = (AbstractReturnCode)f.get(null);
+                        AbstractReturnCode code = (AbstractReturnCode) f.get(null);
                         if (code.getCode() < minCode || code.getCode() >= maxCode) {
                             throw new RuntimeException(
                                     "code " + f.getName() + " which value is " + code.getCode() + " not in the scope [" + minCode + "," + maxCode
@@ -234,16 +235,16 @@ public final class ApiManager {
                         {
                             //入参的递归检查
                             if (Collection.class.isAssignableFrom(pInfo.type)) {//增加对List自定义Object的支持+List<String>的支持
-                                if (List.class == pInfo.type) {
+                                if (Collection.class.isAssignableFrom(pInfo.type)) {
                                     Type genericType;
                                     try {
-                                        genericType = ((ParameterizedTypeImpl)mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
+                                        genericType = ((ParameterizedTypeImpl) mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
                                     } catch (Throwable t) {
                                         throw new RuntimeException("unsupported input type,get genericType failed, method name:" + mInfo.getName(),
                                                 t);
                                     }
                                     try {
-                                        pInfo.actuallyGenericType = Class.forName(((Class)genericType).getName());
+                                        pInfo.actuallyGenericType = Class.forName(((Class) genericType).getName(), true, Thread.currentThread().getContextClassLoader());
                                     } catch (Exception e) {
                                         throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
                                     }
@@ -260,9 +261,11 @@ public final class ApiManager {
                         for (int j = 0; j < a.length; ) {
                             Annotation n = a[j];
                             if (n.annotationType() == ApiParameter.class) {
-                                ApiParameter p = (ApiParameter)n;
+                                ApiParameter p = (ApiParameter) n;
                                 pInfo.description = p.desc();
-                                pInfo.sequence = p.sequence();
+                                if (p.sequence() != null && p.sequence().trim().length() > 0) {
+                                    pInfo.sequence = p.sequence();
+                                }
                                 pInfo.isRequired = p.required();
                                 pInfo.isRsaEncrypted = p.rsaEncrypted();
                                 pInfo.ignoreForSecurity = p.ignoreForSecurity();
@@ -273,9 +276,17 @@ public final class ApiManager {
                                         pInfo.verifyEnumType = p.enumDef();
                                     }
                                 }
+                                for (Annotation an : a) {
+                                    if (an.annotationType() == EnumDef.class) {
+                                        if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
+                                                || pInfo.actuallyGenericType == String.class) {
+                                            pInfo.verifyEnumType = ((EnumDef) an).value();
+                                        }
+                                    }
+                                }
                                 if (CompileConfig.isDebug) {
                                     // 检查sequence属性合法性
-                                    if (pInfo.sequence != null) {
+                                    if (pInfo.sequence != null && pInfo.sequence.length() > 0) {
                                         try {
                                             if (pInfo.sequence.startsWith("int") || pInfo.sequence.startsWith("str")) {
                                                 Integer.parseInt(pInfo.sequence.substring(4));
@@ -325,12 +336,12 @@ public final class ApiManager {
                                 }
                                 break;
                             } else if (n.annotationType() == ApiAutowired.class) {
-                                ApiAutowired p = (ApiAutowired)n;
+                                ApiAutowired p = (ApiAutowired) n;
                                 pInfo.name = p.value();
                                 pInfo.isAutowired = true;
                                 break;
                             } else if (n.annotationType() == ApiCookieAutowired.class) {
-                                ApiCookieAutowired p = (ApiCookieAutowired)n;
+                                ApiCookieAutowired p = (ApiCookieAutowired) n;
                                 if (p.value() == null || p.value().length == 0) {
                                     throw new RuntimeException("cookie名不能为空 " + api.name() + "  " + clazz.getName());
                                 }
@@ -446,10 +457,10 @@ public final class ApiManager {
                 if (pInfo.defaultValue.length() == 0) {
                     pInfo.defaultValue = null;
                 } else {
-                    Enum.valueOf((Class<Enum>)pInfo.type, pInfo.defaultValue);
+                    Enum.valueOf((Class<Enum>) pInfo.type, pInfo.defaultValue);
                 }
             }
-        } else if ((pInfo.type.isArray() && pInfo.type.getComponentType() == String.class) || (pInfo.type == List.class
+        } else if ((pInfo.type.isArray() && pInfo.type.getComponentType() == String.class) || (Collection.class.isAssignableFrom(pInfo.type)
                 && pInfo.actuallyGenericType == String.class)) {
             apiInfo.needDefaultValueConstDefined = true;//需要在ApiExecute设置常量
             pInfo.needDefaultValueConstDefined = true;
@@ -561,18 +572,22 @@ public final class ApiManager {
         } else if (RawString.class == apiInfo.returnType) {
             apiInfo.serializer = Serializer.rawStringSerializer;
             apiInfo.wrapper = ResponseWrapper.objectWrapper;
+        } else if (net.pocrd.responseEntity.RawString.class == apiInfo.returnType) {
+            //TODO remove,RawString不应对外暴露
+            apiInfo.serializer = Serializer.deprecatedRawStringSerializer;
+            apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (Collection.class.isAssignableFrom(apiInfo.returnType)) {//增加对Collection自定义Object的支持+Collection<String>的支持
             Type genericType;
             try {
-                genericType = ((ParameterizedTypeImpl)mInfo.getGenericReturnType()).getActualTypeArguments()[0];
+                genericType = ((ParameterizedTypeImpl) mInfo.getGenericReturnType()).getActualTypeArguments()[0];
             } catch (Throwable t) {
                 throw new RuntimeException("unsupported return type, get genericType failed, method name:" + mInfo.getName(), t);
             }
             Class<?> genericClazz;
             try {
-                genericClazz = Class.forName(((Class)genericType).getName());
+                genericClazz = Class.forName(((Class) genericType).getName(), true, Thread.currentThread().getContextClassLoader());
             } catch (Exception e) {
-                throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(),
+                throw new RuntimeException("generic type load failed:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(),
                         e);
             }
             if (String.class == genericClazz) {//如果要支持更多的jdk中已有类型的序列化

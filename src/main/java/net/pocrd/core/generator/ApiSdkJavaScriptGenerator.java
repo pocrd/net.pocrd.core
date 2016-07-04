@@ -1,7 +1,6 @@
 package net.pocrd.core.generator;
 
 import net.pocrd.define.ConstField;
-import net.pocrd.entity.CodeGenConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -19,23 +18,51 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
+import java.util.HashMap;
 
 /**
  * Created by guankaiqiang521 on 2014/9/25.
  */
 public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
-    private static final Logger                    logger   = LoggerFactory.getLogger(ApiSdkJavaGenerator.class);
-    private static final ApiSdkJavaScriptGenerator instance = new ApiSdkJavaScriptGenerator();
+    private static final Logger logger = LoggerFactory.getLogger(ApiSdkJavaGenerator.class);
 
-    private ApiSdkJavaScriptGenerator() {
+    private String xslt;
+    private String output;
+    private String packagePrefix;
+
+    private ApiSdkJavaScriptGenerator(String xslt, String output, String packagePrefix) {
+        this.xslt = xslt;
+        this.output = output;
+        this.packagePrefix = packagePrefix;
     }
 
-    public static ApiSdkJavaScriptGenerator getInstance() {
-        return instance;
+    public static class Builder {
+        private String xslt          = null;
+        private String output        = "~/tmp";
+        private String packagePrefix = "com.fengqu.m";
+
+        public Builder setXsltPath(String xslt) {
+            this.xslt = xslt;
+            return this;
+        }
+
+        public Builder setOutputPath(String output) {
+            this.output = output;
+            return this;
+        }
+
+        public Builder setPackagePrefix(String packagePrefix) {
+            this.packagePrefix = packagePrefix;
+            return this;
+        }
+
+        public ApiSdkJavaScriptGenerator build() {
+            return new ApiSdkJavaScriptGenerator(xslt, output, packagePrefix);
+        }
     }
 
     @Override
-    public InputStream transformInputStream(InputStream inputStream) {
+    protected InputStream transformInputStream(InputStream inputStream) {
         BufferedReader reader = null;
         InputStream swapStream = null;
         try {
@@ -43,7 +70,7 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
             StringBuilder out = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
-                out.append(line.replace("${pkg}", CodeGenConfig.getInstance().getApiSdkJsPkgName()) + "\r\n");
+                out.append(line.replace("${pkg}", packagePrefix) + "\r\n");
             }
             System.out.println(out.toString());   //Prints the string content read from input stream
             swapStream = new ByteArrayInputStream(out.toString().getBytes(ConstField.UTF8));
@@ -72,7 +99,7 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
         try {
             defaultXslt = ApiSdkJavaScriptGenerator.class.getResourceAsStream("/xslt/js.xslt");
             Transformer trans = TransformerFactory.newInstance().newTransformer(
-                    getXsltSource(CodeGenConfig.getInstance().getJsXsltSite(), new StreamSource(transformInputStream(defaultXslt))));
+                    getXsltSource(xslt, new StreamSource(transformInputStream(defaultXslt))));
             trans.setOutputProperty("omit-xml-declaration", "yes");
             Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
             generateJsRequest(trans, document);
@@ -99,7 +126,7 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
             XPath path = XPathFactory.newInstance().newXPath();
             NodeList nl = (NodeList)path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
             int len = nl.getLength();
-            String outputPath = CodeGenConfig.getInstance().getApiSdkJsLocation();
+            String outputPath = output;
             FileUtil.recreateDir(outputPath);
             for (int i = 0; i < len; i++) {
                 Element e = (Element)nl.item(i);
@@ -115,17 +142,30 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
                         throw new RuntimeException(String.format("create folder:%s failed!", path));
                     }
                 }
-                String fileName = outputPath + File.separator + moduleName + File.separator + CodeGenConfig.getInstance().getApiSdkJsPkgName() + ".api." + methodName + ".js";
+                String fileName =
+                        outputPath + File.separator + moduleName + File.separator + packagePrefix + ".api."
+                                + methodName + ".js";
                 File source = new File(fileName);
                 if (!source.exists()) {
                     trans.transform(new DOMSource(e), new StreamResult(source));
                 }
             }
             Node n = (Node)path.evaluate("//Document/codeList", doc, XPathConstants.NODE);
-            trans.transform(new DOMSource(n), new StreamResult(outputPath +  File.separator + CodeGenConfig.getInstance().getApiSdkJsPkgName() +  ".api.apiCode.js"));
+            trans.transform(new DOMSource(n),
+                    new StreamResult(outputPath + File.separator + packagePrefix + ".api.apiCode.js"));
         } catch (Exception e) {
             logger.error("generate api js client failed", e);
             throw new RuntimeException("generate api js client failed", e);
         }
+    }
+
+    public static void main(String[] args) {
+        if (args.length > 0) {
+            if ("generateViaJar".equals(args[0]) && args.length == 3 && args[1].length() > 0) {
+                new Builder().setOutputPath(args[2]).build().generateViaJar(args[1]);
+                return;
+            }
+        }
+        System.out.println("error parameter.  args[0]:generateViaJar  args[1]:jar path  args[2]:output path");
     }
 }

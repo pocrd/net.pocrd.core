@@ -8,7 +8,7 @@ import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.responseEntity.ObjectArrayResp;
-import net.pocrd.responseEntity.RawString;
+import net.pocrd.util.RawString;
 import net.pocrd.util.POJOSerializerProvider;
 import org.junit.Test;
 

@@ -10,7 +10,6 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 
 public class TypeCheckUtil {
     /**
@@ -36,6 +35,8 @@ public class TypeCheckUtil {
             add(double[].class);
             add(float.class);
             add(float[].class);
+            // RawString在输出的时候会被解释为String
+            add(RawString.class);
         }
     };
 
@@ -60,7 +61,7 @@ public class TypeCheckUtil {
      * Type检查器
      */
     public interface TypeChecker {
-        boolean accept(Class<?> type, String serviceInterfaceName);
+        boolean accept(Class<?> type, String desc);
     }
 
     /**
@@ -68,13 +69,13 @@ public class TypeCheckUtil {
      */
     public static class DescriptionAnnotationChecker implements TypeChecker {
         @Override
-        public boolean accept(Class<?> type, String serviceInterfaceName) {
+        public boolean accept(Class<?> type, String desc) {
             if (INPUT_ACCEPT_CLAZZ_SET.contains(type) || type.isEnum()) {
                 return true;
             }
             Description description = type.getAnnotation(Description.class);
             if (description == null) {
-                throw new RuntimeException("description miss, " + type.getName() + " in " + serviceInterfaceName);
+                throw new RuntimeException("description missing, " + type.getName() + " in " + desc);
             }
 
             return true;
@@ -86,7 +87,7 @@ public class TypeCheckUtil {
      */
     public static class PublicFieldChecker implements TypeChecker {
         @Override
-        public boolean accept(Class<?> returnType, String serviceInterfaceName) {
+        public boolean accept(Class<?> returnType, String desc) {
             boolean hasPublicField = false;
             Field[] fields = returnType.getDeclaredFields();
             if (fields != null) {
@@ -98,12 +99,12 @@ public class TypeCheckUtil {
                 }
             }
             if (!hasPublicField) {
-                throw new RuntimeException("no public field is defined in " + returnType + " of " + serviceInterfaceName);
+                throw new RuntimeException("no public field is defined in " + returnType + " of " + desc);
             }
             boolean isAbstractOrIsInterface = false;
             int modified = returnType.getModifiers();
             if (Modifier.isAbstract(modified) || Modifier.isInterface(modified)) {
-                if (List.class == returnType) {
+                if (Collection.class.isAssignableFrom(returnType)) {
                     isAbstractOrIsInterface = false;
                 } else {
                     isAbstractOrIsInterface = true;
@@ -114,7 +115,7 @@ public class TypeCheckUtil {
                 for (Field field : fields) {
                     int mod = field.getModifiers();
                     if (Modifier.isAbstract(mod) || Modifier.isInterface(mod)) {
-                        if (List.class == returnType) {
+                        if (Collection.class.isAssignableFrom(returnType)) {
                             isAbstractOrIsInterface = false;
                         } else {
                             isAbstractOrIsInterface = true;
@@ -123,7 +124,7 @@ public class TypeCheckUtil {
                 }
             }
             if (isAbstractOrIsInterface) {
-                throw new RuntimeException("do not allow abstract or interface defined in " + returnType + " of " + serviceInterfaceName);
+                throw new RuntimeException("do not allow abstract or interface defined in " + returnType + " of " + desc);
             }
             return true;
         }
@@ -134,10 +135,10 @@ public class TypeCheckUtil {
      */
     public static class SerializableImplChecker implements TypeChecker {
         @Override
-        public boolean accept(Class<?> returnType, String serviceInterfaceName) {
+        public boolean accept(Class<?> returnType, String desc) {
             if (!Serializable.class.isAssignableFrom(returnType)) {
                 throw new RuntimeException(
-                        "serializable miss,return type must implements Serializable, " + returnType.getName() + " in " + serviceInterfaceName);
+                        "serializable miss,return type must implements Serializable, " + returnType.getName() + " in " + desc);
             }
             return true;
         }
@@ -203,7 +204,7 @@ public class TypeCheckUtil {
                                 throw new RuntimeException("can not get generic type, " + returnType + " in " + serviceInterfaceName, exception);
                             }
                             try {
-                                fieldActualClazz = Class.forName(((Class<?>)fieldActuallyGenericType).getName());
+                                fieldActualClazz = Class.forName(((Class<?>)fieldActuallyGenericType).getName(), true, Thread.currentThread().getContextClassLoader());
                             } catch (ClassNotFoundException e) {
                                 throw new RuntimeException("generic type unsupported, " + fieldActuallyGenericType + " in " + serviceInterfaceName,
                                         e);
@@ -282,7 +283,7 @@ public class TypeCheckUtil {
                             throw new RuntimeException("can not get generic type, " + inputType + " in " + serviceInterfaceName, exception);
                         }
                         try {
-                            fieldActualClazz = Class.forName(((Class)fieldActuallyGenericType).getName());
+                            fieldActualClazz = Class.forName(((Class)fieldActuallyGenericType).getName(), true, Thread.currentThread().getContextClassLoader());
                         } catch (ClassNotFoundException e) {
                             throw new RuntimeException("generic type unsupported, " + fieldActuallyGenericType + " in " + serviceInterfaceName,
                                     e);

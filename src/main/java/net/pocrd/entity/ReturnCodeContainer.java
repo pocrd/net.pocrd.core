@@ -40,7 +40,7 @@ public class ReturnCodeContainer {
     public static AbstractReturnCode findCode(int c) {
         AbstractReturnCode code = map.get(c);
         if (code == null) {
-            code = ApiReturnCode.INTERNAL_SERVER_ERROR;
+            throw new RuntimeException("cannot find errorCode:" + c + " in registed ReturnCode class.");
         }
         return code;
     }

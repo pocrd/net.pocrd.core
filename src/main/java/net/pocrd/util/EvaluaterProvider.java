@@ -41,7 +41,7 @@ public class EvaluaterProvider implements Opcodes {
 
     @SuppressWarnings("unchecked")
     private static <TLeft, TRight> Evaluater<TLeft, TRight> createEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
+        ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
         MethodVisitor mv;
         String l_name = Type.getInternalName(leftClass);
         String r_name = Type.getInternalName(rightClass);
@@ -306,7 +306,7 @@ public class EvaluaterProvider implements Opcodes {
                     }
                 }
             }
-            return (Evaluater<TLeft, TRight>)new PocClassLoader(EvaluaterProvider.class.getClassLoader()).defineClass(className,
+            return (Evaluater<TLeft, TRight>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
                                                                                                                       cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(className, e);

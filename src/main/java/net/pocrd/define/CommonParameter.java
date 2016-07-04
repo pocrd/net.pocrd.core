@@ -25,6 +25,9 @@ public final class CommonParameter {
     @Description("device token 代表访问设备的身份,完成设备注册流程后获取")
     public static final String deviceToken = "_dtk";
 
+    @Description("oauth token 代表第三方平台给该用户的授权身份")
+    public static final String oauthToken = "_otk";
+
     @Description("method 请求的资源名")
     public static final String method = "_mt";
 

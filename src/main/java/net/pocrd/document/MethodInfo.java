@@ -24,11 +24,11 @@ public class MethodInfo {
     @Description("接口可用状态")
     public String              state;
     @Description("接口返回值类型结构描述")
-    public List<RespStruct>    respStructList;
+    public List<TypeStruct>    respStructList;
     @Description("接口参数列表信息")
     public List<ParameterInfo> parameterInfoList;
     @Description("接口返回值类型结构描述")
-    public List<ReqStruct>     reqStructList;
+    public List<TypeStruct>    reqStructList;
     @Description("接口返回业务异常列表")
     public List<CodeInfo>      errorCodeList;
     @Description("接口组负责人")

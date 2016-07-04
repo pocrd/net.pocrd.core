@@ -1,14 +1,12 @@
 package net.pocrd.core.test.model;
 
-import net.pocrd.core.test.DemoDao.TestEnum;
-
 import java.util.List;
 
 /**
  * Created by rendong on 14-4-27.
  */
 public class TestObj2 {
-    public TestEnum  testEnum;
+//    public TestEnum  testEnum;
     public char      c;
     public boolean   b;
     public boolean[] bs;

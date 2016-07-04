@@ -5,16 +5,17 @@
     <xsl:variable name="requiredParamNumber" select="0"/>// Auto Generated.  DO NOT EDIT!
     
 package ${pkg}.api.request;
-<xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">import ${pkg}.ApiContext;
+<xsl:if test="./parameterInfoList/parameterInfo[isList='true']">
+import java.util.List;</xsl:if>
+import com.google.gson.*;
+<xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
+import ${pkg}.ApiContext;
 import ${pkg}.util.Base64Util;
 import ${pkg}.util.RsaHelper;</xsl:if>
 import ${pkg}.LocalException;
 import ${pkg}.BaseRequest;
 import ${pkg}.SecurityType;
 import ${pkg}.api.resp.*;
-import org.json.JSONArray;
-import org.json.JSONObject;
-import java.util.List;
 
 /**
  * <xsl:value-of select="description"/>
@@ -24,7 +25,7 @@ import java.util.List;
  */
 public class <xsl:call-template name="getClassName">
                <xsl:with-param name="name" select="methodName" />
-             </xsl:call-template> extends BaseRequest<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text><xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> {
+             </xsl:call-template> extends BaseRequest<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text><xsl:call-template name="getReturnValueType"><xsl:with-param name="name" select="returnType"/></xsl:call-template><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> {
     <xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RegexPatternField"/></xsl:for-each>
       <xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
       private RsaHelper rsaHelper = null;</xsl:if>
@@ -38,10 +39,10 @@ public class <xsl:call-template name="getClassName">
         <xsl:if test="count(parameterInfoList/parameterInfo[isRequired = 'true'])&gt;0">
         try {<xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
             if (rsaHelper == null) {
-                rsaHelper = new RsaHelper(ApiContext.getRsaPubKey());
+                rsaHelper = new RsaHelper(ApiContext.getContentRsaPubKey());
             }</xsl:if><xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RequiredParameterSetter"><xsl:with-param name="methodName" select="$methodName"/></xsl:call-template></xsl:for-each>
         } catch(Exception e) {
-            throw new LocalException(e, "SERIALIZE_ERROR", LocalException.SERIALIZE_ERROR);
+            throw new LocalException("SERIALIZE_ERROR", LocalException.SERIALIZE_ERROR, e);
         }
         </xsl:if>
     }
@@ -59,14 +60,27 @@ public class <xsl:call-template name="getClassName">
      * 不要直接调用这个方法，API使用者应该访问基类的getResponse()获取接口的返回值
      */
     @Override
-    protected <xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> getResult(JSONObject json) {        
-        try {
+    protected <xsl:call-template name="getReturnValueType"><xsl:with-param name="name" select="returnType"/></xsl:call-template> getResult(JsonObject json) {
+        <xsl:choose>
+            <xsl:when test="'string'=returnType">return null;</xsl:when>
+        <xsl:otherwise>try {
             return <xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.deserialize(json);
         } catch (Exception e) {
-            logger.error(e, "<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize failed.");
+            logger.error("<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize failed.", e);
         }
         return null;
+        </xsl:otherwise>
+        </xsl:choose>
     }
+    <xsl:if test="'string'=returnType">
+    @Override
+    protected void fillResponse(String rawString) {
+        response.code = 0;
+        response.length = rawString.length();
+        response.message = "Success";
+        response.result = rawString;
+    }
+    </xsl:if>
 }
   </xsl:template>
     <xsl:template name ="getClassName">
@@ -87,6 +101,13 @@ public class <xsl:call-template name="getClassName">
       <xsl:with-param name="replace" select="'_'" />
       <xsl:with-param name="by" select="''" />
     </xsl:call-template>.<xsl:value-of select="$subname"/>
+  </xsl:template>
+  <xsl:template name="getReturnValueType">
+    <xsl:param name="name"/>
+      <xsl:choose>
+          <xsl:when test="'string' = $name">String</xsl:when>
+          <xsl:otherwise><xsl:call-template name="getLastName"><xsl:with-param name="name" select="$name"></xsl:with-param></xsl:call-template></xsl:otherwise>
+      </xsl:choose>
   </xsl:template>
   <xsl:template name ="getLastName">
     <xsl:param name="name"/>
@@ -203,7 +224,7 @@ public class <xsl:call-template name="getClassName">
     <xsl:param name="methodName"/>
     <xsl:if test="isRequired = 'true'">
       <xsl:choose><xsl:when test="isList = 'true'">
-            JSONArray <xsl:value-of select="name" />Array = new JSONArray();<xsl:call-template name="RequiredParameterSerialize">
+            JsonArray <xsl:value-of select="name" />Array = new JsonArray();<xsl:call-template name="RequiredParameterSerialize">
           <xsl:with-param name="type" select="type" />
           <xsl:with-param name="name" select="name" />
           <xsl:with-param name="isList" select="isList" />
@@ -307,14 +328,14 @@ public class <xsl:call-template name="getClassName">
         <xsl:value-of select="name"/>) {
         try {
         <xsl:choose><xsl:when test="isList = 'true'">
-            JSONArray <xsl:value-of select="name" />Array = new JSONArray();<xsl:call-template name="RequiredParameterSerialize">
+            JsonArray <xsl:value-of select="name" />Array = new JsonArray();<xsl:call-template name="RequiredParameterSerialize">
             <xsl:with-param name="type" select="type" />
             <xsl:with-param name="name" select="name" />
             <xsl:with-param name="isList" select="isList" />
         </xsl:call-template>
             <xsl:choose><xsl:when test="isRsaEncrypt='true'">
                     if (rsaHelper == null) {
-                        rsaHelper = new RsaHelper(ApiContext.getRsaPubKey());
+                        rsaHelper = new RsaHelper(ApiContext.getContentRsaPubKey());
                     }
                     params.put("<xsl:value-of select="name" />", Base64Util.encodeToString(rsaHelper.encrypt(<xsl:value-of select="name" />Array.toString().getBytes("UTF-8"))));
                 </xsl:when>
@@ -324,7 +345,7 @@ public class <xsl:call-template name="getClassName">
             </xsl:choose>
         </xsl:when><xsl:otherwise><xsl:choose><xsl:when test="isRsaEncrypt='true'">
             if (rsaHelper == null) {
-                rsaHelper = new RsaHelper(ApiContext.getRsaPubKey());
+                rsaHelper = new RsaHelper(ApiContext.getContentRsaPubKey());
             }
             params.put("<xsl:value-of select="name"/>", Base64Util.encodeToString(rsaHelper.encrypt(<xsl:call-template name="ParseValue">
             <xsl:with-param name="type">
@@ -353,7 +374,7 @@ public class <xsl:call-template name="getClassName">
             setVerifyError("<xsl:value-of select="name"></xsl:value-of>", "<xsl:value-of select="verifyMsg"></xsl:value-of>");
             }</xsl:if>
         } catch(Exception e) {
-            throw new LocalException(e, "SERIALIZE_ERROR", LocalException.SERIALIZE_ERROR);
+            throw new LocalException("SERIALIZE_ERROR", LocalException.SERIALIZE_ERROR, e);
         }
     }
     </xsl:if>
@@ -367,7 +388,7 @@ public class <xsl:call-template name="getClassName">
     </xsl:if>
   </xsl:template>
   <xsl:template name="ErrorCode">
-            // <xsl:value-of select="desc"/>
+            /* <xsl:value-of select="desc"/> */
             case ApiCode.<xsl:value-of select="name"/>: {
                 break;
             }</xsl:template>
@@ -379,7 +400,7 @@ package ${pkg}.api.request;
  */
 public class ApiCode {
     <xsl:for-each select="code"><xsl:if test="isDesign='true'">
-    /** <xsl:value-of select="desc"/> 服务端:<xsl:value-of select="service"/> */
+    /* <xsl:value-of select="desc"/> 服务端:<xsl:value-of select="service"/> */
     public static final int <xsl:value-of select="name"/> = <xsl:value-of select="code"/>;</xsl:if>
     </xsl:for-each>
 }</xsl:template>
@@ -387,13 +408,11 @@ public class ApiCode {
     <xsl:template name="req" match="reqStruct"><xsl:call-template name="ApiResponse"/></xsl:template>
   <xsl:template name="ApiResponse">// Auto Generated.  DO NOT EDIT!
 package ${pkg}.api.resp;
-    <xsl:if test="./fieldList/field[isList='true']">
+<xsl:if test="./fieldList/field[isList='true']">
 import java.util.ArrayList;
 import java.util.List;
-
-import org.json.JSONArray;</xsl:if>
-import org.json.JSONException;
-import org.json.JSONObject;
+</xsl:if>
+import com.google.gson.*;
 
 public class <xsl:value-of select="name" /> {
 <xsl:for-each select="fieldList/field">
@@ -407,9 +426,9 @@ public class <xsl:value-of select="name" /> {
     /**
      * 反序列化函数，用于从json字符串反序列化本类型实例
      */
-    public static <xsl:value-of select="name" /> deserialize(String json) throws JSONException {
+    public static <xsl:value-of select="name" /> deserialize(String json) {
         if (json != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !json.isEmpty()) {
-            return deserialize(new JSONObject(json));
+            return deserialize(new JsonParser().parse(json).getAsJsonObject());
         }
         return null;
     }
@@ -417,9 +436,10 @@ public class <xsl:value-of select="name" /> {
     /**
      * 反序列化函数，用于从json节点对象反序列化本类型实例
      */
-    public static <xsl:value-of select="name" /> deserialize(JSONObject json) throws JSONException {
-        if (json != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> json.length() <xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> 0) {
+    public static <xsl:value-of select="name" /> deserialize(JsonObject json) {
+        if (json != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !json.isJsonNull()) {
             <xsl:value-of select="name" /> result = new <xsl:value-of select="name" />();
+            JsonElement element = null;
             <xsl:choose>
                 <xsl:when test="contains(name,'Api_RawString') or contains(name,'Api_JSONString')">result.value = json.toString();
                 </xsl:when>
@@ -438,11 +458,11 @@ public class <xsl:value-of select="name" /> {
         return null;
     }
     
-    /*
+    /**
      * 序列化函数，用于从对象生成数据字典
      */
-    public JSONObject serialize() throws JSONException {
-        JSONObject json = new JSONObject();
+    public JsonObject serialize() {
+        JsonObject json = new JsonObject();
         <xsl:for-each select="fieldList/field">
           <xsl:call-template name="SerializeField">
             <xsl:with-param name="type" select="type" />
@@ -486,42 +506,45 @@ public class <xsl:value-of select="name" /> {
     <xsl:param name="isList"/>
     <xsl:choose>
       <xsl:when test="$isList='true'">
-            // <xsl:value-of select="desc" />
-            JSONArray <xsl:value-of select="name" />Array = json.optJSONArray("<xsl:value-of select="name" />");
-            if (<xsl:value-of select="name" />Array != null) {
-                int len = <xsl:value-of select="name" />Array.length();
+            /* <xsl:value-of select="desc" /> */
+            element = json.get("<xsl:value-of select="name" />");
+            if (element != null) {
+                JsonArray <xsl:value-of select="name" />Array = element.getAsJsonArray();
+                int len = <xsl:value-of select="$name" />Array.size();
                 <xsl:choose>
-                  <xsl:when test="$type = 'boolean'">result.<xsl:value-of select="name" /> = new boolean[len];</xsl:when>
-                  <xsl:when test="$type = 'byte'">result.<xsl:value-of select="name" /> = new byte[len];</xsl:when>
-                  <xsl:when test="$type = 'short'">result.<xsl:value-of select="name" /> = new short[len];</xsl:when>
-                  <xsl:when test="$type = 'char'">result.<xsl:value-of select="name" /> = new char[len];</xsl:when>
-                  <xsl:when test="$type = 'float'">result.<xsl:value-of select="name" /> = new float[len];</xsl:when>
-                  <xsl:when test="$type = 'double'">result.<xsl:value-of select="name" /> = new double[len];</xsl:when>
-                  <xsl:when test="$type = 'int'">result.<xsl:value-of select="name" /> = new int[len];</xsl:when>
-                  <xsl:when test="$type = 'long'">result.<xsl:value-of select="name" /> = new long[len];</xsl:when>
-                  <xsl:when test="$type = 'string'">result.<xsl:value-of select="name" /> = new
-                      ArrayList<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text>String<xsl:text
-                              disable-output-escaping="yes"><![CDATA[>]]></xsl:text>(len);</xsl:when>
+                  <xsl:when test="$type = 'boolean'">result.<xsl:value-of select="$name" /> = new boolean[len];</xsl:when>
+                  <xsl:when test="$type = 'byte'">result.<xsl:value-of select="$name" /> = new byte[len];</xsl:when>
+                  <xsl:when test="$type = 'short'">result.<xsl:value-of select="$name" /> = new short[len];</xsl:when>
+                  <xsl:when test="$type = 'char'">result.<xsl:value-of select="$name" /> = new char[len];</xsl:when>
+                  <xsl:when test="$type = 'float'">result.<xsl:value-of select="$name" /> = new float[len];</xsl:when>
+                  <xsl:when test="$type = 'double'">result.<xsl:value-of select="$name" /> = new double[len];</xsl:when>
+                  <xsl:when test="$type = 'int'">result.<xsl:value-of select="$name" /> = new int[len];</xsl:when>
+                  <xsl:when test="$type = 'long'">result.<xsl:value-of select="$name" /> = new long[len];</xsl:when>
+                  <xsl:when test="$type = 'string'">result.<xsl:value-of select="$name" /> = new ArrayList<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text>String<xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text>(len);</xsl:when>
                   <xsl:otherwise>result.<xsl:value-of select="name" /> = new ArrayList<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text>
                   <xsl:value-of select="$type" /><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text>(len);</xsl:otherwise>
           </xsl:choose>
                 for (int i = 0; i<xsl:text disable-output-escaping="yes"><![CDATA[ < ]]></xsl:text>len; i++) {
-                        <xsl:call-template name="JsonGetter">
-                          <xsl:with-param name="type" select="type" />
-                          <xsl:with-param name="name" select="name" />
-                          <xsl:with-param name="isList" select="isList" />
-                        </xsl:call-template>
+                    <xsl:call-template name="JsonGetter">
+                      <xsl:with-param name="type" select="$type" />
+                      <xsl:with-param name="name" select="$name" />
+                      <xsl:with-param name="isList" select="$isList" />
+                    </xsl:call-template>
                 }
             }
       </xsl:when>
       <xsl:otherwise>
-            // <xsl:value-of select="desc" /><xsl:text disable-output-escaping="yes">&#xD;&#xA;<![CDATA[            ]]></xsl:text>  
-            <xsl:call-template name="JsonGetter">
-              <xsl:with-param name="type" select="type" />
-              <xsl:with-param name="name" select="name" />
-              <xsl:with-param name="isList" select="isList" />
-            </xsl:call-template>
-      </xsl:otherwise></xsl:choose></xsl:template>
+            /* <xsl:value-of select="desc" /> */
+            element = json.get("<xsl:value-of select="name" />");
+            if (element != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !element.isJsonNull()) {
+                <xsl:call-template name="JsonGetter">
+                  <xsl:with-param name="type" select="type" />
+                  <xsl:with-param name="name" select="name" />
+                  <xsl:with-param name="isList" select="isList" />
+                </xsl:call-template>
+            }
+      </xsl:otherwise></xsl:choose>
+  </xsl:template>
   <xsl:template name="JsonGetter">
     <xsl:param name="type"/>
     <xsl:param name="name"/>
@@ -529,42 +552,37 @@ public class <xsl:value-of select="name" /> {
     <xsl:choose>
       <xsl:when test="$isList = 'true'">
         <xsl:choose>
-          <xsl:when test="$type = 'boolean'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.optBoolean(i);</xsl:when>
-          <xsl:when test="$type = 'byte'">result.<xsl:value-of select="name" />[i] = (byte)<xsl:value-of select="name" />Array.optInt(i);</xsl:when>
-          <xsl:when test="$type = 'short'">result.<xsl:value-of select="name" />[i] = (short)<xsl:value-of select="name" />Array.optInt(i);</xsl:when>
-          <xsl:when test="$type = 'char'">result.<xsl:value-of select="name" />[i] = (char)<xsl:value-of select="name" />Array.optInt(i);</xsl:when>
-          <xsl:when test="$type = 'float'">result.<xsl:value-of select="name" />[i] = (float)<xsl:value-of select="name" />Array.optDouble(i);</xsl:when>
-          <xsl:when test="$type = 'double'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.optDouble(i);</xsl:when>
-          <xsl:when test="$type = 'int'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.optInt(i);</xsl:when>
-          <xsl:when test="$type = 'long'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.optLong(i);</xsl:when>
-          <xsl:when test="$type = 'string'">
-          if(!<xsl:value-of select="name" />Array.isNull(i)){
-              result.<xsl:value-of select="name" />.add(<xsl:value-of select="name" />Array.optString(i, null));
-          }else{
-              result.<xsl:value-of select="name" />.add(i, null);
-          }
-          </xsl:when>
-            <xsl:otherwise>JSONObject jo = <xsl:value-of select="name" />Array.optJSONObject(i);
-                    if (jo != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> jo.length() <xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> 0) {
+          <xsl:when test="$type = 'boolean'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsBoolean();</xsl:when>
+          <xsl:when test="$type = 'byte'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsByte();</xsl:when>
+          <xsl:when test="$type = 'short'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsShort();</xsl:when>
+          <xsl:when test="$type = 'char'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsCharacter();</xsl:when>
+          <xsl:when test="$type = 'float'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsFloat();</xsl:when>
+          <xsl:when test="$type = 'double'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsDouble();</xsl:when>
+          <xsl:when test="$type = 'int'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsInt();</xsl:when>
+          <xsl:when test="$type = 'long'">result.<xsl:value-of select="name" />[i] = <xsl:value-of select="name" />Array.get(i).getAsLong();</xsl:when>
+          <xsl:when test="$type = 'string'">if (<xsl:value-of select="name" />Array.get(i) != null) {
+                        result.<xsl:value-of select="name" />.add(<xsl:value-of select="name" />Array.get(i).getAsString());
+                    } else {
+                        result.<xsl:value-of select="name" />.add(i, null);
+                    }</xsl:when>
+          <xsl:otherwise>JsonObject jo = <xsl:value-of select="name" />Array.get(i).getAsJsonObject();
+                    if (jo != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !jo.isJsonNull()) {
                         result.<xsl:value-of select="name" />.add(<xsl:value-of select="type" />.deserialize(jo));
                     }</xsl:otherwise>
         </xsl:choose>
       </xsl:when>
       <xsl:otherwise>
         <xsl:choose>
-          <xsl:when test="$type = 'boolean'">result.<xsl:value-of select="name" /> = json.optBoolean("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'byte'">result.<xsl:value-of select="name" /> = (byte)json.optInt("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'short'">result.<xsl:value-of select="name" /> = (short)json.optInt("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'char'">result.<xsl:value-of select="name" /> = (char)json.optInt("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'float'">result.<xsl:value-of select="name" /> = (float)json.optDouble("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'double'">result.<xsl:value-of select="name" /> = json.optDouble("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'int'">result.<xsl:value-of select="name" /> = json.optInt("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'long'">result.<xsl:value-of select="name" /> = json.optLong("<xsl:value-of select="name" />");</xsl:when>
-          <xsl:when test="$type = 'string'">
-              if(!json.isNull("<xsl:value-of select="name" />")){
-                  result.<xsl:value-of select="name" /> = json.optString("<xsl:value-of select="name" />", null);
-              }</xsl:when>
-          <xsl:otherwise>result.<xsl:value-of select="name" /> = <xsl:value-of select="type" />.deserialize(json.optJSONObject("<xsl:value-of select="name" />"));</xsl:otherwise>
+          <xsl:when test="$type = 'boolean'">result.<xsl:value-of select="$name" /> = element.getAsBoolean();</xsl:when>
+          <xsl:when test="$type = 'byte'">result.<xsl:value-of select="$name" /> = element.getAsByte();</xsl:when>
+          <xsl:when test="$type = 'short'">result.<xsl:value-of select="$name" /> = element.getAsShort();</xsl:when>
+          <xsl:when test="$type = 'char'">result.<xsl:value-of select="$name" /> = element.getAsCharacter();</xsl:when>
+          <xsl:when test="$type = 'float'">result.<xsl:value-of select="$name" /> = element.getAsFloat();</xsl:when>
+          <xsl:when test="$type = 'double'">result.<xsl:value-of select="$name" /> = element.getAsDouble();</xsl:when>
+          <xsl:when test="$type = 'int'">result.<xsl:value-of select="$name" /> = element.getAsInt();</xsl:when>
+          <xsl:when test="$type = 'long'">result.<xsl:value-of select="$name" /> = element.getAsLong();</xsl:when>
+          <xsl:when test="$type = 'string'">result.<xsl:value-of select="$name" /> = element.getAsString();</xsl:when>
+          <xsl:otherwise>result.<xsl:value-of select="$name" /> = <xsl:value-of select="type" />.deserialize(json.get("<xsl:value-of select="name" />").getAsJsonObject());</xsl:otherwise>
         </xsl:choose>
       </xsl:otherwise>
     </xsl:choose></xsl:template>
@@ -575,28 +593,28 @@ public class <xsl:value-of select="name" /> {
     <xsl:variable name="objcName"><xsl:value-of select="$name"/></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList='true'">
-        // <xsl:value-of select="desc" /> 
+        /* <xsl:value-of select="desc" /> */
         if (this.<xsl:value-of select="$objcName" /> != null) {
-            JSONArray <xsl:value-of select="$objcName" />Array = new JSONArray();
-            for (<xsl:call-template name="ParseType"><xsl:with-param name="type"><xsl:call-template name="getLastName"><xsl:with-param name="name" select="type"/></xsl:call-template>
+            JsonArray <xsl:value-of select="$objcName" />Array = new JsonArray();
+            for (<xsl:call-template name="ParseType"><xsl:with-param name="type"><xsl:call-template name="getLastName"><xsl:with-param name="name" select="$type"/></xsl:call-template>
         </xsl:with-param></xsl:call-template> value : this.<xsl:value-of select="$objcName" />) {
                 <xsl:call-template name="JsonSetter">
-                  <xsl:with-param name="type" select="type" />
-                  <xsl:with-param name="name" select="name" />
-                  <xsl:with-param name="isList" select="isList" />
+                  <xsl:with-param name="type" select="$type" />
+                  <xsl:with-param name="name" select="$name" />
+                  <xsl:with-param name="isList" select="$isList" />
                 </xsl:call-template>
             }
-            json.put("<xsl:value-of select="$objcName" />", <xsl:value-of select="$objcName" />Array);
+            json.add("<xsl:value-of select="$objcName" />", <xsl:value-of select="$objcName" />Array);
         }
       </xsl:when>
       <xsl:otherwise>
-        // <xsl:value-of select="desc" /><xsl:text disable-output-escaping="yes">&#xD;&#xA;<![CDATA[        ]]></xsl:text>  
-            <xsl:call-template name="JsonSetter">
-              <xsl:with-param name="type" select="type" />
-              <xsl:with-param name="name" select="name" />
-              <xsl:with-param name="isList" select="isList" />
-            </xsl:call-template>
-          </xsl:otherwise></xsl:choose></xsl:template>
+        /* <xsl:value-of select="desc" /> */
+        <xsl:call-template name="JsonSetter">
+          <xsl:with-param name="type" select="type" />
+          <xsl:with-param name="name" select="name" />
+          <xsl:with-param name="isList" select="isList" />
+        </xsl:call-template>
+      </xsl:otherwise></xsl:choose></xsl:template>
   <xsl:template name="JsonSetter">
     <xsl:param name="type"/>
     <xsl:param name="name"/>
@@ -605,41 +623,41 @@ public class <xsl:value-of select="name" /> {
     <xsl:choose>
       <xsl:when test="$isList = 'true'">
         <xsl:choose>
-          <xsl:when test="$type = 'boolean'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'byte'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'char'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'short'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'float'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'double'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'int'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'long'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
-          <xsl:when test="$type = 'string'"><xsl:value-of select="$objcName" />Array.put(value);</xsl:when>
+          <xsl:when test="$type = 'boolean'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'byte'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'char'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'short'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'float'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'double'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'int'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'long'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'string'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
           <xsl:otherwise>if (value != null) {
-                    <xsl:value-of select="$objcName" />Array.put(value.serialize());
+                    <xsl:value-of select="$objcName" />Array.add(value.serialize());
                 }</xsl:otherwise>
         </xsl:choose>
       </xsl:when>
       <xsl:otherwise>
         <xsl:choose>
-          <xsl:when test="$type = 'boolean'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'boolean'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'byte'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'byte'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'char'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'char'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'short'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'short'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'float'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'float'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'double'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'double'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'int'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'int'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'long'">json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
+          <xsl:when test="$type = 'long'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'string'">if(this.<xsl:value-of select="$objcName" /> != null) { json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />); }
+          <xsl:when test="$type = 'string'">if(this.<xsl:value-of select="$objcName" /> != null) { json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />); }
           </xsl:when>
-          <xsl:otherwise>if (this.<xsl:value-of select="$objcName" /> != null) { json.put("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />.serialize()); }
+          <xsl:otherwise>if (this.<xsl:value-of select="$objcName" /> != null) { json.add("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />.serialize()); }
           </xsl:otherwise>
         </xsl:choose>
       </xsl:otherwise>
