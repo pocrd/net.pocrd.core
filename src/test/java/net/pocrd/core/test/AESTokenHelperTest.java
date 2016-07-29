@@ -38,6 +38,12 @@ public class AESTokenHelperTest {
         assertEquals(ci.deviceId, caller.deviceId);
         assertEquals(ci.appid, caller.appid);
         assertEquals(ci.oauthid, caller.oauthid);
+
+        AESTokenHelper h = new AESTokenHelper("3r0ShGtuxLjYEnDnKo7BbcKM4faNpKRBcw61GGvuCSI=");
+        CallerInfo ca = h.parseToken(
+                "OwqUPFrrZYwO9YEYsbfw1bnIu%2Fuy8aEv0ned%2BiNY%2BJNXR%2BG2v%2BBwn0feE1lGXbaYwPDfJ4F9Gkn%2FKaARAQjduxLsKFzVwsCkcmdz2in1OUU%3D");
+
+        System.out.println(ca.deviceId);
     }
 
     @Test

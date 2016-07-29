@@ -69,10 +69,10 @@ public class ApiGeneratorTest {
 
     @Test
     public void testGenerateFromNetResource() {
-        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/autogen/oc").setClassPrefix("SF").build().generateWithNetResource(
+        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/autogen/oc").setClassPrefix("SF").build().generateWithApiInfo(
                 "http://localhost:8080/info.api?raw");
         new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/autogen/java").setPackagePrefix("com.sfht.m.app.client").build()
-                .generateWithNetResource("http://localhost:8080/info.api?raw");
+                .generateWithApiInfo("http://localhost:8080/info.api?raw");
     }
 
     @Test
@@ -87,6 +87,6 @@ public class ApiGeneratorTest {
                 .setPackagePrefix("sf.b2c.mall").build();
         instance.setApiGroups(new String[] { "logistics", "order", "payment", "products", "shopcart", "user" });
         instance.setSecurityTypes(SecurityType.UserLogin, SecurityType.None, SecurityType.RegisteredDevice);
-        instance.generateWithNetResource("http://115.28.160.84/info.api?raw");
+        instance.generateWithApiInfo("http://115.28.160.84/info.api?raw");
     }
 }

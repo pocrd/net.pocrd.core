@@ -24,25 +24,28 @@ import java.util.List;
  * Created by guankaiqiang521 on 2014/9/25.
  */
 public class ApiSdkJavaGenerator extends ApiCodeGenerator {
-    private static final Logger logger = LoggerFactory.getLogger(ApiSdkJavaGenerator.class);
+    private static final Logger logger  = LoggerFactory.getLogger(ApiSdkJavaGenerator.class);
     private static final String REQUEST = "request";
-    private static final String RESP = "resp";
-    private static final String API = "api";
+    private static final String RESP    = "resp";
+    private static final String API     = "api";
 
     private String xslt;
     private String output;
     private String packagePrefix;
 
-    private ApiSdkJavaGenerator(String xslt, String output, String packagePrefix) {
-        this.xslt = xslt;
+    private ApiSdkJavaGenerator(String output, String packagePrefix) {
         this.output = output;
         this.packagePrefix = packagePrefix;
     }
 
+    private void setXslt(String xslt) {
+        this.xslt = xslt;
+    }
+
     public static class Builder {
-        private String xslt = null;
-        private String output = "~/tmp";
-        private String packagePrefix = "com.fengqu.m.app.client";
+        private String xslt          = null;
+        private String output        = "~/tmp";
+        private String packagePrefix = "net.pocrd.m.app.client";
 
         public Builder setXsltPath(String xslt) {
             this.xslt = xslt;
@@ -60,16 +63,18 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
         }
 
         public ApiSdkJavaGenerator build() {
-            return new ApiSdkJavaGenerator(xslt, output, packagePrefix);
+            ApiSdkJavaGenerator g = new ApiSdkJavaGenerator(output, packagePrefix);
+            g.setXslt(xslt);
+            return g;
         }
     }
 
     @Override
-    protected InputStream transformInputStream(InputStream inputStream) {
+    protected InputStream customizeXslt(InputStream xslt) {
         BufferedReader reader = null;
         InputStream swapStream = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(inputStream, ConstField.UTF8));
+            reader = new BufferedReader(new InputStreamReader(xslt, ConstField.UTF8));
             StringBuilder out = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -85,8 +90,8 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
                 if (reader != null) {
                     reader.close();
                 }
-                if (inputStream != null) {
-                    inputStream.close();
+                if (xslt != null) {
+                    xslt.close();
                 }
             } catch (IOException e) {
                 logger.error("close failed!", e);
@@ -97,14 +102,14 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
     }
 
     @Override
-    public void generate(InputStream inputStream) {
+    public void generate(InputStream apiInfo) {
         InputStream defaultXslt = null;
         try {
             defaultXslt = ApiSdkJavaGenerator.class.getResourceAsStream("/xslt/java.xslt");
             Transformer trans = TransformerFactory.newInstance().newTransformer(
-                    getXsltSource(xslt, new StreamSource(transformInputStream(defaultXslt))));
+                    getXsltSource(xslt, new StreamSource(customizeXslt(defaultXslt))));
             trans.setOutputProperty("omit-xml-declaration", "yes");
-            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(apiInfo);
             generateJavaEntity(trans, document);
             generateJavaRequest(trans, document);
             // generateJavaFramework();
@@ -116,8 +121,8 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
                 if (defaultXslt != null) {
                     defaultXslt.close();
                 }
-                if (inputStream != null) {
-                    inputStream.close();
+                if (apiInfo != null) {
+                    apiInfo.close();
                 }
             } catch (IOException e) {
                 logger.error("close failed!", e);
@@ -130,15 +135,15 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
         try {
 
             XPath path = XPathFactory.newInstance().newXPath();
-            NodeList nl = (NodeList) path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
+            NodeList nl = (NodeList)path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
             int len = nl.getLength();
             String outputPath = output + File.separator + API + File.separator + RESP;
             FileUtil.recreateDir(outputPath);
             for (int i = 0; i < len; i++) {
-                NodeList pl = ((Element) ((Element) nl.item(i)).getElementsByTagName("respStructList").item(0)).getElementsByTagName("respStruct");
+                NodeList pl = ((Element)((Element)nl.item(i)).getElementsByTagName("respStructList").item(0)).getElementsByTagName("respStruct");
                 int l = pl.getLength();
                 for (int j = 0; j < l; j++) {
-                    Element e = (Element) pl.item(j);
+                    Element e = (Element)pl.item(j);
                     String className = e.getElementsByTagName("name").item(0).getFirstChild().getNodeValue();
                     String fileName = outputPath + File.separator + className + ".java";
                     File source = new File(fileName);
@@ -147,12 +152,12 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
                     }
                 }
 
-                NodeList ns = ((Element) nl.item(i)).getElementsByTagName("reqStructList");
+                NodeList ns = ((Element)nl.item(i)).getElementsByTagName("reqStructList");
                 if (ns != null && ns.getLength() != 0) {
-                    NodeList rl = ((Element) ns.item(0)).getElementsByTagName("reqStruct");
+                    NodeList rl = ((Element)ns.item(0)).getElementsByTagName("reqStruct");
                     l = rl.getLength();
                     for (int j = 0; j < l; j++) {
-                        Element e = (Element) rl.item(j);
+                        Element e = (Element)rl.item(j);
                         String className = e.getElementsByTagName("name").item(0).getFirstChild().getNodeValue();
                         String fileName = outputPath + File.separator + className + ".java";
                         File source = new File(fileName);
@@ -163,10 +168,10 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
                 }
             }
             //通用返回数据结构
-            nl = (NodeList) path.evaluate("//Document/respStructList/respStruct", doc, XPathConstants.NODESET);
+            nl = (NodeList)path.evaluate("//Document/respStructList/respStruct", doc, XPathConstants.NODESET);
             len = nl.getLength();
             for (int i = 0; i < len; i++) {
-                Element e = (Element) nl.item(i);
+                Element e = (Element)nl.item(i);
                 String className = e.getElementsByTagName("name").item(0).getFirstChild().getNodeValue();
                 String fileName = outputPath + File.separator + className + ".java";
                 File source = new File(fileName);
@@ -184,12 +189,12 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
     private void generateJavaRequest(Transformer trans, Document doc) {
         try {
             XPath path = XPathFactory.newInstance().newXPath();
-            NodeList nl = (NodeList) path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
+            NodeList nl = (NodeList)path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
             int len = nl.getLength();
             String outputPath = output + File.separator + API + File.separator + REQUEST;
             FileUtil.recreateDir(outputPath);
             for (int i = 0; i < len; i++) {
-                Element e = (Element) nl.item(i);
+                Element e = (Element)nl.item(i);
                 String methodName = e.getElementsByTagName("methodName").item(0).getFirstChild().getNodeValue();
                 int index = methodName.indexOf('.');
                 methodName = methodName.substring(0, 1).toUpperCase() + methodName.substring(1, index) + "_" + methodName.substring(index + 1,
@@ -201,7 +206,7 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
                     trans.transform(new DOMSource(e), new StreamResult(source));
                 }
             }
-            Node n = (Node) path.evaluate("//Document/codeList", doc, XPathConstants.NODE);
+            Node n = (Node)path.evaluate("//Document/codeList", doc, XPathConstants.NODE);
             trans.transform(new DOMSource(n), new StreamResult(outputPath + File.separator + "ApiCode.java"));
         } catch (Exception e) {
             logger.error("generate api java client failed", e);
@@ -230,7 +235,7 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
                             byte[] buffer = new byte[4096];
                             int len;
                             fileOutputStream = new FileOutputStream(new File(fileName));
-                            stream = transformInputStream(new FileInputStream(file));
+                            stream = customizeXslt(new FileInputStream(file));
                             while ((len = stream.read(buffer)) != -1) {
                                 fileOutputStream.write(buffer, 0, len);
                             }
@@ -257,12 +262,15 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
     }
 
     public static void main(String[] args) {
-        if (args.length > 0) {
-            if ("generateViaJar".equals(args[0]) && args.length == 3 && args[1].length() > 0) {
-                new Builder().setOutputPath(args[2]).build().generateViaJar(args[1]);
+        if (args.length == 4) {
+            if ("jar".equals(args[0])) {
+                new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build().generateViaJar(args[1]);
+                return;
+            } else if ("url".equals(args[0])) {
+                new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build().generateWithApiInfo(args[1]);
                 return;
             }
         }
-        System.out.println("error parameter.  args[0]:generateViaJar  args[1]:jar path  args[2]:output path");
+        System.out.println("error parameter. {jar/url} {jar/url path} {package prefix} {output path}");
     }
 }

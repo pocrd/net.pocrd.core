@@ -147,7 +147,7 @@ public abstract class ApiCodeGenerator {
         if (targetSite != null && !targetSite.isEmpty()) {
             try {
                 byte[] xslt = WebRequestUtil.getResponseBytes(targetSite, null, true);
-                swapStream = transformInputStream(new ByteArrayInputStream(xslt));
+                swapStream = customizeXslt(new ByteArrayInputStream(xslt));
                 xslSource = new StreamSource(swapStream);
             } catch (Exception e) {
                 logger.warn("get xslt failed from site:{},will use default xslt to generate doc", CommonConfig.getInstance().getApiInfoXslSite());
@@ -161,30 +161,30 @@ public abstract class ApiCodeGenerator {
     /**
      * 转换模板，替换xslt中的定制元素
      *
-     * @param inputStream
+     * @param xslt
      */
-    protected abstract InputStream transformInputStream(InputStream inputStream);
+    protected abstract InputStream customizeXslt(InputStream xslt);
 
     /**
      * 使用xslt进行代码生成
      *
-     * @param inputStream
+     * @param apiInfo
      */
-    public abstract void generate(InputStream inputStream);
+    public abstract void generate(InputStream apiInfo);
 
     /**
      * 访问指定站点获取数据源
      *
-     * @param website xml下载地址
+     * @param apiInfoUrl xml下载地址
      */
-    public void generateWithNetResource(String website) {
-        byte[] bytes = WebRequestUtil.getResponseBytes(website, null, true);
+    public void generateWithApiInfo(String apiInfoUrl) {
+        byte[] bytes = WebRequestUtil.getResponseBytes(apiInfoUrl, null, true);
         if (bytes != null) {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
             generate(byteArrayInputStream);
         } else {
-            logger.error("generate code failed with resource form " + website);
-            throw new RuntimeException("generate code failed with resource form " + website);
+            logger.error("generate code failed with resource form " + apiInfoUrl);
+            throw new RuntimeException("generate code failed with resource form " + apiInfoUrl);
         }
     }
 

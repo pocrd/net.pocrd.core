@@ -18,7 +18,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
-import java.util.HashMap;
 
 /**
  * Created by guankaiqiang521 on 2014/9/25.
@@ -39,7 +38,7 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
     public static class Builder {
         private String xslt          = null;
         private String output        = "~/tmp";
-        private String packagePrefix = "com.fengqu.m";
+        private String packagePrefix = "net.pocrd.m";
 
         public Builder setXsltPath(String xslt) {
             this.xslt = xslt;
@@ -62,11 +61,11 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
     }
 
     @Override
-    protected InputStream transformInputStream(InputStream inputStream) {
+    protected InputStream customizeXslt(InputStream xslt) {
         BufferedReader reader = null;
         InputStream swapStream = null;
         try {
-            reader = new BufferedReader(new InputStreamReader(inputStream, ConstField.UTF8));
+            reader = new BufferedReader(new InputStreamReader(xslt, ConstField.UTF8));
             StringBuilder out = new StringBuilder();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -82,8 +81,8 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
                 if (reader != null) {
                     reader.close();
                 }
-                if (inputStream != null) {
-                    inputStream.close();
+                if (xslt != null) {
+                    xslt.close();
                 }
             } catch (IOException e) {
                 logger.error("close failed!", e);
@@ -94,14 +93,14 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
     }
 
     @Override
-    public void generate(InputStream inputStream) {
+    public void generate(InputStream apiInfo) {
         InputStream defaultXslt = null;
         try {
             defaultXslt = ApiSdkJavaScriptGenerator.class.getResourceAsStream("/xslt/js.xslt");
             Transformer trans = TransformerFactory.newInstance().newTransformer(
-                    getXsltSource(xslt, new StreamSource(transformInputStream(defaultXslt))));
+                    getXsltSource(xslt, new StreamSource(customizeXslt(defaultXslt))));
             trans.setOutputProperty("omit-xml-declaration", "yes");
-            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
+            Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(apiInfo);
             generateJsRequest(trans, document);
         } catch (Exception e) {
             logger.error("generate failed!", e);
@@ -111,8 +110,8 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
                 if (defaultXslt != null) {
                     defaultXslt.close();
                 }
-                if (inputStream != null) {
-                    inputStream.close();
+                if (apiInfo != null) {
+                    apiInfo.close();
                 }
             } catch (IOException e) {
                 logger.error("close failed!", e);
@@ -160,12 +159,15 @@ public class ApiSdkJavaScriptGenerator extends ApiCodeGenerator {
     }
 
     public static void main(String[] args) {
-        if (args.length > 0) {
-            if ("generateViaJar".equals(args[0]) && args.length == 3 && args[1].length() > 0) {
-                new Builder().setOutputPath(args[2]).build().generateViaJar(args[1]);
+        if (args.length == 4) {
+            if ("jar".equals(args[0])) {
+                new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build().generateViaJar(args[1]);
+                return;
+            } else if ("url".equals(args[0])) {
+                new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build().generateWithApiInfo(args[1]);
                 return;
             }
         }
-        System.out.println("error parameter.  args[0]:generateViaJar  args[1]:jar path  args[2]:output path");
+        System.out.println("error parameter. {jar/url} {jar/url path} {package prefix} {output path}");
     }
 }

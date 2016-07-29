@@ -26,7 +26,7 @@ public class HtmlApiDocGenerator extends ApiCodeGenerator {
     }
 
     public static class Builder {
-        private String xslt = null;
+        private String xslt   = null;
         private String output = "~/tmp";
 
         public Builder setXsltPath(String xslt) {
@@ -47,22 +47,22 @@ public class HtmlApiDocGenerator extends ApiCodeGenerator {
     /**
      * do nothing
      *
-     * @param inputStream
+     * @param xslt
      */
     @Override
-    protected InputStream transformInputStream(InputStream inputStream) {
-        return inputStream;
+    protected InputStream customizeXslt(InputStream xslt) {
+        return xslt;
     }
 
     @Override
-    public void generate(InputStream inputStream) {
+    public void generate(InputStream apiInfo) {
         InputStream defaultStream = null;
         try {
             defaultStream = HtmlApiDocGenerator.class.getResourceAsStream("/xslt/apiInfo.xsl");
             TransformerFactory tFactory = TransformerFactory.newInstance();
-            Source xslSource = getXsltSource(xslt, new StreamSource(transformInputStream(defaultStream)));
+            Source xslSource = getXsltSource(xslt, new StreamSource(customizeXslt(defaultStream)));
             Transformer trasform = tFactory.newTransformer(xslSource);
-            trasform.transform(new StreamSource(inputStream), new StreamResult(output + "/apidoc.html"));
+            trasform.transform(new StreamSource(apiInfo), new StreamResult(output + "/apidoc.html"));
         } catch (Exception e) {
             logger.error("generator doc failed!", e);
             throw new RuntimeException("generator doc failed!", e);
@@ -71,8 +71,8 @@ public class HtmlApiDocGenerator extends ApiCodeGenerator {
                 if (defaultStream != null) {
                     defaultStream.close();
                 }
-                if (inputStream != null) {
-                    inputStream.close();
+                if (apiInfo != null) {
+                    apiInfo.close();
                 }
             } catch (IOException e) {
                 logger.error("close failed!", e);
@@ -82,12 +82,15 @@ public class HtmlApiDocGenerator extends ApiCodeGenerator {
     }
 
     public static void main(String[] args) {
-        if (args.length > 0) {
-            if ("generateViaJar".equals(args[0]) && args.length == 3 && args[1].length() > 0) {
+        if (args.length == 3) {
+            if ("jar".equals(args[0])) {
                 new Builder().setOutputPath(args[2]).build().generateViaJar(args[1]);
+                return;
+            } else if ("url".equals(args[0])) {
+                new Builder().setOutputPath(args[2]).build().generateWithApiInfo(args[1]);
                 return;
             }
         }
-        System.out.println("error parameter.  args[0]:generateViaJar  args[1]:jar path  args[2]:output path");
+        System.out.println("error parameter. {jar/url} {jar/url path} {output path}");
     }
 }

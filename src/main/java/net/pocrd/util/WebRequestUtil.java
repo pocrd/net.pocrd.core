@@ -2,6 +2,7 @@ package net.pocrd.util;
 
 import net.pocrd.define.ConstField;
 import net.pocrd.entity.ApiReturnCode;
+import net.pocrd.entity.CompileConfig;
 import net.pocrd.entity.ReturnCodeException;
 import org.apache.http.Consts;
 import org.apache.http.HttpResponse;
@@ -66,7 +67,9 @@ public class WebRequestUtil {
         try {
             resp = getHttpResponse(baseUrl, params, useGzip);
             String result = EntityUtils.toString(resp.getEntity(), ConstField.UTF8);
-            logger.info(baseUrl + " " + params + " RESPONSE:" + result);
+            if (CompileConfig.isDebug) {
+                logger.info(baseUrl + " " + params + " RESPONSE:" + result);
+            }
             return result;
         } catch (ReturnCodeException rce) {
             throw rce;
