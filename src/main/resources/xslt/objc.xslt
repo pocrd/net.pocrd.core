@@ -50,7 +50,7 @@
 // Auto Generated.  DO NOT EDIT!
 
 #import "${prefix}<xsl:call-template name="getClassName"><xsl:with-param name="name" select="methodName" /></xsl:call-template>.h"
-#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"
+<xsl:choose><xsl:when test="not('string'=returnType)">#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"</xsl:when></xsl:choose>
 
 /*
  * <xsl:value-of select="description"/>
@@ -90,7 +90,8 @@
 /*
  * 获取服务端返回的请求结果实体
  */
-- (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) result
+<xsl:choose><xsl:when test="'string'=returnType">- (NSString *) result</xsl:when>
+<xsl:otherwise>- (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) result</xsl:otherwise></xsl:choose>
 {
     if (_response<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![_response isKindOfClass:[NSNull class]]) {
         return (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) _response.result;
