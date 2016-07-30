@@ -34,7 +34,7 @@
         parserMap.put("<xsl:value-of select="$name"/>", new Parser$<xsl:call-template name="getClassName"><xsl:with-param name="name" select="$name"/></xsl:call-template>());</xsl:template>
     <xsl:template match="/">// Auto Generated.  DO NOT EDIT!
 
-package com.fengqu.etl.user.action;
+package net.pocrd.etl.user.action;
 
 import java.util.HashMap;
 
