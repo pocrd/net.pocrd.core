@@ -108,12 +108,12 @@
 {
     @try
     {
-      <xsl:choose><xsl:when test="'string'=returnType">[json objectForKey:@"raw_string"];</xsl:when>
-          <xsl:otherwise>_response.result = [${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize:json];</xsl:otherwise></xsl:choose>
+      _response.result = <xsl:choose><xsl:when test="'string'=returnType">[json objectForKey:@"raw_string"];</xsl:when>
+          <xsl:otherwise>[${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize:json];</xsl:otherwise></xsl:choose>
     }
     @catch (NSException *exception)
     {
-        //${prefix}Debug(@"%@%@",exception.reason,@"${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize failed");
+        //${prefix}Debug(@"%@%@",exception.reason,@"<xsl:choose><xsl:when test="'string'=returnType">NSString</xsl:when><xsl:otherwise>${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template></xsl:otherwise></xsl:choose> deserialize failed");
     }
 }
 @end
