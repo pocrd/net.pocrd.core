@@ -95,7 +95,8 @@
 <xsl:otherwise>- (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) result</xsl:otherwise></xsl:choose>
 {
     if (_response<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![_response isKindOfClass:[NSNull class]]) {
-        return (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) _response.result;
+        return <xsl:choose><xsl:when test="'string'=returnType">(NSString *)</xsl:when>
+      <xsl:otherwise>(${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *)</xsl:otherwise></xsl:choose> _response.result;
     }
     return nil;
 }
@@ -107,7 +108,8 @@
 {
     @try
     {
-        _response.result = [${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize:json];
+      <xsl:choose><xsl:when test="'string'=returnType">[json objectForKey:@"raw_string"];</xsl:when>
+          <xsl:otherwise>_response.result = [${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize:json];</xsl:otherwise></xsl:choose>
     }
     @catch (NSException *exception)
     {
