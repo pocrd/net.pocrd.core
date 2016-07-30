@@ -11,7 +11,7 @@
 
 #import "${prefix}ApiCode.h"
 #import "${prefix}BaseRequest.h"
-#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"<xsl:for-each select="parameterInfoList/parameterInfo[substring(type, 1, 4) = 'Api_']">
+<xsl:choose><xsl:when test="not('string'=returnType)">#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"</xsl:when></xsl:choose><xsl:for-each select="parameterInfoList/parameterInfo[substring(type, 1, 4) = 'Api_']">
 #import "${prefix}<xsl:value-of select="type" />.h"</xsl:for-each>
 
 /*
@@ -43,7 +43,8 @@
 /*
  * 获取服务端返回的请求结果实体
  */
-- (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) result;
+<xsl:choose><xsl:when test="'string'=returnType">- (NSString *) result;</xsl:when>
+<xsl:otherwise>- (${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> *) result;</xsl:otherwise></xsl:choose>
 
 @end
 /************ split .h and .m file ************/
