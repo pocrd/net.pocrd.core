@@ -572,10 +572,6 @@ public final class ApiManager {
         } else if (RawString.class == apiInfo.returnType) {
             apiInfo.serializer = Serializer.rawStringSerializer;
             apiInfo.wrapper = ResponseWrapper.objectWrapper;
-        } else if (net.pocrd.responseEntity.RawString.class == apiInfo.returnType) {
-            //TODO remove,RawString不应对外暴露
-            apiInfo.serializer = Serializer.deprecatedRawStringSerializer;
-            apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (Collection.class.isAssignableFrom(apiInfo.returnType)) {//增加对Collection自定义Object的支持+Collection<String>的支持
             Type genericType;
             try {

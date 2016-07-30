@@ -57,7 +57,7 @@ public class ApiDocumentationHelper {
                 methodInfo.methodOwner = info.owner;
                 methodInfo.encryptionOnly = info.encryptionOnly;
                 methodInfo.needVerify = info.needVerfiy;
-                if (RawString.class == info.returnType || net.pocrd.responseEntity.RawString.class == info.returnType) {
+                if (RawString.class == info.returnType) {
                     methodInfo.returnType = "string";
                     methodInfo.respStructList = emptyTypeStructList;
                 } else if (String.class == info.returnType) {

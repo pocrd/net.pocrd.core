@@ -300,7 +300,7 @@ public abstract class BaseServlet extends HttpServlet {
             switch (apiContext.format) {
                 case XML:
                     if (call.result == null) {
-                        if (call.method.returnType != RawString.class && call.method.returnType != net.pocrd.responseEntity.RawString.class) {
+                        if (call.method.returnType != RawString.class) {
                             apiContext.outputStream.write(ConstField.XML_EMPTY);
                         }
                     } else {
@@ -312,7 +312,7 @@ public abstract class BaseServlet extends HttpServlet {
                         apiContext.outputStream.write(ConstField.JSON_SPLIT);
                     }
                     if (call.result == null) {
-                        if (call.method.returnType != RawString.class && call.method.returnType != net.pocrd.responseEntity.RawString.class) {
+                        if (call.method.returnType != RawString.class) {
                             apiContext.outputStream.write(ConstField.JSON_EMPTY);
                         }
                     } else {
@@ -833,8 +833,7 @@ public abstract class BaseServlet extends HttpServlet {
         Exception outputException = null;
 
         try {
-            if (calls.length == 1 && (calls[0].method.returnType == RawString.class
-                    || calls[0].method.returnType == net.pocrd.responseEntity.RawString.class)) {// rawString的处理，将dubbo service返回的结果直接输出
+            if (calls.length == 1 && calls[0].method.returnType == RawString.class) {// rawString的处理，将dubbo service返回的结果直接输出
                 OutputStream output = response.getOutputStream();
                 if (code == ApiReturnCode.SUCCESS && calls[0].getReturnCode() == ApiReturnCode.SUCCESS.getCode()) {
                     apiContext.outputStream.writeTo(output);

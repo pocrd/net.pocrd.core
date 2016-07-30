@@ -6,8 +6,8 @@ import net.pocrd.entity.ApiReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.responseEntity.JSONString;
 import net.pocrd.responseEntity.ObjectArrayResp;
-import net.pocrd.util.RawString;
 import net.pocrd.util.POJOSerializerProvider;
+import net.pocrd.util.RawString;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -20,7 +20,7 @@ public interface Serializer<T> {
         /**
          * 使用fastjson作为json序列化实现，序列化的特性定义
          */
-        public static final SerializerFeature[] SERIALIZER_FEATURES = new SerializerFeature[]{
+        public static final SerializerFeature[] SERIALIZER_FEATURES = new SerializerFeature[] {
                 //            SerializerFeature.DisableCircularReferenceDetect,//disable循环引用
                 //            SerializerFeature.WriteMapNullValue,//null属性，序列化为null,do by guankaiqiang,android sdk中 JSON.optString()将null convert成了"null",故关闭该特性
                 SerializerFeature.NotWriteRootClassName, //与pocrd保持一致
@@ -84,36 +84,6 @@ public interface Serializer<T> {
     };
 
     /**
-     * TODO remove,RawString不应对外暴露
-     *
-     * @see rawStringSerializer
-     * @deprecated
-     */
-    public static final Serializer<net.pocrd.responseEntity.RawString> deprecatedRawStringSerializer = new Serializer<net.pocrd.responseEntity.RawString>() {
-
-        @Override
-        public void toXml(net.pocrd.responseEntity.RawString instance, OutputStream out, boolean isRoot) {
-            try {
-                if (instance.value != null) {
-                    out.write(instance.value.getBytes(ConstField.UTF8));
-                }
-            } catch (Exception e) {
-                throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, e);
-            }
-        }
-
-        @Override
-        public void toJson(net.pocrd.responseEntity.RawString instance, OutputStream out, boolean isRoot) {
-            try {
-                if (instance.value != null) {
-                    out.write(instance.value.getBytes(ConstField.UTF8));
-                }
-            } catch (Exception e) {
-                throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, e);
-            }
-        }
-    };
-    /**
      * note:PojoSerializer不支持动态类型，要让SerializerProvider支持要写很多恶心的代码，还是直接写java代码了
      */
     public static final Serializer<ObjectArrayResp> objectArrayRespSerializer = new Serializer<ObjectArrayResp>() {
@@ -150,7 +120,7 @@ public interface Serializer<T> {
                                 out.write(bs[7]);
                             } else if (obj.getClass().isEnum()) {
                                 out.write(bs[6]);
-                                out.write(((Enum) obj).name().getBytes(ConstField.UTF8));
+                                out.write(((Enum)obj).name().getBytes(ConstField.UTF8));
                                 out.write(bs[7]);
                             } else {
                                 Serializer localSerializer = POJOSerializerProvider.getSerializer(obj.getClass());
