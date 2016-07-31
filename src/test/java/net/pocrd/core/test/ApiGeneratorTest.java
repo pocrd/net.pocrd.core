@@ -40,7 +40,7 @@ public class ApiGeneratorTest {
                  state = ApiOpenState.OPEN)
         public abstract RawString testWeiXin(
                 @ApiParameter(required = false, name = "msg", desc = "test")
-                String paramString);
+                        String paramString);
     }
 
     @Test
@@ -58,7 +58,8 @@ public class ApiGeneratorTest {
 
     @Test
     public void testJavaGenertorViaJar() throws ParserConfigurationException, IOException, SAXException {
-        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build().generateViaJar("/home/admin/api/tmp/discovery-api-0.2.5-SNAPSHOT.jar");
+        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build()
+                .generateViaJar("/home/admin/api/tmp/discovery-api-0.2.5-SNAPSHOT.jar");
     }
 
     @Test
@@ -85,7 +86,7 @@ public class ApiGeneratorTest {
     public void testGenerateJsSdkFromNetResource() {
         ApiSdkJavaScriptGenerator instance = new ApiSdkJavaScriptGenerator.Builder().setOutputPath("/home/admin/autogen/js")
                 .setPackagePrefix("sf.b2c.mall").build();
-        instance.setApiGroups(new String[] { "logistics", "order", "payment", "products", "shopcart", "user" });
+        instance.setApiGroups("logistics,order,payment,products,shopcart,user");
         instance.setSecurityTypes(SecurityType.UserLogin, SecurityType.None, SecurityType.RegisteredDevice);
         instance.generateWithApiInfo("http://115.28.160.84/info.api?raw");
     }

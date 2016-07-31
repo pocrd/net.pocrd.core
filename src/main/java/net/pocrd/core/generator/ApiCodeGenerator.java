@@ -26,65 +26,50 @@ import java.util.jar.JarFile;
  * Created by guankaiqiang521 on 2014/9/26.
  */
 public abstract class ApiCodeGenerator {
-    private static final Logger logger = LoggerFactory.getLogger(ApiCodeGenerator.class);
+    private static final Logger logger                = LoggerFactory.getLogger(ApiCodeGenerator.class);
     /**
      * only generte sdk when securityLevel is None, RegisteredDevice, UserTrustedDevice, MobileOwner, MobileOwnerTrustedDevice, UserLogin, UserLoginAndMobileOwner
      */
-    private static String DEFAULT_API_EVALUATE_CONDITION;
-    private Set<SecurityType> securityTypeSetToGen = null;
-    private Set<String> apiGroupToGen = null;
-    private Set<String> rejectApis = null;
-
-    static {
-        StringBuilder sb = new StringBuilder("(securityLevel =");
-        for (SecurityType securityType : SecurityType.values()) {
-            if (securityType != SecurityType.Document && securityType != SecurityType.Test) {
-                sb.append("'").append(securityType).append("' or securityLevel = ");
-            }
-        }
-        String tmp = sb.toString();
-        tmp = tmp.substring(0, tmp.lastIndexOf(" or securityLevel = ")) + ")";
-        DEFAULT_API_EVALUATE_CONDITION = tmp;
-    }
+    private              String accept_security_types = null; // default all
+    private              String accept_group_names    = null; // default all
+    private              String reject_api_names      = null; // default all
 
     protected String getApiEvaluate() {
-        String apiEvaluate = null, seTmp = null, groupTmp = null, rejectApiTmp = null;
-        if (securityTypeSetToGen != null && securityTypeSetToGen.size() > 0) {
-            StringBuilder sb = new StringBuilder("(securityLevel =");
-            for (SecurityType securityType : securityTypeSetToGen) {
-                sb.append("'").append(securityType).append("' or securityLevel = ");
-            }
-            seTmp = sb.toString();
-            seTmp = seTmp.substring(0, seTmp.lastIndexOf(" or securityLevel = "));
-            seTmp = seTmp + ")";
+        String apiEvaluate = null;
+        StringBuilder acceptSecurityTypes = new StringBuilder();
+        StringBuilder acceptGroupNames = new StringBuilder();
+        StringBuilder acceptApiNames = new StringBuilder();
+
+        if (accept_security_types != null && accept_security_types.length() > 0) {
+            acceptSecurityTypes.append("(securityLevel='");
+            acceptSecurityTypes.append(accept_security_types.replace(",", "' or securityLevel='"));
+            acceptSecurityTypes.append("')");
         }
-        if (apiGroupToGen != null && apiGroupToGen.size() > 0) {
-            StringBuilder sb = new StringBuilder("(groupName =");
-            for (String groupName : apiGroupToGen) {
-                sb.append("'").append(groupName).append("' or groupName = ");
-            }
-            groupTmp = sb.toString();
-            groupTmp = groupTmp.substring(0, groupTmp.lastIndexOf(" or groupName = "));
-            groupTmp = groupTmp + ")";
+        if (accept_group_names != null && accept_group_names.length() > 0) {
+            acceptGroupNames.append("(groupName='");
+            acceptGroupNames.append(accept_group_names.replace(",", "' or groupName='"));
+            acceptGroupNames.append("')");
         }
-        if (rejectApis != null && rejectApis.size() > 0) {
-            StringBuilder sb = new StringBuilder("(methodName !=");
-            for (String api : rejectApis) {
-                sb.append("'").append(api).append("' and methodName != ");
-            }
-            rejectApiTmp = sb.toString();
-            rejectApiTmp = rejectApiTmp.substring(0, rejectApiTmp.lastIndexOf(" and methodName != "));
-            rejectApiTmp = rejectApiTmp + ")";
+        if (reject_api_names != null && reject_api_names.length() > 0) {
+            acceptApiNames.append("(methodName!='");
+            acceptApiNames.append(reject_api_names.replace(",", "' and methodName!='"));
+            acceptApiNames.append("')");
         }
-        seTmp = seTmp == null ? DEFAULT_API_EVALUATE_CONDITION : seTmp;
-        if (groupTmp == null && rejectApiTmp == null) {
-            apiEvaluate = "//Document/apiList/api[" + seTmp + "]";
-        } else if (groupTmp != null && rejectApiTmp == null) {
-            apiEvaluate = "//Document/apiList/api[" + seTmp + " and " + groupTmp + "]";
-        } else if (groupTmp == null) {
-            apiEvaluate = "//Document/apiList/api[" + seTmp + " and " + rejectApiTmp + "]";
+
+        String query = "";
+        if (accept_security_types != null) {
+            query += acceptSecurityTypes.toString();
+        }
+        if (accept_group_names != null) {
+            query += (query.length() > 0 ? " and " : "") + acceptGroupNames.toString();
+        }
+        if (reject_api_names != null) {
+            query += (query.length() > 0 ? " and " : "") + acceptApiNames.toString();
+        }
+        if (query.length() == 0) {
+            apiEvaluate = "//Document/apiList/api";
         } else {
-            apiEvaluate = "//Document/apiList/api[" + seTmp + " and " + groupTmp + " and " + rejectApiTmp + "]";
+            apiEvaluate = "//Document/apiList/api[" + query + "]";
         }
         System.out.println("[API EVALUATE] " + apiEvaluate);
         return apiEvaluate;
@@ -97,48 +82,24 @@ public abstract class ApiCodeGenerator {
      */
     public void setSecurityTypes(SecurityType... securityTypes) {
         if (securityTypes != null && securityTypes.length > 0) {
-            securityTypeSetToGen = new HashSet<SecurityType>();
-            securityTypeSetToGen.addAll(Arrays.asList(securityTypes));
+            StringBuilder sb = new StringBuilder();
+            for (SecurityType type : securityTypes) {
+                sb.append(type.name()).append(",");
+            }
+            sb.setLength(sb.length() - 1);
+            accept_security_types = sb.toString();
         }
     }
 
-    public void setSecurityTypes(List<SecurityType> securityTypes) {
-        if (securityTypes != null && securityTypes.size() > 0) {
-            securityTypeSetToGen = new HashSet<SecurityType>();
-            securityTypeSetToGen.addAll(securityTypes);
-        }
+    public void setSecurityTypes(String securityTypes) {
+        accept_security_types = securityTypes;
     }
 
-    public void setApiGroups(List<String> apiGroups) {
-        if (apiGroups != null && apiGroups.size() > 0) {
-            apiGroupToGen = new HashSet<String>();
-            apiGroupToGen.addAll(apiGroups);
-        }
+    public void setApiGroups(String apiGroups) {
+        accept_group_names = apiGroups;
     }
-
-    public void setApiGroups(String[] apiGroups) {
-        if (apiGroups != null && apiGroups.length > 0) {
-            apiGroupToGen = new HashSet<String>();
-            apiGroupToGen.addAll(Arrays.asList(apiGroups));
-        }
-    }
-
-    public Set<String> getRejectApis() {
-        return rejectApis;
-    }
-
-    public void setRejectApis(List<String> rejectApis) {
-        if (rejectApis != null && rejectApis.size() > 0) {
-            this.rejectApis = new HashSet<String>();
-            this.rejectApis.addAll(rejectApis);
-        }
-    }
-
-    public void setRejectApis(String[] rejectApis) {
-        if (rejectApis != null && rejectApis.length > 0) {
-            this.rejectApis = new HashSet<String>();
-            this.rejectApis.addAll(Arrays.asList(rejectApis));
-        }
+    public void setRejectApis(String rejectApis) {
+        reject_api_names = rejectApis;
     }
 
     public Source getXsltSource(String targetSite, Source defaultSource) {
@@ -194,7 +155,7 @@ public abstract class ApiCodeGenerator {
         try {
             jf = new JarFile(jarFilePath);
             ClassLoader loader = URLClassLoader.newInstance(
-                    new URL[]{new URL("file:" + jarFilePath)},
+                    new URL[] { new URL("file:" + jarFilePath) },
                     getClass().getClassLoader()
             );
             Thread.currentThread().setContextClassLoader(loader);

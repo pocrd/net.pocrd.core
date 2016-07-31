@@ -1,6 +1,7 @@
 package net.pocrd.core.generator;
 
 import net.pocrd.define.ConstField;
+import net.pocrd.entity.CompileConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -18,6 +19,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -80,7 +82,9 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
             while ((line = reader.readLine()) != null) {
                 out.append(line.replace("${pkg}", packagePrefix) + "\r\n");
             }
-            System.out.println(out.toString());   //Prints the string content read from input stream
+            if (CompileConfig.isDebug) {
+                System.out.println(out.toString());   //Prints the string content read from input stream
+            }
             swapStream = new ByteArrayInputStream(out.toString().getBytes(ConstField.UTF8));
         } catch (Exception e) {
             logger.error("transform file failed!", e);
@@ -262,15 +266,24 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
     }
 
     public static void main(String[] args) {
-        if (args.length == 4) {
-            if ("jar".equals(args[0])) {
-                new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build().generateViaJar(args[1]);
-                return;
-            } else if ("url".equals(args[0])) {
-                new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build().generateWithApiInfo(args[1]);
-                return;
+        if (args.length >= 4 && args.length % 2 == 0) {
+            ApiCodeGenerator gen = new Builder().setPackagePrefix(args[2]).setOutputPath(args[3]).build();
+            HashMap<String, String> map = new HashMap<String, String>();
+            for (int i = 5; i < args.length; ) {
+                map.put(args[i - 1], args[i]);
+                i += 2;
             }
+            gen.setApiGroups(map.get("-g"));
+            gen.setSecurityTypes(map.get("-s"));
+            gen.setRejectApis(map.get("-ra"));
+            if ("jar".equals(args[0])) {
+                gen.generateViaJar(args[1]);
+            } else if ("url".equals(args[0])) {
+                gen.generateWithApiInfo(args[1]);
+            }
+        } else {
+            System.out.println(
+                    "error parameter. {jar/url} {jar/url path} {package prefix} {output path} {-g accept_group_names} {-s accept_security_types} {-ra reject_api_names}");
         }
-        System.out.println("error parameter. {jar/url} {jar/url path} {package prefix} {output path}");
     }
 }

@@ -1,6 +1,7 @@
 package net.pocrd.core.generator;
 
 import net.pocrd.define.ConstField;
+import net.pocrd.entity.CompileConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -20,6 +21,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
+import java.util.HashMap;
 import java.util.HashSet;
 
 /**
@@ -39,8 +41,8 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
     }
 
     public static class Builder {
-        private String xslt = null;
-        private String output = "~/tmp";
+        private String xslt        = null;
+        private String output      = "~/tmp";
         private String classPrefix = "POC";
 
         public Builder setXsltPath(String xslt) {
@@ -74,7 +76,9 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
             while ((line = reader.readLine()) != null) {
                 out.append(line.replace("${prefix}", classPrefix) + "\r\n");
             }
-            System.out.println(out.toString());   //Prints the string content read from input stream
+            if (CompileConfig.isDebug) {
+                System.out.println(out.toString());   //Prints the string content read from input stream
+            }
             swapStream = new ByteArrayInputStream(out.toString().getBytes(ConstField.UTF8));
         } catch (Exception e) {
             logger.error("transform file failed!", e);
@@ -124,10 +128,10 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         }
     }
 
-    private static final String RESP = "Response";
-    private static final String REQ = "Request";
-    private static final String SPLITER = "/************ split .h and .m file ************/";
-    private static final int SPLITER_LENGTH = SPLITER.length();
+    private static final String RESP           = "Response";
+    private static final String REQ            = "Request";
+    private static final String SPLITER        = "/************ split .h and .m file ************/";
+    private static final int    SPLITER_LENGTH = SPLITER.length();
 
     /**
      * out put resource to file
@@ -190,7 +194,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         XPath path = XPathFactory.newInstance().newXPath();
         NodeList nl = null;
         try {
-            nl = (NodeList) path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
+            nl = (NodeList)path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
             logger.error("evaluate node failed!", e);
             throw new RuntimeException("evaluate node failed!", e);
@@ -201,10 +205,10 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         HashSet<String> respSet = new HashSet();
         for (int i = 0; i < len; i++) {
             //返回结构体
-            NodeList pl = ((Element) ((Element) nl.item(i)).getElementsByTagName("respStructList").item(0)).getElementsByTagName("respStruct");
+            NodeList pl = ((Element)((Element)nl.item(i)).getElementsByTagName("respStructList").item(0)).getElementsByTagName("respStruct");
             int l = pl.getLength();
             for (int j = 0; j < l; j++) {
-                Element e = (Element) pl.item(j);
+                Element e = (Element)pl.item(j);
                 String className = classPrefix + e.getElementsByTagName("name").item(
                         0).getFirstChild().getNodeValue();
                 String fileName = outputPath + className;
@@ -219,12 +223,12 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
                 respSet.add(className + ".h");
             }
             //请求结构体
-            NodeList ns = ((Element) nl.item(i)).getElementsByTagName("reqStructList");
+            NodeList ns = ((Element)nl.item(i)).getElementsByTagName("reqStructList");
             if (ns != null && ns.getLength() != 0) {
-                pl = ((Element) ns.item(0)).getElementsByTagName("reqStruct");
+                pl = ((Element)ns.item(0)).getElementsByTagName("reqStruct");
                 l = pl.getLength();
                 for (int j = 0; j < l; j++) {
-                    Element e = (Element) pl.item(j);
+                    Element e = (Element)pl.item(j);
                     String className = classPrefix + e.getElementsByTagName("name").item(
                             0).getFirstChild().getNodeValue();
                     String fileName = outputPath + className;
@@ -242,14 +246,14 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         }
         //通用返回对象结构体
         try {
-            nl = (NodeList) path.evaluate("//Document/respStructList/respStruct", doc, XPathConstants.NODESET);
+            nl = (NodeList)path.evaluate("//Document/respStructList/respStruct", doc, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
             logger.error("evaluate node failed!", e);
             throw new RuntimeException("evaluate node failed!", e);
         }
         len = nl.getLength();
         for (int i = 0; i < len; i++) {
-            Element e = (Element) nl.item(i);
+            Element e = (Element)nl.item(i);
             String className = classPrefix + e.getElementsByTagName("name").item(
                     0).getFirstChild().getNodeValue();
             String fileName = outputPath + className;
@@ -297,7 +301,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         //生成request
         NodeList nl = null;
         try {
-            nl = (NodeList) path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
+            nl = (NodeList)path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
         } catch (XPathExpressionException e) {
             logger.error("evaluate node failed!", e);
             throw new RuntimeException("evaluate node failed!", e);
@@ -307,7 +311,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         FileUtil.recreateDir(outputPath);
         HashSet<String> reqSet = new HashSet<String>();
         for (int i = 0; i < len; i++) {
-            Element e = (Element) nl.item(i);
+            Element e = (Element)nl.item(i);
             String methodName = e.getElementsByTagName("methodName").item(0).getFirstChild().getNodeValue();
             int index = methodName.indexOf('.');
             methodName = methodName.substring(0, 1).toUpperCase() + methodName.substring(1, index) + "_" + methodName.substring(index + 1,
@@ -328,7 +332,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         //生成ApiCode
         Node n = null;
         try {
-            n = (Node) path.evaluate("//Document/codeList", doc, XPathConstants.NODE);
+            n = (Node)path.evaluate("//Document/codeList", doc, XPathConstants.NODE);
         } catch (XPathExpressionException e) {
             logger.error("evaluate node failed!", e);
             throw new RuntimeException("evaluate node failed!", e);
@@ -375,15 +379,24 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
     }
 
     public static void main(String[] args) {
-        if (args.length == 4) {
-            if ("jar".equals(args[0])) {
-                new Builder().setClassPrefix(args[2]).setOutputPath(args[3]).build().generateViaJar(args[1]);
-                return;
-            } else if ("url".equals(args[0])) {
-                new Builder().setClassPrefix(args[2]).setOutputPath(args[3]).build().generateWithApiInfo(args[1]);
-                return;
+        if (args.length >= 4 && args.length % 2 == 0) {
+            ApiCodeGenerator gen = new Builder().setClassPrefix(args[2]).setOutputPath(args[3]).build();
+            HashMap<String, String> map = new HashMap<String, String>();
+            for (int i = 5; i < args.length; ) {
+                map.put(args[i - 1], args[i]);
+                i += 2;
             }
+            gen.setApiGroups(map.get("-g"));
+            gen.setSecurityTypes(map.get("-s"));
+            gen.setRejectApis(map.get("-ra"));
+            if ("jar".equals(args[0])) {
+                gen.generateViaJar(args[1]);
+            } else if ("url".equals(args[0])) {
+                gen.generateWithApiInfo(args[1]);
+            }
+        } else {
+            System.out.println(
+                    "error parameter. {jar/url} {jar/url path} {package prefix} {output path} {-g accept_group_names} {-s accept_security_types} {-ra reject_api_names}");
         }
-        System.out.println("error parameter. {jar/url} {jar/url path} {class prefix} {output path}");
     }
 }
