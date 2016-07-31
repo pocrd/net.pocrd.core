@@ -14,7 +14,7 @@ public class WebRequestUtilTest {
         for (int i = 0; i < N; ) {
             ts[i] = new Thread(new Runnable() {
                 @Override public void run() {
-                    String s = WebRequestUtil.getResponseString("http://www.baid1u.com", "", false);
+                    String s = WebRequestUtil.getResponseString("http://www.baid1u.com", "");
                 }
             });
             i++;

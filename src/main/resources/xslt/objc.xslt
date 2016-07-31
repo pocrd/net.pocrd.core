@@ -243,7 +243,7 @@
     <xsl:param name="name"/>
     <xsl:param name="isList"/>
     <xsl:param name="desc"/>
-    <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
+    <xsl:variable name="objcName"><xsl:call-template name="renameKeyword"><xsl:with-param name="name" select="$name"/></xsl:call-template></xsl:variable>
     <xsl:if test="$isList = 'true'">
 /* <xsl:value-of select="$desc" /> */
 @property (nonatomic, strong) NSMutableArray *<xsl:value-of select="$objcName"/>;
@@ -533,7 +533,7 @@ typedef enum {
     <xsl:param name="type"/>
     <xsl:param name="name"/>
     <xsl:param name="isList"/>
-    <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
+    <xsl:variable name="objcName"><xsl:call-template name="renameKeyword"><xsl:with-param name="name" select="$name"/></xsl:call-template></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList='true'">
         /* <xsl:value-of select="desc" /> */
@@ -560,7 +560,7 @@ typedef enum {
     <xsl:param name="type"/>
     <xsl:param name="name"/>
     <xsl:param name="isList"/>
-    <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
+    <xsl:variable name="objcName"><xsl:call-template name="renameKeyword"><xsl:with-param name="name" select="$name"/></xsl:call-template></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList = 'true'">
         <xsl:choose>
@@ -605,11 +605,20 @@ typedef enum {
         </xsl:choose>
       </xsl:otherwise>
     </xsl:choose></xsl:template>
+  <xsl:template name="renameKeyword">
+      <xsl:param name="name"/>
+      <xsl:choose>
+          <xsl:when test="$name = 'id'">identify</xsl:when>
+          <xsl:when test="$name = 'operator'">optname</xsl:when>
+          <xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when>
+          <xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise>
+      </xsl:choose>
+  </xsl:template>
   <xsl:template name="SerializeField">
     <xsl:param name="type"/>
     <xsl:param name="name"/>
     <xsl:param name="isList"/>
-    <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
+    <xsl:variable name="objcName"><xsl:call-template name="renameKeyword"><xsl:with-param name="name" select="$name"/></xsl:call-template></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList='true'">
     /* <xsl:value-of select="desc" /> */
@@ -652,7 +661,7 @@ typedef enum {
     <xsl:param name="type"/>
     <xsl:param name="name"/>
     <xsl:param name="isList"/>
-    <xsl:variable name="objcName"><xsl:choose><xsl:when test="$name = 'id'">identify</xsl:when><xsl:when test="substring($name,1,3) = 'new'">a<xsl:value-of select="$name"/></xsl:when><xsl:otherwise><xsl:value-of select="$name"/></xsl:otherwise></xsl:choose></xsl:variable>
+    <xsl:variable name="objcName"><xsl:call-template name="renameKeyword"><xsl:with-param name="name" select="$name"/></xsl:call-template></xsl:variable>
     <xsl:choose>
       <xsl:when test="$isList = 'true'">
         <xsl:choose>

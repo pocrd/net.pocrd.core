@@ -107,7 +107,7 @@ public abstract class ApiCodeGenerator {
         InputStream swapStream = null;
         if (targetSite != null && !targetSite.isEmpty()) {
             try {
-                byte[] xslt = WebRequestUtil.getResponseBytes(targetSite, null, true);
+                byte[] xslt = WebRequestUtil.getResponseBytes(targetSite, null);
                 swapStream = customizeXslt(new ByteArrayInputStream(xslt));
                 xslSource = new StreamSource(swapStream);
             } catch (Exception e) {
@@ -139,7 +139,7 @@ public abstract class ApiCodeGenerator {
      * @param apiInfoUrl xml下载地址
      */
     public void generateWithApiInfo(String apiInfoUrl) {
-        byte[] bytes = WebRequestUtil.getResponseBytes(apiInfoUrl, null, true);
+        byte[] bytes = WebRequestUtil.getResponseBytes(apiInfoUrl, null);
         if (bytes != null) {
             ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(bytes);
             generate(byteArrayInputStream);

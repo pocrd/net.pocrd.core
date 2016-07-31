@@ -15,7 +15,6 @@ import net.pocrd.util.MiscUtil;
 import net.pocrd.util.POJOSerializerProvider;
 import net.pocrd.util.RawString;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpHeaders;
 import org.slf4j.*;
 
 import javax.servlet.ServletException;
@@ -67,6 +66,8 @@ public abstract class BaseServlet extends HttpServlet {
     private static final   String               CONTENT_TYPE_PLAINTEXT   = "text/plain";
     private static final   String               JSONARRAY_PREFIX         = "[";
     private static final   String               JSONARRAY_SURFIX         = "]";
+    private static final   String               USER_AGENT               = "User-Agent";
+    public static final    String               REFERER                  = "Referer";
     private static final   Serializer<Response> apiResponseSerializer    = POJOSerializerProvider.getSerializer(Response.class);
 
     private ApiManager apiManager;
@@ -351,8 +352,8 @@ public abstract class BaseServlet extends HttpServlet {
     private void parseParameter(ApiContext context, HttpServletRequest request, HttpServletResponse response) {
         // 解析通用参数
         {
-            context.agent = request.getHeader(HttpHeaders.USER_AGENT);
-            context.referer = request.getHeader(HttpHeaders.REFERER);
+            context.agent = request.getHeader(USER_AGENT);
+            context.referer = request.getHeader(REFERER);
             context.clientIP = MiscUtil.getClientIP(request);
             context.cid = request.getParameter(CommonParameter.callId);
             if (context.cid != null && context.cid.length() > 32) {
@@ -570,7 +571,7 @@ public abstract class BaseServlet extends HttpServlet {
             RpcContext.getContext().setAttachment(CommonParameter.versionName, apiContext.versionName);
             RpcContext.getContext().setAttachment(CommonParameter.location, apiContext.location);
             RpcContext.getContext().setAttachment(CommonParameter.cookieDeviceId, apiContext.deviceIdStr);
-            RpcContext.getContext().setAttachment(HttpHeaders.REFERER, apiContext.referer != null ?
+            RpcContext.getContext().setAttachment(REFERER, apiContext.referer != null ?
                     apiContext.referer.length() < 1024 ? apiContext.referer : apiContext.referer.substring(0, 1024) : null);
             RpcContext.getContext().setAttachment(CommonParameter.businessId,
                     (call.businessId != null && call.businessId.length() < 4096) ? call.businessId : null);
