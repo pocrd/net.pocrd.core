@@ -51,15 +51,6 @@ public class CommonConfig {
         return instance;
     }
 
-    private String accessFileLoggerName;
-
-    private void setAccessFileLoggerName(String accessFileLoggerName) {
-        this.accessFileLoggerName = accessFileLoggerName;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.accessLoggerName:{}", this.accessFileLoggerName);
-        }
-    }
-
     private String autogenPath;
 
     private void setAutogenPath(String autogenPath) {
@@ -114,6 +105,9 @@ public class CommonConfig {
         return this.apiInfoXslSite;
     }
 
+    /**
+     * 域名白名单
+     */
     private HashMap<String, String> originWhiteList = new HashMap<String, String>();
 
     private void setOriginWhiteList(String list) {
@@ -125,6 +119,10 @@ public class CommonConfig {
                 originWhiteList.put(domain, domain.substring(index));
             }
         }
+    }
+
+    public HashMap<String, String> getOriginWhiteList() {
+        return originWhiteList;
     }
 
     /**
@@ -142,9 +140,5 @@ public class CommonConfig {
 
     private void setDubboAsync(boolean async) {
         this.dubboAsync = async;
-    }
-
-    public HashMap<String, String> getOriginWhiteList() {
-        return originWhiteList;
     }
 }
