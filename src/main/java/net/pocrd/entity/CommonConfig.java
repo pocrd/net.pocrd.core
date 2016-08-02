@@ -4,51 +4,63 @@ import net.pocrd.util.Md5Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Properties;
 
 public class CommonConfig {
     private static final Logger logger = LoggerFactory.getLogger(CommonConfig.class);
-    private static CommonConfig instance;
+    private static Properties prop;
 
     private CommonConfig() {
     }
 
-    public static final void init(Properties prop) {
-        synchronized (CommonConfig.class) {
-            if (instance == null) {
-                instance = new CommonConfig();
+    public static final void init(Properties properties) {
+        prop = properties;
+    }
+
+    private static class Singleton {
+        static CommonConfig instance = null;
+
+        static {
+            instance = new CommonConfig();
+            if (prop == null) {
+                try {
+                    logger.warn("missing CommonConfig.init, try to load net.pocrd.core.config");
+                    InputStream is = CommonConfig.class.getResourceAsStream("/net.pocrd.core.config");
+                    if (is != null) {
+                        prop = new Properties();
+                        prop.load(is);
+                    }
+                } catch (Exception e) {
+                    logger.warn("load /net.pocrd.core.config failed.", e);
+                }
             }
             if (prop == null) {
-                throw new RuntimeException("common config init failed.");
-            } else {
-                instance.setAutogenPath(prop.getProperty("net.pocrd.autogenPath", "/tmp/autogen"));
-                instance.setApigwVersion(prop.getProperty("net.pocrd.apigwVersion", "develop"));
-                instance.setApiInfoXslSite(prop.getProperty("net.pocrd.apiInfoXslSite"));
-                instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
-                instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync"));
+                logger.warn("load config failed. use default settings.");
+                prop = new Properties();
             }
+
+            instance.setAutogenPath(prop.getProperty("net.pocrd.autogenPath", "/tmp/autogen"));
+            instance.setApigwVersion(prop.getProperty("net.pocrd.apigwVersion", "develop"));
+            instance.setApiInfoXslSite(prop.getProperty("net.pocrd.apiInfoXslSite", "/"));
+            instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
+            instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync"));
+
+            //启动时获取当前机器ip
             try {
                 InetAddress addr = InetAddress.getLocalHost();
                 instance.serverAddress = Md5Util.computeToHex(addr.getHostAddress().getBytes("UTF-8")).substring(0, 6);
                 logger.info("apigw server,address:{},hash:{}", addr.getHostAddress(), instance.serverAddress);
             } catch (Exception e) {
-                //启动时获取当前机器ip
                 logger.error("can not get server address,_cid may be not unique", e);
             }
         }
     }
 
     public static final CommonConfig getInstance() {
-        if (instance == null) {
-            if (CompileConfig.isDebug) {
-                init(new Properties());
-            } else {
-                throw new RuntimeException("common config not init.");
-            }
-        }
-        return instance;
+        return Singleton.instance;
     }
 
     private String autogenPath;
@@ -136,9 +148,5 @@ public class CommonConfig {
 
     private void setDubboAsyncString(String async) {
         this.dubboAsync = "true".equalsIgnoreCase(async);
-    }
-
-    private void setDubboAsync(boolean async) {
-        this.dubboAsync = async;
     }
 }
