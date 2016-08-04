@@ -1,5 +1,7 @@
 package net.pocrd.annotation;
 
+import net.pocrd.define.AutowireableParameter;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -11,5 +13,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApiAutowired {
-    String value();
+    AutowireableParameter value();
 }

@@ -31,7 +31,7 @@ public enum SecurityType {
      * 1. 设备token
      * 2. 设备签名
      */
-    RegisteredDevice(0x0100),
+    RegisteredDevice(0x0010),
 
     /**
      * 用户认证，已拥有用户id 但尚未完成用户注册的完整流程(未绑定手机号或其他原因)
@@ -39,37 +39,7 @@ public enum SecurityType {
      * 1. 用户token
      * 2. 设备签名
      */
-    User(0x0200),
-
-    /**
-     * 受信设备认证, 验证服务端存在设备ID到用户ID的信任绑定关系. 暂无实例使用这个安全级别.
-     * 验证要素
-     * 1. 用户token 包含设备token
-     * 2. 设备签名
-     * 3. 后台验证用户与设备之间存在授信
-     */
-    UserTrustedDevice(0x0400),
-
-    /**
-     * 手机动态密码认证, 验证手机号的动态密码. eg. 动态密码注册
-     * 验证要素
-     * 1. 手机号
-     * 2. 短信验证码
-     * 3. 设备token
-     * 4. 设备签名
-     */
-    MobileOwner(0x0800),
-
-    /**
-     * 同时验证受信设备和手机验证码, 并验证手机号所代表的用户与设备的受信关系. eg. 用户非登录态重置密码
-     * 验证要素
-     * 1. 手机号      可倒查出userId
-     * 2. 短信验证码
-     * 3. 设备token
-     * 4. 设备签名
-     * 5. 倒查出的userId与设备是受信关系
-     */
-    MobileOwnerTrustedDevice(0x1000),
+    User(0x0020),
 
     /**
      * 用户登录认证, 验证用户名密码, 且验证设备受信并激活
@@ -79,12 +49,12 @@ public enum SecurityType {
      * 3. 后台验证用户与设备之间存在授信
      * 4. 后台验证设备与用户的关系处于激活状态
      */
-    UserLogin(0x2000),
+    UserLogin(0x0100),
 
     /**
-     * 复合认证(UserLogin|MobileOwner): 同时进行静态密码和动态密码的验证(不验证手机号与用户的关联性), eg. 绑定手机号到当前用户(未绑定过手机号)
+     * 用户授权, 通过短信认证码等方式获得高等级临时授权, 建议授权持续时间不超过60秒, 并可在业务系统间做计数
      */
-    UserLoginAndMobileOwner(UserLogin.code | MobileOwner.code),
+    UserAuth(0x0200),
 
     /**
      * 第三方集成认证, 验证第三方证书签名
@@ -146,7 +116,7 @@ public enum SecurityType {
     }
 
     /**
-     * 判断auth是否会过期, 包含 OAuthVerified, User, UserTrustedDevice, MobileOwner, MobileOwnerTrustedDevice, UserLogin
+     * 判断auth是否会过期, 包含 OAuthVerified, User, UserLogin
      * 其中之一的auth都可能会过期
      */
     public static boolean expirable(int auth) {
@@ -154,7 +124,7 @@ public enum SecurityType {
     }
 
     /**
-     * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserTrustedDevice, MobileOwner, MobileOwnerTrustedDevice, UserLogin
+     * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserLogin
      */
     public static boolean requireToken(int auth){
         return (auth & 0x3F02) != 0;

@@ -30,11 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author rendong
  */
 public final class ApiManager {
-    private static final Logger logger = LoggerFactory.getLogger(ApiManager.class);
-    private Map<String, HttpApiExecuter> nameToApi = new ConcurrentHashMap<String, HttpApiExecuter>();
-    private Map<String, ApiMethodInfo> apiInfos = new ConcurrentHashMap<String, ApiMethodInfo>();
-    private static final String UNDER_SCORE = "_";
-    private static final String DUBBO_INSTANCE_PKG_NAME = "com.alibaba.dubbo.common.bytecode";
+    private static final Logger                       logger                  = LoggerFactory.getLogger(ApiManager.class);
+    private              Map<String, HttpApiExecuter> nameToApi               = new ConcurrentHashMap<String, HttpApiExecuter>();
+    private              Map<String, ApiMethodInfo>   apiInfos                = new ConcurrentHashMap<String, ApiMethodInfo>();
+    private static final String                       UNDER_SCORE             = "_";
 
     public ApiManager() {
     }
@@ -124,7 +123,7 @@ public final class ApiManager {
             try {
                 for (Field f : returnCodeClass.getDeclaredFields()) {
                     if (isConstField(f) && AbstractReturnCode.class.isAssignableFrom(f.getType())) {
-                        AbstractReturnCode code = (AbstractReturnCode) f.get(null);
+                        AbstractReturnCode code = (AbstractReturnCode)f.get(null);
                         if (code.getCode() < minCode || code.getCode() >= maxCode) {
                             throw new RuntimeException(
                                     "code " + f.getName() + " which value is " + code.getCode() + " not in the scope [" + minCode + "," + maxCode
@@ -238,13 +237,14 @@ public final class ApiManager {
                                 if (Collection.class.isAssignableFrom(pInfo.type)) {
                                     Type genericType;
                                     try {
-                                        genericType = ((ParameterizedTypeImpl) mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
+                                        genericType = ((ParameterizedTypeImpl)mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
                                     } catch (Throwable t) {
                                         throw new RuntimeException("unsupported input type,get genericType failed, method name:" + mInfo.getName(),
                                                 t);
                                     }
                                     try {
-                                        pInfo.actuallyGenericType = Class.forName(((Class) genericType).getName(), true, Thread.currentThread().getContextClassLoader());
+                                        pInfo.actuallyGenericType = Class
+                                                .forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
                                     } catch (Exception e) {
                                         throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
                                     }
@@ -261,7 +261,7 @@ public final class ApiManager {
                         for (int j = 0; j < a.length; ) {
                             Annotation n = a[j];
                             if (n.annotationType() == ApiParameter.class) {
-                                ApiParameter p = (ApiParameter) n;
+                                ApiParameter p = (ApiParameter)n;
                                 pInfo.description = p.desc();
                                 if (p.sequence() != null && p.sequence().trim().length() > 0) {
                                     pInfo.sequence = p.sequence();
@@ -280,7 +280,7 @@ public final class ApiManager {
                                     if (an.annotationType() == EnumDef.class) {
                                         if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
                                                 || pInfo.actuallyGenericType == String.class) {
-                                            pInfo.verifyEnumType = ((EnumDef) an).value();
+                                            pInfo.verifyEnumType = ((EnumDef)an).value();
                                         }
                                     }
                                 }
@@ -336,16 +336,16 @@ public final class ApiManager {
                                 }
                                 break;
                             } else if (n.annotationType() == ApiAutowired.class) {
-                                ApiAutowired p = (ApiAutowired) n;
-                                pInfo.name = p.value();
+                                ApiAutowired p = (ApiAutowired)n;
+                                pInfo.name = p.value().name();
                                 pInfo.isAutowired = true;
                                 break;
                             } else if (n.annotationType() == ApiCookieAutowired.class) {
-                                ApiCookieAutowired p = (ApiCookieAutowired) n;
+                                ApiCookieAutowired p = (ApiCookieAutowired)n;
                                 if (p.value() == null || p.value().length == 0) {
                                     throw new RuntimeException("cookie名不能为空 " + api.name() + "  " + clazz.getName());
                                 }
-                                pInfo.name = CommonParameter.cookie;
+                                pInfo.name = AutowireableParameter.cookies.name();
                                 pInfo.names = p.value();
                                 pInfo.isAutowired = true;
                                 break;
@@ -457,7 +457,7 @@ public final class ApiManager {
                 if (pInfo.defaultValue.length() == 0) {
                     pInfo.defaultValue = null;
                 } else {
-                    Enum.valueOf((Class<Enum>) pInfo.type, pInfo.defaultValue);
+                    Enum.valueOf((Class<Enum>)pInfo.type, pInfo.defaultValue);
                 }
             }
         } else if ((pInfo.type.isArray() && pInfo.type.getComponentType() == String.class) || (Collection.class.isAssignableFrom(pInfo.type)
@@ -489,16 +489,6 @@ public final class ApiManager {
                 Enum.valueOf(pInfo.verifyEnumType, pInfo.defaultValue);
             }
         }
-    }
-
-    /**
-     * 是否dubbo实例
-     *
-     * @param serviceInstance service实例
-     * @return 是否dubbo实例
-     */
-    private static boolean isDubboInstance(Object serviceInstance) {
-        return serviceInstance.getClass().getName().contains(DUBBO_INSTANCE_PKG_NAME);
     }
 
     /**
@@ -575,13 +565,13 @@ public final class ApiManager {
         } else if (Collection.class.isAssignableFrom(apiInfo.returnType)) {//增加对Collection自定义Object的支持+Collection<String>的支持
             Type genericType;
             try {
-                genericType = ((ParameterizedTypeImpl) mInfo.getGenericReturnType()).getActualTypeArguments()[0];
+                genericType = ((ParameterizedTypeImpl)mInfo.getGenericReturnType()).getActualTypeArguments()[0];
             } catch (Throwable t) {
                 throw new RuntimeException("unsupported return type, get genericType failed, method name:" + mInfo.getName(), t);
             }
             Class<?> genericClazz;
             try {
-                genericClazz = Class.forName(((Class) genericType).getName(), true, Thread.currentThread().getContextClassLoader());
+                genericClazz = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
             } catch (Exception e) {
                 throw new RuntimeException("generic type load failed:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(),
                         e);
@@ -613,6 +603,7 @@ public final class ApiManager {
      * 检查接口参数定义中是否有重复的参数命名
      *
      * @param pInfos 参数信息
+     *
      * @return true:存在重复的参数名,false:无重复参数
      */
     private static boolean hasDuplicateParam(ApiParameterInfo[] pInfos) {

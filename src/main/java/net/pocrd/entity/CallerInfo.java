@@ -22,18 +22,13 @@ public class CallerInfo implements Serializable {
         }
     }
 
-    // 设备/用户分组
-    public String[] groups;
-
-    // 通过动态密码验证的phone number
-    public String phoneNumber;
-
     // 参与token计算
     public int    appid;
     public int    securityLevel;
     public long   expire;
     public long   deviceId;
     public long   uid;
-    public byte[] key;                      // 设备身份公钥
     public String oauthid;
+    public byte[] key;                      // 设备身份公钥
+    public String roles;
 }

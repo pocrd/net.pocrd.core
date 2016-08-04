@@ -2,6 +2,7 @@ package net.pocrd.util;
 
 import net.pocrd.annotation.Description;
 import net.pocrd.core.PocClassLoader;
+import net.pocrd.define.AutowireableParameter;
 import net.pocrd.define.CommonParameter;
 import net.pocrd.define.HttpApiExecuter;
 import net.pocrd.entity.ApiMethodInfo;
@@ -246,7 +247,7 @@ public class HttpApiProvider implements Opcodes {
                         } else if (parameterType.isEnum()) {
                             pmv.visitMethodInsn(INVOKESTATIC, parameterType.getName().replace('.', '/'), "valueOf",
                                     "(Ljava/lang/String;)" + Type.getDescriptor(parameterType));
-                        } else if (parameterType == Map.class && CommonParameter.cookie.equals(parameterInfo.name)) {
+                        } else if (parameterType == Map.class && AutowireableParameter.cookies.name().equals(parameterInfo.name)) {
                             pmv.visitLdcInsn(Type.getType(parameterType));
                             pmv.visitMethodInsn(INVOKESTATIC, "com/alibaba/fastjson/JSON", "parseObject",
                                     "(Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;");

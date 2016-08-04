@@ -23,27 +23,22 @@ public class AESTokenHelperTest {
         AESTokenHelper th = new AESTokenHelper(tokenPwd);
         CallerInfo ci = new CallerInfo();
         ci.expire = 987654321;
-        ci.groups = new String[] { "TEST", "VIP" };
+        ci.roles = "TEST,VIP";
         ci.key = "1111111".getBytes(ConstField.UTF8);
-        ci.securityLevel = 9;
+        ci.securityLevel = 63;
         ci.deviceId = 22222222222222L;
         ci.appid = 321;
         ci.oauthid = "1234567890987654321";
-        String token = th.generateStringDeviceToken(ci);
+        String token = th.generateToken(ci);
+        System.out.println(token);
         CallerInfo caller = th.parseToken(token);
         assertEquals(ci.expire, caller.expire);
-        assertNull(caller.groups);
+        assertEquals(ci.roles, caller.roles);
         assertTrue(Arrays.equals(ci.key, caller.key));
         assertEquals(ci.securityLevel, caller.securityLevel);
         assertEquals(ci.deviceId, caller.deviceId);
         assertEquals(ci.appid, caller.appid);
         assertEquals(ci.oauthid, caller.oauthid);
-
-        AESTokenHelper h = new AESTokenHelper("3r0ShGtuxLjYEnDnKo7BbcKM4faNpKRBcw61GGvuCSI=");
-        CallerInfo ca = h.parseToken(
-                "OwqUPFrrZYwO9YEYsbfw1bnIu%2Fuy8aEv0ned%2BiNY%2BJNXR%2BG2v%2BBwn0feE1lGXbaYwPDfJ4F9Gkn%2FKaARAQjduxLsKFzVwsCkcmdz2in1OUU%3D");
-
-        System.out.println(ca.deviceId);
     }
 
     @Test
@@ -52,7 +47,7 @@ public class AESTokenHelperTest {
         final AESTokenHelper th = new AESTokenHelper(tokenPwd);
         final CallerInfo ci = new CallerInfo();
         ci.expire = 987654321;
-        ci.groups = new String[] { "TEST", "VIP" };
+        ci.roles = "TEST,VIP";
         ci.key = "1111111".getBytes(ConstField.UTF8);
         ci.securityLevel = 9;
         ci.deviceId = 22222222222222L;
@@ -63,10 +58,10 @@ public class AESTokenHelperTest {
 
             @Override
             public void run() {
-                String token = th.generateStringDeviceToken(ci);
+                String token = th.generateToken(ci);
                 CallerInfo caller = th.parseToken(token);
                 assertEquals(ci.expire, caller.expire);
-                assertNull(caller.groups);
+                assertEquals(ci.roles, caller.roles);
                 assertTrue(Arrays.equals(ci.key, caller.key));
                 assertTrue(caller.securityLevel > 0);
                 assertTrue(caller.deviceId > 0);
@@ -81,30 +76,23 @@ public class AESTokenHelperTest {
         CallerInfo callerInfo = new CallerInfo();
         callerInfo.uid = 123456789L;
         callerInfo.appid = 1;
+        callerInfo.roles = "A,B,C,D";
         callerInfo.deviceId = 123456789L;
         callerInfo.expire = System.currentTimeMillis() + 10000000000L;
         callerInfo.key = "demo key".getBytes(ConstField.UTF8);
         callerInfo.oauthid = "1234567890987654321";
         callerInfo.securityLevel = SecurityType.RegisteredDevice.authorize(0);
         AESTokenHelper aesTokenHelper = new AESTokenHelper("eqHSs48SCL2VoGsW1lWvDWKQ8Vu71UZJyS7Dbf/e4zo=");
-        String tk = aesTokenHelper.generateStringUserToken(callerInfo);
+        String tk = aesTokenHelper.generateToken(callerInfo);
         System.out.println("tk:" + tk);
         CallerInfo callerInfo1 = aesTokenHelper.parseToken(tk);
         assertEquals(callerInfo.uid, callerInfo1.uid);
+        assertEquals(callerInfo.roles, callerInfo1.roles);
         assertEquals(callerInfo.appid, callerInfo1.appid);
         assertEquals(callerInfo.deviceId, callerInfo1.deviceId);
         assertEquals(callerInfo.expire, callerInfo1.expire);
         assertArrayEquals(callerInfo.key, callerInfo1.key);
         assertEquals(callerInfo.securityLevel, callerInfo1.securityLevel);
         assertEquals(callerInfo.oauthid, callerInfo1.oauthid);
-    }
-
-    @Test
-    public void generateTokenTest_2() throws UnsupportedEncodingException {
-        AESTokenHelper aesTokenHelper = new AESTokenHelper("eqHSs48SCL2VoGsW1lWvDWKQ8Vu71UZJyS7Dbf/e4zo=");
-        CallerInfo callerInfo1 = aesTokenHelper.parseToken(URLDecoder
-                .decode("836RJ9i%2BuFv1eXkdJX6VYziHRYTQHJoM0qX7FcCLiRUS9QHFeEmEpFdKdsCZzPhg09KTfIPxr47k65%2FLyqKm%2F5k4V8JgBXmBvFfFBpOh3I8%3D",
-                        "utf-8"));
-        System.out.println(HexStringUtil.toHexString(callerInfo1.key));
     }
 }

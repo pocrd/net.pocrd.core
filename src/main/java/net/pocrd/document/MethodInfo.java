@@ -35,9 +35,6 @@ public class MethodInfo {
     public String              groupOwner;
     @Description("接口负责人")
     public String              methodOwner;
-    @Deprecated
-    @Description("允许访问的第三方编号列表")
-    public int[]               allowThirdPartyIds;
     @Description("是否只允许通过加密通道访问")
     public boolean             encryptionOnly;
     @Description("Integared级别接口是否需要网关对请求进行签名验证")

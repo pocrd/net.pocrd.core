@@ -1,9 +1,12 @@
 package net.pocrd.dubboext;
 
+import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.fastjson.JSON;
+import net.pocrd.define.CommonParameter;
 import net.pocrd.define.ConstField;
 import net.pocrd.define.Serializer.ApiSerializerFeature;
-import net.pocrd.entity.AbstractReturnCode;
+import net.pocrd.entity.ApiContext;
+import net.pocrd.entity.CallerInfo;
 import net.pocrd.responseEntity.CreditNotification;
 import net.pocrd.responseEntity.MessageNotification;
 import org.slf4j.Logger;
@@ -86,32 +89,6 @@ public class DubboExtProperty {
     static boolean containsKey(String key) {
         Map<String, String> map = notifications.get();
         return map == null ? false : map.containsKey(key);
-    }
-
-    /**
-     * 用于在返回正常业务值的同时返回一个错误code, 请使用throw ServiceException / ServiceRuntimeException 来返回错误
-     * 慎用!
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public static void setErrorCodeExt(AbstractReturnCode code) {
-        if (code != null) {
-            if (!containsKey(ConstField.ERROR_CODE_EXT)) {
-                addNotifications(ConstField.ERROR_CODE_EXT, String.valueOf(code.getCode()));
-            }
-        }
-    }
-
-    /**
-     * 用于在返回正常业务值的同时返回一个错误code, 请使用throw ServiceException / ServiceRuntimeException 来返回错误
-     * 慎用!
-     *
-     * @deprecated
-     */
-    @Deprecated
-    public static String getErrorCodeExt() {
-        return getValue(ConstField.ERROR_CODE_EXT);
     }
 
     /**
@@ -261,4 +238,45 @@ public class DubboExtProperty {
         return getValue(ConstField.SERVICE_LOG);
     }
 
+    public static class ClientCaller {
+        public String callId;
+        public String clientIP;
+        public String versionCode;
+        public String applicationId;
+        public String deviceId;
+        public String userId;
+        public String oauthid;
+        public String roles;
+    }
+
+    public static void setClientCallerToAttachment() {
+        ApiContext apiContext = ApiContext.getCurrent();
+        RpcContext context = RpcContext.getContext();
+        context.setAttachment(CommonParameter.callId, apiContext.cid);
+        context.setAttachment("clientIP", apiContext.clientIP);
+        context.setAttachment(CommonParameter.versionCode, apiContext.versionCode);
+        CallerInfo caller = apiContext.caller;
+        if (caller != null) {
+            context.setAttachment(CommonParameter.applicationId, String.valueOf(caller.appid));
+            context.setAttachment(CommonParameter.deviceId, String.valueOf(caller.deviceId));
+            context.setAttachment(CommonParameter.userId, String.valueOf(caller.uid));
+            context.setAttachment("oauthid", caller.oauthid);
+            context.setAttachment("roles", caller.roles);
+        }
+    }
+
+    public static ClientCaller getClientCallerFromAttachment() {
+        RpcContext context = RpcContext.getContext();
+        ClientCaller caller = new ClientCaller();
+        caller.callId = context.getAttachment(CommonParameter.callId);
+        caller.clientIP = context.getAttachment("clientIP");
+        caller.versionCode = context.getAttachment(CommonParameter.versionCode);
+        caller.applicationId = context.getAttachment(CommonParameter.applicationId);
+        caller.deviceId = context.getAttachment(CommonParameter.deviceId);
+        caller.userId = context.getAttachment(CommonParameter.userId);
+        caller.oauthid = context.getAttachment("oauthid");
+        caller.roles = context.getAttachment("roles");
+
+        return caller;
+    }
 }

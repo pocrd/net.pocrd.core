@@ -10,7 +10,6 @@ import java.io.*;
 
 /**
  * 处理使用AES秘钥加密用户信息而产生的token
- * TODO: 增加token前缀用于客户端可以直接判断该token的适用场景, 由此可以不再有deviceToken, userToken, oauthToken 等区别
  *
  * @author rendong
  */
@@ -29,21 +28,9 @@ public class AESTokenHelper {
     }
 
     /**
-     * 从base64编码的字符串中解析调用者信息
-     */
-    public CallerInfo parseToken(String token) {
-        try {
-            return parseToken(Base64Util.decode(token));
-        } catch (Exception e) {
-            logger.error("token parse failed.", e);
-        }
-        return null;
-    }
-
-    /**
      * 解析调用者信息
      */
-    public CallerInfo parseToken(byte[] token) {
+    private CallerInfo parse(byte[] token) {
         DataInputStream dis = null;
         CallerInfo caller = null;
         try {
@@ -67,13 +54,23 @@ public class AESTokenHelper {
                 }
             }
             if (dis.available() > 0) {
-                len = dis.readShort();
+                len = dis.readByte();
                 if (len > 0) {
                     byte[] bs = new byte[len];
                     if (len != dis.read(bs)) {
                         return null;
                     }
                     caller.oauthid = new String(bs, ConstField.UTF8);
+                }
+            }
+            if (dis.available() > 0) {
+                len = dis.readByte();
+                if (len > 0) {
+                    byte[] bs = new byte[len];
+                    if (len != dis.read(bs)) {
+                        return null;
+                    }
+                    caller.roles = new String(bs, ConstField.UTF8);
                 }
             }
             if (dis.available() > 0) {
@@ -96,7 +93,7 @@ public class AESTokenHelper {
     /**
      * 生成用户token
      */
-    public byte[] generateUserToken(CallerInfo caller) {
+    private byte[] generate(CallerInfo caller) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(8);
         DataOutputStream dos = new DataOutputStream(baos);
         byte[] token = null;
@@ -114,8 +111,13 @@ public class AESTokenHelper {
             }
             byte[] oauthid = caller.oauthid == null ? null : caller.oauthid.getBytes(ConstField.UTF8);
             if (oauthid != null) {
-                dos.writeShort(oauthid.length);
+                dos.writeByte(oauthid.length);
                 dos.write(oauthid);
+            }
+            byte[] roles = caller.roles == null ? null : caller.roles.getBytes(ConstField.UTF8);
+            if (roles != null) {
+                dos.writeByte(roles.length);
+                dos.write(roles);
             }
             byte[] bs = baos.toByteArray();
             token = aes.encrypt(bs);
@@ -132,30 +134,82 @@ public class AESTokenHelper {
     }
 
     /**
-     * 生成设备token
+     * 生成token string
      *
      * @param caller
      */
-    public byte[] generateDeviceToken(CallerInfo caller) {
-        caller.uid = 0;
-        return generateUserToken(caller);
+    public String generateToken(CallerInfo caller) {
+        return toHax3(caller.securityLevel).append(Base64Util.encodeToString(this.generate(caller))).toString();
     }
 
     /**
-     * 生成用户token
-     *
-     * @param caller
+     * 从base64编码的字符串中解析调用者信息
      */
-    public String generateStringUserToken(CallerInfo caller) {
-        return Base64Util.encodeToString(this.generateUserToken(caller));
+    public CallerInfo parseToken(String token) {
+        try {
+            return parse(Base64Util.decode(token.substring(3)));
+        } catch (Exception e) {
+            logger.error("token parse failed.", e);
+        }
+        return null;
     }
 
-    /**
-     * 生成设备token
-     *
-     * @param caller
-     */
-    public String generateStringDeviceToken(CallerInfo caller) {
-        return Base64Util.encodeToString(this.generateDeviceToken(caller));
+    private static StringBuilder toHax3(int value) {
+        StringBuilder sb = new StringBuilder(50);
+        sb.append("000");
+        for (int i = 2; i >= 0; i--) {
+            switch (value % 16) {
+                case 0:
+                    sb.setCharAt(i, '0');
+                    break;
+                case 1:
+                    sb.setCharAt(i, '1');
+                    break;
+                case 2:
+                    sb.setCharAt(i, '2');
+                    break;
+                case 3:
+                    sb.setCharAt(i, '3');
+                    break;
+                case 4:
+                    sb.setCharAt(i, '4');
+                    break;
+                case 5:
+                    sb.setCharAt(i, '5');
+                    break;
+                case 6:
+                    sb.setCharAt(i, '6');
+                    break;
+                case 7:
+                    sb.setCharAt(i, '7');
+                    break;
+                case 8:
+                    sb.setCharAt(i, '8');
+                    break;
+                case 9:
+                    sb.setCharAt(i, '9');
+                    break;
+                case 10:
+                    sb.setCharAt(i, 'A');
+                    break;
+                case 11:
+                    sb.setCharAt(i, 'B');
+                    break;
+                case 12:
+                    sb.setCharAt(i, 'C');
+                    break;
+                case 13:
+                    sb.setCharAt(i, 'D');
+                    break;
+                case 14:
+                    sb.setCharAt(i, 'E');
+                    break;
+                case 15:
+                    sb.setCharAt(i, 'F');
+                    break;
+            }
+            value = value / 16;
+        }
+        return sb;
     }
 }

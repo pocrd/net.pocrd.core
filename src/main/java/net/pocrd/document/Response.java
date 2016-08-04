@@ -19,13 +19,6 @@ public class Response {
     @Description("调用标识符")
     public String cid;
 
-    /**
-     * 暂时无使用场景
-     */
-    @Deprecated
-    @Description("用作特定场景使用")
-    public String data;
-
     @Description("API调用状态，code的信息请参考ApiCode定义文件")
     public List<CallState> stateList;
 

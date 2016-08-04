@@ -131,14 +131,6 @@ public class ApiMethodInfo {
     public String groupOwner;
 
     /**
-     * 允许访问的第三方编号，apigw中进行配置，不由业务方接口声明提供
-     *
-     * @Deprecated
-     */
-    @Deprecated
-    public Set<Integer> allowThirdPartyIds;
-
-    /**
      * 本接口是否只接受加密传输
      */
     public boolean encryptionOnly;

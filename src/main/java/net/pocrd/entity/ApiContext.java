@@ -63,6 +63,9 @@ public class ApiContext {
      */
     public Map<String, String> requestInfo;
 
+    /**
+     * 在日志记录中忽略敏感信息
+     */
     public final void ignoreParameterForSecurity(String key) {
         if (requestInfo != null) {
             requestInfo.remove(key);
@@ -128,19 +131,14 @@ public class ApiContext {
     public String versionCode;
 
     /**
-     * 客户端应用版本名 例:1.6.0
-     */
-    public String versionName;
-
-    /**
      * 应用编号,显示传参的_aid
      */
-    public int appid;
+    public String appid;
 
     /**
      * 第三方合作者编号
      */
-    public int thirdPartyId;
+    public String thirdPartyId;
 
     /**
      * 返回值序列化方式
@@ -193,12 +191,6 @@ public class ApiContext {
     public String clientIP;
 
     /**
-     * Device Token
-     * TODO:to be removed, token需要做归一化处理
-     */
-    public String deviceToken;
-
-    /**
      * Token
      */
     public String token;
@@ -207,12 +199,6 @@ public class ApiContext {
      * secret token 用于在不同domian间传递csrftoken, 只能在https协议下传入
      */
     public String stoken;
-
-    /**
-     * oauth token 用于存放第三方授权信息
-     * TODO:to be removed, token需要做归一化处理
-     */
-    public String otoken;
 
     /**
      * Security Level 本次调用所需的综合安全级别
@@ -268,7 +254,6 @@ public class ApiContext {
      * 获取 cookie 值
      *
      * @param key
-     * @return
      */
     public final String getCookie(String key) {
         return cookies.get(key);
@@ -301,7 +286,7 @@ public class ApiContext {
     public final void clear() {
         this.agent = null;
         this.apiCallInfos = null;
-        this.appid = 0;
+        this.appid = null;
         this.caller = null;
         this.cid = null;
         this.clearUserToken = false;
@@ -312,7 +297,6 @@ public class ApiContext {
         this.currentCall = null;
         this.deviceId = 0;
         this.deviceIdStr = null;
-        this.deviceToken = null;
         this.format = SerializeType.JSON;
         this.host = null;
         this.isSSL = false;
@@ -320,7 +304,6 @@ public class ApiContext {
         this.localException = null;
         this.location = null;
         this.notifications.clear();
-        this.otoken = null;
         this.outputStream.reset();
         this.referer = null;
         this.requiredSecurity = 0;
@@ -328,11 +311,10 @@ public class ApiContext {
         this.serializeCount = 0;
         this.startTime = 0;
         this.stoken = null;
-        this.thirdPartyId = 0;
+        this.thirdPartyId = null;
         this.token = null;
         this.uid = null;
         this.versionCode = null;
-        this.versionName = null;
         MDC.clear();
     }
 }

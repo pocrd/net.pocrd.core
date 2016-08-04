@@ -54,19 +54,9 @@ public @interface HttpApi {
     String owner() default "";
 
     /**
-     * Integrated级别接口，需要指定允许访问的第三方编号
-     * 第三方集成接口需要明确的指定可以访问该资源的合作方
-     *
-     * @return
-     *
-     * @Deprecated 使用diamond进行配置，不由业务方指定
-     */
-    @Deprecated int[] allowThirdPartyIds() default {};
-
-    /**
      * @return
      *
      * @see SecurityType.Integrated 级别接口是否需要apigw进行签名验证,false:验证由服务提供方完成,true:apigw负责签名验证
      */
-    boolean needVerify() default false;
+    boolean needVerify() default true;
 }

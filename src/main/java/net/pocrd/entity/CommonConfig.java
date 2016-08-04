@@ -27,7 +27,7 @@ public class CommonConfig {
             instance = new CommonConfig();
             if (prop == null) {
                 try {
-                    logger.warn("missing CommonConfig.init, try to load net.pocrd.core.config");
+                    logger.warn("missing call CommonConfig.init(), try to load net.pocrd.core.config");
                     InputStream is = CommonConfig.class.getResourceAsStream("/net.pocrd.core.config");
                     if (is != null) {
                         prop = new Properties();
@@ -46,7 +46,7 @@ public class CommonConfig {
             instance.setApigwVersion(prop.getProperty("net.pocrd.apigwVersion", "develop"));
             instance.setApiInfoXslSite(prop.getProperty("net.pocrd.apiInfoXslSite", "/"));
             instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
-            instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync"));
+            instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync", "true"));
 
             //启动时获取当前机器ip
             try {

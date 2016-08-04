@@ -59,7 +59,7 @@ public class ApiGeneratorTest {
     @Test
     public void testJavaGenertorViaJar() throws ParserConfigurationException, IOException, SAXException {
         new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build()
-                .generateViaJar("/home/admin/api/tmp/discovery-api-0.2.5-SNAPSHOT.jar");
+                .generateViaJar("/home/admin/api/demo-api.jar");
     }
 
     @Test
@@ -71,9 +71,9 @@ public class ApiGeneratorTest {
     @Test
     public void testGenerateFromNetResource() {
         new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/autogen/oc").setClassPrefix("SF").build().generateWithApiInfo(
-                "http://localhost:8080/info.api?raw");
+                "http://115.28.160.84/info.api?raw");
         new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/autogen/java").setPackagePrefix("com.sfht.m.app.client").build()
-                .generateWithApiInfo("http://localhost:8080/info.api?raw");
+                .generateWithApiInfo("http://115.28.160.84/info.api?raw");
     }
 
     @Test
