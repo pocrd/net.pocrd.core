@@ -737,7 +737,7 @@ public abstract class BaseServlet extends HttpServlet {
             call.setReturnCode(ApiReturnCode.SUCCESS);
         } catch (ReturnCodeException rce) {//APIGW内部异常传递,RuntimeException
             call.setReturnCode(rce.getCode());
-            if (rce.getCode() == ApiReturnCode.PARAMETER_ERROR) {
+            if (rce.getCode() == ApiReturnCode.PARAMETER_ERROR || rce.getCode() == ApiReturnCode.ROLE_DENIED) {
                 logger.error(SERVLET_MARKER, "servlet catch an api error. " + rce.getMessage());
             } else {
                 logger.error(SERVLET_MARKER, "servlet catch an api error.", rce);
