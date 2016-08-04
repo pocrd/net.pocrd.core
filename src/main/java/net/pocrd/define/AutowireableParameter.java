@@ -14,4 +14,6 @@ public enum AutowireableParameter {
     versionCode,
     referer,
     host,
+    token,
+    stoken,
 }
