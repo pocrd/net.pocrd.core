@@ -120,13 +120,13 @@ public enum SecurityType {
      * 其中之一的auth都可能会过期
      */
     public static boolean expirable(int auth) {
-        return (auth & 0x3E02) != 0;
+        return (auth & 0x0322) != 0;
     }
 
     /**
      * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserLogin
      */
     public static boolean requireToken(int auth){
-        return (auth & 0x3F02) != 0;
+        return (auth & 0x0332) != 0;
     }
 }

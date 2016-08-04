@@ -30,10 +30,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author rendong
  */
 public final class ApiManager {
-    private static final Logger                       logger                  = LoggerFactory.getLogger(ApiManager.class);
-    private              Map<String, HttpApiExecuter> nameToApi               = new ConcurrentHashMap<String, HttpApiExecuter>();
-    private              Map<String, ApiMethodInfo>   apiInfos                = new ConcurrentHashMap<String, ApiMethodInfo>();
-    private static final String                       UNDER_SCORE             = "_";
+    private static final Logger                       logger      = LoggerFactory.getLogger(ApiManager.class);
+    private              Map<String, HttpApiExecuter> nameToApi   = new ConcurrentHashMap<String, HttpApiExecuter>();
+    private              Map<String, ApiMethodInfo>   apiInfos    = new ConcurrentHashMap<String, ApiMethodInfo>();
+    private static final String                       UNDER_SCORE = "_";
 
     public ApiManager() {
     }
@@ -361,10 +361,6 @@ public final class ApiManager {
                     if (hasDuplicateParam(pInfos)) {
                         throw new RuntimeException("duplicate param , groupName: " + apiInfo.groupName + ", methodName: " + apiInfo.methodName);
                     }
-                    //                    Class<?>[] types = mInfo.getExceptionTypes();
-                    //                    if (types == null || types.length != 1 || types[0] != ServiceException.class) {
-                    //                        throw new RuntimeException("undefine throws ServiceException. " + apiInfo.groupName + ", methodName: " + apiInfo.methodName);
-                    //                    }
                     parseReturnType(apiInfo, mInfo, clazz);//返回结果解析,设置apiInfo.seriliazer,apiInfo.returnType, apiInfo.actuallyGenericType
                     //递归检查返回结果类型
                     TypeCheckUtil.recursiveCheckReturnType(clazz.getName(), apiInfo.returnType, apiInfo.actuallyGenericReturnType,
@@ -372,31 +368,20 @@ public final class ApiManager {
                             new PublicFieldChecker());
                     apiInfo.dubboInterface = clazz;
                     apiInfo.securityLevel = api.security();
+                    if (api.roles().length() > 0) {
+                        apiInfo.roleSet = new HashSet<String>();
+                        for (String role : api.roles().split(",")) {
+                            apiInfo.roleSet.add(role);
+                        }
+                    }
                     //对于Integrated级别接口需要指定可访问该接口的第三方编号
                     if (SecurityType.Integrated.check(apiInfo.securityLevel)) {
-                        //                        if (api.allowThirdPartyIds() != null && api.allowThirdPartyIds().length != 0) {
-                        //                            apiInfo.allowThirdPartyIds = new HashSet<Integer>();
-                        //                            for (int tpid : api.allowThirdPartyIds()) {
-                        //                                apiInfo.allowThirdPartyIds.add(tpid);
-                        //                            }
-                        //                        } else {
-                        //                            // 接口上未指定allowThirdPartyIds的Integrated接口，由业务系统验证请求身份的合法性
-                        //                            logger.warn(
-                        //                                    "no allowThirdPartyIds has been setted for integrated api:" + apiInfo.methodName
-                        //                                            + ". Dubbo service must ensure the legitimacy of the request!");
-                        //                            System.out.println(
-                        //                                    "no allowThirdPartyIds has been setted for integrated api:" + apiInfo.methodName
-                        //                                            + ". Dubbo service must ensure the legitimacy of the request!");
-                        //                        }
                         if (api.needVerify()) {
                             apiInfo.needVerfiy = true;
                         } else {
                             // 接口未要求网关进行签名验证
                             apiInfo.needVerfiy = false;
                             logger.warn(
-                                    "integrated api:" + apiInfo.methodName
-                                            + " do not need verify by apigw. Dubbo service must ensure the legitimacy of the request!");
-                            System.out.println(
                                     "integrated api:" + apiInfo.methodName
                                             + " do not need verify by apigw. Dubbo service must ensure the legitimacy of the request!");
                         }

@@ -2,6 +2,7 @@ package net.pocrd.annotation;
 
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
+import net.pocrd.util.StringUtil;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -13,50 +14,41 @@ import java.lang.annotation.Target;
 public @interface HttpApi {
     /**
      * Http 接口名
-     *
-     * @return
      */
     String name();
 
     /**
      * Http 接口注释
-     *
-     * @return
      */
     String desc();
 
     /**
-     * Http 接口短描述
-     *
-     * @return
+     * Http 接口详细描述
      */
     String detail() default "";
 
     /**
      * 调用接口所需的安全级别
-     *
-     * @return
      */
     SecurityType security();
 
     /**
      * 接口开放状态
-     *
-     * @return
      */
     ApiOpenState state() default ApiOpenState.OPEN;
 
     /**
      * 接口负责人
-     *
-     * @return
      */
-    String owner() default "";
+    String owner();
 
     /**
-     * @return
-     *
-     * @see SecurityType.Integrated 级别接口是否需要apigw进行签名验证,false:验证由服务提供方完成,true:apigw负责签名验证
+     * SecurityType.Integrated 级别接口是否需要apigw进行签名验证,false:验证由服务提供方完成,true:apigw负责签名验证
      */
     boolean needVerify() default true;
+
+    /**
+     * 可以访问该资源的角色列表 半角逗号分隔
+     */
+    String roles() default "";
 }

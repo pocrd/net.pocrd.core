@@ -106,6 +106,13 @@ public class ApiReturnCode extends AbstractReturnCode {
     public final static int _C_RISK_MANAGER_DENIED = -166;
     public final static AbstractReturnCode RISK_MANAGER_DENIED = new ApiReturnCode(_C_RISK_MANAGER_DENIED, ACCESS_DENIED);
 
+    /**
+     * security level missmatch
+     */
+    public final static int _C_SECURITY_LEVEL_MISSMATCH = -167;
+    public final static AbstractReturnCode SECURITY_LEVEL_MISSMATCH = new ApiReturnCode(_C_SECURITY_LEVEL_MISSMATCH, ACCESS_DENIED);
+
+
     public final static int _C_SIGNATURE_ERROR = -180;
     public final static AbstractReturnCode SIGNATURE_ERROR = new ApiReturnCode("签名错误", _C_SIGNATURE_ERROR);
 
@@ -164,6 +171,10 @@ public class ApiReturnCode extends AbstractReturnCode {
 
     public final static int _C_UPLOAD_FILE_NAME_ERROR = -390;
     public final static AbstractReturnCode UPLOAD_FILE_NAME_ERROR = new ApiReturnCode("上传文件名错误", _C_UPLOAD_FILE_NAME_ERROR);
+
+    public final static int _C_ROLE_DENIED = -400;
+    public final static AbstractReturnCode ROLE_DENIED = new ApiReturnCode("当前用户权限不足", _C_ROLE_DENIED);
+
 
     protected ApiReturnCode(String desc, int code) {
         super(desc, code);

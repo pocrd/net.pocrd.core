@@ -76,6 +76,11 @@ public class ApiMethodInfo {
     public SecurityType securityLevel = SecurityType.None;
 
     /**
+     * 可以访问该方法的权限集合
+     */
+    public Set<String> roleSet;
+
+    /**
      * 资源所属组名
      */
     public String groupName;

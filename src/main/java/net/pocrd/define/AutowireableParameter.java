@@ -7,7 +7,6 @@ public enum AutowireableParameter {
     userAgent,
     cookies,
     businessid,
-    inputCharset,
     postBody,
     channel,
     thirdPartyId,

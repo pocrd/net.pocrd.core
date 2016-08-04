@@ -322,7 +322,7 @@ public class POJOSerializerProvider implements Opcodes {
                     //隐式转换
                     if (t == byte.class) {
                         pmv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(I)Ljava/lang/String;");
-                    } else if (t == char.class) {//TODO char的处理策略
+                    } else if (t == char.class) {
                         pmv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(I)Ljava/lang/String;");
                     } else if (t == short.class) {
                         pmv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", "(I)Ljava/lang/String;");
