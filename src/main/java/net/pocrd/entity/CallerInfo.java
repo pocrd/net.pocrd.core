@@ -30,5 +30,5 @@ public class CallerInfo implements Serializable {
     public long   uid;
     public String oauthid;
     public byte[] key;                      // 设备身份公钥
-    public String roles;
+    public String role;
 }

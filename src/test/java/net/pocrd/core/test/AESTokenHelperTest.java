@@ -23,7 +23,7 @@ public class AESTokenHelperTest {
         AESTokenHelper th = new AESTokenHelper(tokenPwd);
         CallerInfo ci = new CallerInfo();
         ci.expire = 987654321;
-        ci.roles = "TEST,VIP";
+        ci.role = "TEST";
         ci.key = "1111111".getBytes(ConstField.UTF8);
         ci.securityLevel = 63;
         ci.deviceId = 22222222222222L;
@@ -33,7 +33,7 @@ public class AESTokenHelperTest {
         System.out.println(token);
         CallerInfo caller = th.parseToken(token);
         assertEquals(ci.expire, caller.expire);
-        assertEquals(ci.roles, caller.roles);
+        assertEquals(ci.role, caller.role);
         assertTrue(Arrays.equals(ci.key, caller.key));
         assertEquals(ci.securityLevel, caller.securityLevel);
         assertEquals(ci.deviceId, caller.deviceId);
@@ -47,7 +47,7 @@ public class AESTokenHelperTest {
         final AESTokenHelper th = new AESTokenHelper(tokenPwd);
         final CallerInfo ci = new CallerInfo();
         ci.expire = 987654321;
-        ci.roles = "TEST,VIP";
+        ci.role = "VIP";
         ci.key = "1111111".getBytes(ConstField.UTF8);
         ci.securityLevel = 9;
         ci.deviceId = 22222222222222L;
@@ -61,7 +61,7 @@ public class AESTokenHelperTest {
                 String token = th.generateToken(ci);
                 CallerInfo caller = th.parseToken(token);
                 assertEquals(ci.expire, caller.expire);
-                assertEquals(ci.roles, caller.roles);
+                assertEquals(ci.role, caller.role);
                 assertTrue(Arrays.equals(ci.key, caller.key));
                 assertTrue(caller.securityLevel > 0);
                 assertTrue(caller.deviceId > 0);
@@ -76,7 +76,7 @@ public class AESTokenHelperTest {
         CallerInfo callerInfo = new CallerInfo();
         callerInfo.uid = 123456789L;
         callerInfo.appid = 1;
-        callerInfo.roles = "A,B,C,D";
+        callerInfo.role = "D";
         callerInfo.deviceId = 123456789L;
         callerInfo.expire = System.currentTimeMillis() + 10000000000L;
         callerInfo.key = "demo key".getBytes(ConstField.UTF8);
@@ -87,7 +87,7 @@ public class AESTokenHelperTest {
         System.out.println("tk:" + tk);
         CallerInfo callerInfo1 = aesTokenHelper.parseToken(tk);
         assertEquals(callerInfo.uid, callerInfo1.uid);
-        assertEquals(callerInfo.roles, callerInfo1.roles);
+        assertEquals(callerInfo.role, callerInfo1.role);
         assertEquals(callerInfo.appid, callerInfo1.appid);
         assertEquals(callerInfo.deviceId, callerInfo1.deviceId);
         assertEquals(callerInfo.expire, callerInfo1.expire);

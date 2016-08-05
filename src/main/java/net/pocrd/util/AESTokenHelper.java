@@ -70,7 +70,7 @@ public class AESTokenHelper {
                     if (len != dis.read(bs)) {
                         return null;
                     }
-                    caller.roles = new String(bs, ConstField.UTF8);
+                    caller.role = new String(bs, ConstField.UTF8);
                 }
             }
             if (dis.available() > 0) {
@@ -114,7 +114,7 @@ public class AESTokenHelper {
                 dos.writeByte(oauthid.length);
                 dos.write(oauthid);
             }
-            byte[] roles = caller.roles == null ? null : caller.roles.getBytes(ConstField.UTF8);
+            byte[] roles = caller.role == null ? null : caller.role.getBytes(ConstField.UTF8);
             if (roles != null) {
                 dos.writeByte(roles.length);
                 dos.write(roles);

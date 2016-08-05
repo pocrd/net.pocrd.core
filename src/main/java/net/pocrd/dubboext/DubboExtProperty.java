@@ -246,7 +246,7 @@ public class DubboExtProperty {
         public String deviceId;
         public String userId;
         public String oauthid;
-        public String roles;
+        public String role;
     }
 
     public static void setClientCallerToAttachment() {
@@ -261,7 +261,7 @@ public class DubboExtProperty {
             context.setAttachment(CommonParameter.deviceId, String.valueOf(caller.deviceId));
             context.setAttachment(CommonParameter.userId, String.valueOf(caller.uid));
             context.setAttachment("oauthid", caller.oauthid);
-            context.setAttachment("roles", caller.roles);
+            context.setAttachment("role", caller.role);
         }
     }
 
@@ -275,7 +275,7 @@ public class DubboExtProperty {
         caller.deviceId = context.getAttachment(CommonParameter.deviceId);
         caller.userId = context.getAttachment(CommonParameter.userId);
         caller.oauthid = context.getAttachment("oauthid");
-        caller.roles = context.getAttachment("roles");
+        caller.role = context.getAttachment("role");
 
         return caller;
     }
