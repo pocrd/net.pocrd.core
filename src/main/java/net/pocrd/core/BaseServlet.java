@@ -754,7 +754,10 @@ public abstract class BaseServlet extends HttpServlet {
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.TimeoutException) {
                 logger.error(SERVLET_MARKER, "dubbo timeout.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_TIMEOUT_ERROR);
-            } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.RemotingException || t instanceof com.alibaba.dubbo.rpc.RpcException) {
+            } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.RemotingException) {
+                logger.error(SERVLET_MARKER, "dubbo service exception.", t);
+                call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_ERROR);
+            } else if (t instanceof com.alibaba.dubbo.rpc.RpcException) {
                 logger.error(SERVLET_MARKER, "dubbo exception.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_NOTFOUND_ERROR);
             } else {
