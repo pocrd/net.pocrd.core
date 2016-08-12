@@ -1,5 +1,7 @@
 package net.pocrd.entity;
 
+import net.pocrd.define.ParamCreator;
+
 public class ApiParameterInfo {
     /**
      * 参数类型
@@ -76,4 +78,10 @@ public class ApiParameterInfo {
      * 目前被用在etl处理接口调用日志时按照该顺序放置各个参数
      */
     public String sequence;
+
+    /**
+     * 参数发生器
+     * 详细见 DesignedParameter 的描述
+     */
+    public ParamCreator<?> creator;
 }

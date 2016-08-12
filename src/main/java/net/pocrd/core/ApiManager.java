@@ -340,6 +340,11 @@ public final class ApiManager {
                                 pInfo.name = p.value().name();
                                 pInfo.isAutowired = true;
                                 break;
+                            } else if (n.annotationType() == DesignedParameter.class) {
+                                DesignedParameter p = (DesignedParameter)n;
+                                pInfo.creator = (ParamCreator)p.value().newInstance();
+                                pInfo.isAutowired = true;
+                                break;
                             } else if (n.annotationType() == ApiCookieAutowired.class) {
                                 ApiCookieAutowired p = (ApiCookieAutowired)n;
                                 if (p.value() == null || p.value().length == 0) {
