@@ -16,8 +16,8 @@ import java.lang.annotation.Target;
  * 因此会导致自动化测试用例编写的困难, 通过在接口注册时声明参数为
  * DesignedParameter 并由自定义的 ParamCreator 来产生所需的参数,
  * 使得业务逻辑本身恢复到可测量状态。
- * 基本类型参数值使用String来进行描述, 非基本类型参数值需要可由fastjson
- * 进行序列化/反序列化操作。
+ * 参数值使用String来进行描述, 非基本类型参数值由fastjson进行序列化
+ * 后生成String值返回。
  */
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
