@@ -83,5 +83,5 @@ public class ApiParameterInfo {
      * 参数发生器
      * 详细见 DesignedParameter 的描述
      */
-    public ParamCreator<?> creator;
+    public ParamCreator creator;
 }
