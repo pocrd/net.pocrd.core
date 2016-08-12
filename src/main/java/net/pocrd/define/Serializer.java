@@ -13,22 +13,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 public interface Serializer<T> {
-    /**
-     * ApiSerializerFeatures
-     */
-    public static class ApiSerializerFeature {
-        /**
-         * 使用fastjson作为json序列化实现，序列化的特性定义
-         */
-        public static final SerializerFeature[] SERIALIZER_FEATURES = new SerializerFeature[] {
-                //            SerializerFeature.DisableCircularReferenceDetect,//disable循环引用
-                //            SerializerFeature.WriteMapNullValue,//null属性，序列化为null,do by guankaiqiang,android sdk中 JSON.optString()将null convert成了"null",故关闭该特性
-                SerializerFeature.NotWriteRootClassName, //与pocrd保持一致
-                //            SerializerFeature.WriteEnumUsingToString, //与pocrd保持一致
-                SerializerFeature.WriteNullNumberAsZero,//与pocrd保持一致
-                SerializerFeature.WriteNullBooleanAsFalse,//与pocrd保持一致
-        };
-    }
+    public static final SerializerFeature[] EMPTY_FEATURES = new SerializerFeature[] {};
 
     /**
      * jsonString的序列化
@@ -142,7 +127,7 @@ public interface Serializer<T> {
         @Override
         public void toJson(ObjectArrayResp instance, OutputStream out, boolean isRoot) {
             try {
-                out.write(JSON.toJSONBytes(instance, ApiSerializerFeature.SERIALIZER_FEATURES));
+                out.write(JSON.toJSONBytes(instance));
             } catch (IOException localIOException) {
                 throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, localIOException);
             }

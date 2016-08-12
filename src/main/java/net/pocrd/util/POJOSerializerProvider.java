@@ -5,12 +5,7 @@ import net.pocrd.define.ConstField;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.CompileConfig;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.io.File;
@@ -19,12 +14,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -33,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class POJOSerializerProvider implements Opcodes {
     private final static ConcurrentHashMap<Class<?>, Serializer<?>> cache = new ConcurrentHashMap<Class<?>, Serializer<?>>();
+
     /**
      * 返回实体类的序列化类对象
      */
@@ -75,7 +66,7 @@ public class POJOSerializerProvider implements Opcodes {
             MethodVisitor mv;
 
             cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name, "Ljava/lang/Object;Lnet/pocrd/define/Serializer<" + t_classDesc + ">;", "java/lang/Object",
-                     new String[]{Serializer.class.getName().replace('.', '/')});
+                    new String[] { Serializer.class.getName().replace('.', '/') });
 
             if (clazz.getDeclaringClass() != null) {
                 BytecodeUtil.createInnerClassVisitor(cw, clazz);
@@ -185,7 +176,7 @@ public class POJOSerializerProvider implements Opcodes {
             }
 
             return (Serializer<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
-                                                                                                                cw.toByteArray()).newInstance();
+                    cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(c_name, e);
         }
@@ -193,8 +184,8 @@ public class POJOSerializerProvider implements Opcodes {
 
     //TODO refactor,支持动态类型的风险是无法在编译期获取到接口信息,暂不打算支持。未来会支持对象数组
     private static void buildToXml(String cn, PocMethodVisitor pmv, Class<?> clazz, List<Field> fds, String classDesc, String t_className,
-                                   String t_classDesc, HashMap<String, Integer> map,
-                                   LinkedList<String> list) throws SecurityException, NoSuchMethodException {
+            String t_classDesc, HashMap<String, Integer> map,
+            LinkedList<String> list) throws SecurityException, NoSuchMethodException {
         pmv.visitCode();
         Label l0 = new Label();
         Label l1 = new Label();
@@ -254,7 +245,8 @@ public class POJOSerializerProvider implements Opcodes {
             }
             String name = fd.getName();
             String t_sig = null;
-            if (t == boolean.class || t == byte.class || t == short.class || t == char.class || t == int.class || t == long.class || t == float.class || t == double.class) {
+            if (t == boolean.class || t == byte.class || t == short.class || t == char.class || t == int.class || t == long.class || t == float.class
+                    || t == double.class) {
                 if (t == boolean.class) {
                     t_sig = "Z";
                 } else if (t == byte.class) {
@@ -388,7 +380,7 @@ public class POJOSerializerProvider implements Opcodes {
                         pmv.visitMethodInsn(INVOKEVIRTUAL, t.getName().replace('.', '/'), "name", "()Ljava/lang/String;");
                     }
                     pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/POJOSerializerProvider", "writeXmlString",
-                                        "(Ljava/io/OutputStream;Ljava/lang/String;)V");
+                            "(Ljava/io/OutputStream;Ljava/lang/String;)V");
                     writeCDATAEnd(cn, pmv, name.endsWith("List") ? name.substring(0, name.length() - 4) : "item", 2, map, list);
                     pmv.visitJumpInsn(GOTO, label_loop);
                     pmv.visitLabel(label_finish);
@@ -418,7 +410,7 @@ public class POJOSerializerProvider implements Opcodes {
                         pmv.visitMethodInsn(INVOKEVIRTUAL, t.getName().replace('.', '/'), "name", "()Ljava/lang/String;");
                     }
                     pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/POJOSerializerProvider", "writeXmlString",
-                                        "(Ljava/io/OutputStream;Ljava/lang/String;)V");
+                            "(Ljava/io/OutputStream;Ljava/lang/String;)V");
                     writeCDATAEnd(cn, pmv, name, 2, map, list);
                     pmv.visitLabel(label_null);
                     pmv.deleteLocal("obj");
@@ -434,7 +426,7 @@ public class POJOSerializerProvider implements Opcodes {
                     //TODO 如果要支持泛型的动态序列化，这部分逻辑需要重构
                     pmv.visitLdcInsn(Type.getType(t));
                     pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/POJOSerializerProvider", "getSerializer",
-                                        "(Ljava/lang/Class;)Lnet/pocrd/define/Serializer;");
+                            "(Ljava/lang/Class;)Lnet/pocrd/define/Serializer;");
                     pmv.setLocal("serializer");
                     pmv.loadArg(1); // load instance
                     pmv.visitFieldInsn(GETFIELD, t_className, name, Type.getDescriptor(fd.getType()));//attention:t是actually generic types
@@ -482,7 +474,7 @@ public class POJOSerializerProvider implements Opcodes {
                     pmv.visitLdcInsn(Type.getType(t));
                     //                    }
                     pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/POJOSerializerProvider", "getSerializer",
-                                        "(Ljava/lang/Class;)Lnet/pocrd/define/Serializer;");
+                            "(Ljava/lang/Class;)Lnet/pocrd/define/Serializer;");
                     pmv.loadLocal("obj");
                     pmv.loadArg(2);
                     pmv.loadConst(0);
@@ -508,7 +500,7 @@ public class POJOSerializerProvider implements Opcodes {
         pmv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ApiReturnCode", "UNKNOWN_ERROR", "Lnet/pocrd/entity/AbstractReturnCode;");
         pmv.loadLocal("e");
         pmv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>",
-                            "(Lnet/pocrd/entity/AbstractReturnCode;Ljava/lang/Exception;)V");
+                "(Lnet/pocrd/entity/AbstractReturnCode;Ljava/lang/Exception;)V");
         pmv.visitInsn(ATHROW);
         pmv.visitLabel(label_end);
         pmv.visitInsn(RETURN);
@@ -516,7 +508,7 @@ public class POJOSerializerProvider implements Opcodes {
     }
 
     private static void buildToJsonWithFastJson(String cn, PocMethodVisitor pmv, Class<?> clazz, List<Field> fds, String classDesc,
-                                                String t_className, String t_classDesc, HashMap<String, Integer> map, LinkedList<String> list) {
+            String t_className, String t_classDesc, HashMap<String, Integer> map, LinkedList<String> list) {
         pmv.visitCode();
         Label l0 = new Label();
         Label l1 = new Label();
@@ -525,9 +517,10 @@ public class POJOSerializerProvider implements Opcodes {
         pmv.visitLabel(l0);
         pmv.loadArg(2);
         pmv.loadArg(1);
-        pmv.visitFieldInsn(GETSTATIC, "net/pocrd/define/Serializer$ApiSerializerFeature", "SERIALIZER_FEATURES", "[Lcom/alibaba/fastjson/serializer/SerializerFeature;");
+        pmv.visitFieldInsn(GETSTATIC, "net/pocrd/define/Serializer", "EMPTY_FEATURES",
+                "[Lcom/alibaba/fastjson/serializer/SerializerFeature;");
         pmv.visitMethodInsn(INVOKESTATIC, "com/alibaba/fastjson/JSON", "toJSONBytes",
-                            "(Ljava/lang/Object;[Lcom/alibaba/fastjson/serializer/SerializerFeature;)[B");
+                "(Ljava/lang/Object;[Lcom/alibaba/fastjson/serializer/SerializerFeature;)[B");
         pmv.visitMethodInsn(INVOKEVIRTUAL, "java/io/OutputStream", "write", "([B)V");
         pmv.visitLabel(l1);
         Label label_end = new Label();
@@ -540,7 +533,7 @@ public class POJOSerializerProvider implements Opcodes {
         pmv.visitFieldInsn(GETSTATIC, "net/pocrd/entity/ApiReturnCode", "UNKNOWN_ERROR", "Lnet/pocrd/entity/AbstractReturnCode;");
         pmv.loadLocal("e");
         pmv.visitMethodInsn(INVOKESPECIAL, "net/pocrd/entity/ReturnCodeException", "<init>",
-                            "(Lnet/pocrd/entity/AbstractReturnCode;Ljava/lang/Exception;)V");
+                "(Lnet/pocrd/entity/AbstractReturnCode;Ljava/lang/Exception;)V");
         pmv.visitInsn(ATHROW);
         pmv.visitLabel(label_end);
         pmv.visitInsn(RETURN);
@@ -548,7 +541,7 @@ public class POJOSerializerProvider implements Opcodes {
     }
 
     private static void writeString(String cn, PocMethodVisitor mv, String str, int local_out, HashMap<String, Integer> map,
-                                    LinkedList<String> list) {
+            LinkedList<String> list) {
         int index = 0;
         if (map.containsKey(str)) {
             index = map.get(str);
@@ -565,22 +558,22 @@ public class POJOSerializerProvider implements Opcodes {
     }
 
     private static void writeXmlStart(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
-                                      LinkedList<String> list) {
+            LinkedList<String> list) {
         writeString(cn, mv, "<" + name + ">", local_out, map, list);
     }
 
     private static void writeXmlEnd(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
-                                    LinkedList<String> list) {
+            LinkedList<String> list) {
         writeString(cn, mv, "</" + name + ">", local_out, map, list);
     }
 
     private static void writeCDATAStart(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
-                                        LinkedList<String> list) {
+            LinkedList<String> list) {
         writeString(cn, mv, "<" + name + "><![CDATA[", local_out, map, list);
     }
 
     private static void writeCDATAEnd(String cn, PocMethodVisitor mv, String name, int local_out, HashMap<String, Integer> map,
-                                      LinkedList<String> list) {
+            LinkedList<String> list) {
         writeString(cn, mv, "]]></" + name + ">", local_out, map, list);
     }
 

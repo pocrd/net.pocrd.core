@@ -8,8 +8,8 @@ import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.responseEntity.ObjectArrayResp;
-import net.pocrd.util.RawString;
 import net.pocrd.util.POJOSerializerProvider;
+import net.pocrd.util.RawString;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
@@ -45,9 +45,9 @@ public class HttpApiUtilTest {
     @HttpApi(name = "test.test1", desc = "测试1", security = SecurityType.None, owner = "guankaiqiang")
     public RawString execute(
             @ApiParameter(required = true, name = "i1", desc = "参数1")
-            int i1,
+                    int i1,
             @ApiParameter(required = true, name = "i2", verifyRegex = "^\\d+$", desc = "参数2")
-            int i2) {
+                    int i2) {
         RawString s = new RawString();
         s.value = String.valueOf(i1 + i2);
         return s;
@@ -56,81 +56,81 @@ public class HttpApiUtilTest {
     @HttpApi(name = "test.test2", desc = "测试2", security = SecurityType.None, owner = "guankaiqiang")
     public RawString execute(
             @ApiParameter(required = true, name = "b1", desc = "参数1")
-            boolean b1,
+                    boolean b1,
             @ApiParameter(required = false, name = "b2", desc = "参数2", defaultValue = "true")
-            boolean b2,
+                    boolean b2,
             @ApiParameter(required = true, name = "b3", verifyRegex = "^(true)|(false)$", desc = "参数3")
-            boolean b3,
+                    boolean b3,
             @ApiParameter(required = false, name = "b4", desc = "参数4", defaultValue = "false")
-            boolean b4,
+                    boolean b4,
 
             @ApiParameter(required = true, name = "by1", desc = "参数5")
-            byte by1,
+                    byte by1,
             @ApiParameter(required = false, name = "by2", desc = "参数6", defaultValue = "127")
-            byte by2,
+                    byte by2,
             @ApiParameter(required = true, name = "by3", verifyRegex = "^-?\\d+$", desc = "参数7")
-            byte by3,
+                    byte by3,
             @ApiParameter(required = false, name = "by4", desc = "参数8", defaultValue = "-128")
-            byte by4,
+                    byte by4,
 
             @ApiParameter(required = true, name = "c1", desc = "参数9")
-            char c1,
+                    char c1,
             @ApiParameter(required = false, name = "c2", desc = "参数10", defaultValue = "" + (int)'c')
-            char c2,
+                    char c2,
             @ApiParameter(required = true, name = "c3", verifyRegex = "^\\+?\\d+$", desc = "参数11")
-            char c3,
+                    char c3,
             @ApiParameter(required = false, name = "c4", desc = "参数12", defaultValue = "" + (int)'z')
-            char c4,
+                    char c4,
 
             @ApiParameter(required = true, name = "s1", desc = "参数13")
-            short s1,
+                    short s1,
             @ApiParameter(required = false, name = "s2", desc = "参数14", defaultValue = "" + Short.MAX_VALUE)
-            short s2,
+                    short s2,
             @ApiParameter(required = true, name = "s3", verifyRegex = "^-?\\d+$", desc = "参数15")
-            short s3,
+                    short s3,
             @ApiParameter(required = false, name = "s4", desc = "参数16", defaultValue = "" + Short.MIN_VALUE)
-            short s4,
+                    short s4,
 
             @ApiParameter(required = true, name = "i1", desc = "参数17")
-            int i1,
+                    int i1,
             @ApiParameter(required = false, name = "i2", desc = "参数18", defaultValue = "0" + Integer.MAX_VALUE)
-            int i2,
+                    int i2,
             @ApiParameter(required = true, name = "i3", verifyRegex = "^-?\\d+$", desc = "参数19")
-            int i3,
+                    int i3,
             @ApiParameter(required = false, name = "i4", desc = "参数20", defaultValue = "" + Integer.MIN_VALUE)
-            int i4,
+                    int i4,
 
             @ApiParameter(required = true, name = "l1", desc = "参数21")
-            long l1,
+                    long l1,
             @ApiParameter(required = false, name = "l2", desc = "参数22", defaultValue = "" + Long.MAX_VALUE)
-            long l2,
+                    long l2,
             @ApiParameter(required = true, name = "l3", verifyRegex = "^-?\\d+$", desc = "参数23")
-            long l3,
+                    long l3,
             @ApiParameter(required = false, name = "l4", desc = "参数24", defaultValue = "" + Long.MIN_VALUE)
-            long l4,
+                    long l4,
 
             @ApiParameter(required = true, name = "f1", desc = "参数25")
-            float f1,
+                    float f1,
             @ApiParameter(required = false, name = "f2", desc = "参数26", defaultValue = "" + Float.MAX_VALUE)
-            float f2,
+                    float f2,
             @ApiParameter(required = true, name = "f3", verifyRegex = "^-?\\d+\\.\\d+$", desc = "参数27")
-            float f3,
+                    float f3,
             @ApiParameter(required = false, name = "f4", desc = "参数28", defaultValue = "" + Float.MIN_VALUE)
-            float f4,
+                    float f4,
 
             @ApiParameter(required = true, name = "d1", desc = "参数29")
-            double d1,
+                    double d1,
             @ApiParameter(required = false, name = "d2", desc = "参数30", defaultValue = "" + Double.MAX_VALUE)
-            double d2,
+                    double d2,
             @ApiParameter(required = true, name = "d3", verifyRegex = "^-?\\d+\\.\\d+$", desc = "参数31")
-            double d3,
+                    double d3,
             @ApiParameter(required = false, name = "d4", desc = "参数32", defaultValue = "" + Double.MIN_VALUE)
-            double d4,
+                    double d4,
 
             @ApiParameter(required = true, name = "st1", desc = "参数33")
-            String st1,
+                    String st1,
             @ApiParameter(required = false, name = "st2", desc = "参数34", defaultValue = "xxx")
-            String st2) {
+                    String st2) {
 
         RawString r = new RawString();
         r.value =
@@ -145,162 +145,162 @@ public class HttpApiUtilTest {
     @HttpApi(name = "test.test3", desc = "测试3", security = SecurityType.None, owner = "guankaiqiang")
     public boolean execute(
             @ApiParameter(required = true, name = "b", desc = "参数")
-            boolean b) {
+                    boolean b) {
         return b;
     }
 
     @HttpApi(name = "test.test4", desc = "测试4", security = SecurityType.None, owner = "guankaiqiang")
     public boolean[] execute(
             @ApiParameter(required = true, name = "b1", desc = "参数")
-            boolean b1,
+                    boolean b1,
             @ApiParameter(required = true, name = "b2", desc = "参数")
-            boolean b2,
+                    boolean b2,
             @ApiParameter(required = true, name = "b3", desc = "参数")
-            boolean b3) {
+                    boolean b3) {
         return new boolean[] { b1, b2, b3 };
     }
 
     @HttpApi(name = "test.test5", desc = "测试5", security = SecurityType.None, owner = "guankaiqiang")
     public byte execute(
             @ApiParameter(required = true, name = "b", desc = "参数")
-            byte b) {
+                    byte b) {
         return b;
     }
 
     @HttpApi(name = "test.test6", desc = "测试6", security = SecurityType.None, owner = "guankaiqiang")
     public byte[] execute(
             @ApiParameter(required = true, name = "b1", desc = "参数")
-            byte b1,
+                    byte b1,
             @ApiParameter(required = true, name = "b2", desc = "参数")
-            byte b2,
+                    byte b2,
             @ApiParameter(required = true, name = "b3", desc = "参数")
-            byte b3) {
+                    byte b3) {
         return new byte[] { b1, b2, b3 };
     }
 
     @HttpApi(name = "test.test7", desc = "测试7", security = SecurityType.None, owner = "guankaiqiang")
     public short execute(
             @ApiParameter(required = true, name = "s", desc = "参数")
-            short s) {
+                    short s) {
         return s;
     }
 
     @HttpApi(name = "test.test8", desc = "测试8", security = SecurityType.None, owner = "guankaiqiang")
     public short[] execute(
             @ApiParameter(required = true, name = "s1", desc = "参数")
-            short s1,
+                    short s1,
             @ApiParameter(required = true, name = "s2", desc = "参数")
-            short s2,
+                    short s2,
             @ApiParameter(required = true, name = "s3", desc = "参数")
-            short s3) {
+                    short s3) {
         return new short[] { s1, s2, s3 };
     }
 
     @HttpApi(name = "test.test9", desc = "测试9", security = SecurityType.None, owner = "guankaiqiang")
     public char execute(
             @ApiParameter(required = true, name = "c", desc = "参数")
-            char c) {
+                    char c) {
         return c;
     }
 
     @HttpApi(name = "test.test10", desc = "测试10", security = SecurityType.None, owner = "guankaiqiang")
     public char[] execute(
             @ApiParameter(required = true, name = "c1", desc = "参数")
-            char c1,
+                    char c1,
             @ApiParameter(required = true, name = "c2", desc = "参数")
-            char c2,
+                    char c2,
             @ApiParameter(required = true, name = "c3", desc = "参数")
-            char c3) {
+                    char c3) {
         return new char[] { c1, c2, c3 };
     }
 
     @HttpApi(name = "test.test11", desc = "测试11", security = SecurityType.None, owner = "guankaiqiang")
     public int execute(
             @ApiParameter(required = true, name = "c", desc = "参数")
-            int c) {
+                    int c) {
         return c;
     }
 
     @HttpApi(name = "test.test12", desc = "测试12", security = SecurityType.None, owner = "guankaiqiang")
     public int[] execute(
             @ApiParameter(required = true, name = "c1", desc = "参数")
-            int c1,
+                    int c1,
             @ApiParameter(required = true, name = "c2", desc = "参数")
-            int c2,
+                    int c2,
             @ApiParameter(required = true, name = "c3", desc = "参数")
-            int c3) {
+                    int c3) {
         return new int[] { c1, c2, c3 };
     }
 
     @HttpApi(name = "test.test13", desc = "测试13", security = SecurityType.None, owner = "guankaiqiang")
     public long execute(
             @ApiParameter(required = true, name = "c", desc = "参数")
-            long c) {
+                    long c) {
         return c;
     }
 
     @HttpApi(name = "test.test14", desc = "测试14", security = SecurityType.None, owner = "guankaiqiang")
     public long[] execute(
             @ApiParameter(required = true, name = "c1", desc = "参数")
-            long c1,
+                    long c1,
             @ApiParameter(required = true, name = "c2", desc = "参数")
-            long c2,
+                    long c2,
             @ApiParameter(required = true, name = "c3", desc = "参数")
-            long c3) {
+                    long c3) {
         return new long[] { c1, c2, c3 };
     }
 
     @HttpApi(name = "test.test15", desc = "测试15", security = SecurityType.None, owner = "guankaiqiang")
     public float execute(
             @ApiParameter(required = true, name = "c", desc = "参数")
-            float c) {
+                    float c) {
         return c;
     }
 
     @HttpApi(name = "test.test16", desc = "测试16", security = SecurityType.None, owner = "guankaiqiang")
     public float[] execute(
             @ApiParameter(required = true, name = "c1", desc = "参数")
-            float c1,
+                    float c1,
             @ApiParameter(required = true, name = "c2", desc = "参数")
-            float c2,
+                    float c2,
             @ApiParameter(required = true, name = "c3", desc = "参数")
-            float c3) {
+                    float c3) {
         return new float[] { c1, c2, c3 };
     }
 
     @HttpApi(name = "test.test17", desc = "测试17", security = SecurityType.None, owner = "guankaiqiang")
     public double execute(
             @ApiParameter(required = true, name = "c", desc = "参数")
-            double c) {
+                    double c) {
         return c;
     }
 
     @HttpApi(name = "test.test18", desc = "测试18", security = SecurityType.None, owner = "guankaiqiang")
     public double[] execute(
             @ApiParameter(required = true, name = "c1", desc = "参数")
-            double c1,
+                    double c1,
             @ApiParameter(required = true, name = "c2", desc = "参数")
-            double c2,
+                    double c2,
             @ApiParameter(required = true, name = "c3", desc = "参数")
-            double c3) {
+                    double c3) {
         return new double[] { c1, c2, c3 };
     }
 
     @HttpApi(name = "test.test19", desc = "测试19", security = SecurityType.None, owner = "guankaiqiang")
     public String execute(
             @ApiParameter(required = true, name = "c", desc = "参数")
-            String c) {
+                    String c) {
         return c;
     }
 
     @HttpApi(name = "test.test20", desc = "测试20", security = SecurityType.None, owner = "guankaiqiang")
     public String[] execute(
             @ApiParameter(required = true, name = "c1", desc = "参数")
-            String c1,
+                    String c1,
             @ApiParameter(required = true, name = "c2", desc = "参数")
-            String c2,
+                    String c2,
             @ApiParameter(required = true, name = "c3", desc = "参数")
-            String c3) {
+                    String c3) {
         return new String[] { c1, c2, c3 };
     }
 
@@ -312,9 +312,9 @@ public class HttpApiUtilTest {
     @HttpApi(name = "test.test22", desc = "测试22", security = SecurityType.None, owner = "guankaiqiang")
     public List<TestEntity> execute(
             @ApiParameter(required = true, name = "i1", desc = "参数1")
-            int i1,
+                    int i1,
             @ApiParameter(required = true, name = "str2", desc = "参数2")
-            String i2) {
+                    String i2) {
         List result = new ArrayList<TestEntity>();
         TestEntity res = new TestEntity("testest");
         result.add(res);
@@ -324,13 +324,13 @@ public class HttpApiUtilTest {
     @HttpApi(name = "test.test23", desc = "测试24", security = SecurityType.None, owner = "guankaiqiang")
     public List<String> execute(
             @ApiParameter(required = true, name = "str1", desc = "参数1")
-            String i1,
+                    String i1,
             @ApiParameter(required = true, name = "str2", desc = "参数2")
-            String i2,
+                    String i2,
             @ApiParameter(required = true, name = "str3", desc = "参数3")
-            String i3,
+                    String i3,
             @ApiParameter(required = true, name = "str4", desc = "参数4")
-            String i4) {
+                    String i4) {
         return new ArrayList<String>() {
             {add("a");}
         };
@@ -339,13 +339,13 @@ public class HttpApiUtilTest {
     @HttpApi(name = "test.test24", desc = "测试24", security = SecurityType.None, owner = "guankaiqiang")
     public List<String> execute(
             @ApiParameter(required = true, name = "str1", desc = "参数1")
-            String i1,
+                    String i1,
             @ApiCookieAutowired({ "_c1", "_c2" })
-            Map<String, String> map,
+                    Map<String, String> map,
             @ApiParameter(required = true, name = "str3", desc = "参数3")
-            String i3,
+                    String i3,
             @ApiParameter(required = true, name = "str4", desc = "参数4")
-            String i4) {
+                    String i4) {
         List<String> list = new ArrayList<String>();
         for (String key : map.keySet()) {
             list.add(key + map.get(key));

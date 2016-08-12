@@ -4,7 +4,6 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.fastjson.JSON;
 import net.pocrd.define.CommonParameter;
 import net.pocrd.define.ConstField;
-import net.pocrd.define.Serializer.ApiSerializerFeature;
 import net.pocrd.entity.ApiContext;
 import net.pocrd.entity.CallerInfo;
 import net.pocrd.responseEntity.CreditNotification;
@@ -169,10 +168,10 @@ public class DubboExtProperty {
         if (creditInfo != null) {
             String tmp = getValue(ConstField.CREDIT);
             if (tmp == null) {
-                addNotifications(ConstField.CREDIT, JSON.toJSONString(creditInfo, ApiSerializerFeature.SERIALIZER_FEATURES));
+                addNotifications(ConstField.CREDIT, JSON.toJSONString(creditInfo));
             } else {
                 addNotifications(ConstField.CREDIT,
-                        tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(creditInfo, ApiSerializerFeature.SERIALIZER_FEATURES));
+                        tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(creditInfo));
             }
         }
     }
@@ -190,9 +189,9 @@ public class DubboExtProperty {
         if (msgInfo != null) {
             String tmp = getValue(ConstField.MSG);
             if (tmp == null) {
-                addNotifications(ConstField.MSG, JSON.toJSONString(msgInfo, ApiSerializerFeature.SERIALIZER_FEATURES));
+                addNotifications(ConstField.MSG, JSON.toJSONString(msgInfo));
             } else {
-                addNotifications(ConstField.MSG, tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(msgInfo, ApiSerializerFeature.SERIALIZER_FEATURES));
+                addNotifications(ConstField.MSG, tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(msgInfo));
             }
         }
     }
