@@ -20,26 +20,7 @@ import java.util.regex.Pattern;
  * Api请求上下文信息
  */
 public class ApiContext {
-    private static final Logger                  logger      = LoggerFactory.getLogger(ApiContext.class);
-    /**
-     * 当前线程的ApiContext对象
-     */
-    private static       ThreadLocal<ApiContext> threadLocal = new ThreadLocal<ApiContext>();
-
-    /**
-     * 获取当前Api上下文
-     */
-    public static ApiContext getCurrent() {
-        ApiContext current = threadLocal.get();
-        if (current == null) {
-            current = new ApiContext();
-            threadLocal.set(current);
-        }
-        return current;
-    }
-
-    private ApiContext() {
-    }
+    private static final Logger logger = LoggerFactory.getLogger(ApiContext.class);
 
     public final Pattern callbackRegex = Pattern.compile("^[A-Za-z]\\w{5,64}$");
 

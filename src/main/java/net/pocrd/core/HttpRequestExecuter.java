@@ -32,41 +32,64 @@ import java.util.concurrent.Future;
  * Created by rendong on 16/8/24.
  * 用于解析http请求并转发到后端dubbo服务接口的处理器
  */
-public class HttpApiExecutor {
-    private static final   Logger               logger                  = LoggerFactory.getLogger(HttpApiExecutor.class);
-    protected static final Marker               SERVLET_MARKER          = MarkerFactory.getMarker("executor");
+public class HttpRequestExecuter {
+    private static final Logger               logger                  = LoggerFactory.getLogger(HttpRequestExecuter.class);
+    private static final Marker               SERVLET_MARKER          = MarkerFactory.getMarker("executor");
     //debug 模式下识别http header中dubbo.version参数,将请求路由到指定的dubbo服务上
-    private static final   String               DEBUG_DUBBOVERSION      = "DUBBO-VERSION";
+    private static final String               DEBUG_DUBBOVERSION      = "DUBBO-VERSION";
     //debug 模式下识别http header中dubbo.service.ip参数,将请求路由到指定的dubbo服务上
-    private static final   String               DEBUG_DUBBOSERVICE_URL  = "DUBBO-SERVICE-URL";
-    private static final   ApiMethodCall[]      EMPTY_METHOD_CALL_ARRAY = new ApiMethodCall[0];
-    private static final   String               FORMAT_XML              = "xml";
-    private static final   String               FORMAT_JSON             = "json";
-    private static final   String               FORMAT_PLAINTEXT        = "plaintext";
-    private static final   String               SERVER_ADDRESS          = "a:";
-    private static final   String               THREADID                = "t:";
-    private static final   String               SPLIT                   = "|";
-    private static final   String               REQ_TAG                 = "s:";
-    private static final   String               CONTENT_TYPE_XML        = "application/xml; charset=utf-8";
-    private static final   String               CONTENT_TYPE_JSON       = "application/json; charset=utf-8";
-    private static final   String               CONTENT_TYPE_JAVASCRIPT = "application/javascript; charset=utf-8";
-    private static final   String               CONTENT_TYPE_PLAINTEXT  = "text/plain";
-    private static final   String               JSONARRAY_PREFIX        = "[";
-    private static final   String               JSONARRAY_SURFIX        = "]";
-    private static final   String               USER_AGENT              = "User-Agent";
-    private static final   String               REFERER                 = "Referer";
-    private static final   Serializer<Response> apiResponseSerializer   = POJOSerializerProvider.getSerializer(Response.class);
+    private static final String               DEBUG_DUBBOSERVICE_URL  = "DUBBO-SERVICE-URL";
+    private static final ApiMethodCall[]      EMPTY_METHOD_CALL_ARRAY = new ApiMethodCall[0];
+    private static final String               FORMAT_XML              = "xml";
+    private static final String               FORMAT_JSON             = "json";
+    private static final String               FORMAT_PLAINTEXT        = "plaintext";
+    private static final String               SERVER_ADDRESS          = "a:";
+    private static final String               THREADID                = "t:";
+    private static final String               SPLIT                   = "|";
+    private static final String               REQ_TAG                 = "s:";
+    private static final String               CONTENT_TYPE_XML        = "application/xml; charset=utf-8";
+    private static final String               CONTENT_TYPE_JSON       = "application/json; charset=utf-8";
+    private static final String               CONTENT_TYPE_JAVASCRIPT = "application/javascript; charset=utf-8";
+    private static final String               CONTENT_TYPE_PLAINTEXT  = "text/plain";
+    private static final String               JSONARRAY_PREFIX        = "[";
+    private static final String               JSONARRAY_SURFIX        = "]";
+    private static final String               USER_AGENT              = "User-Agent";
+    private static final String               REFERER                 = "Referer";
+    private static final String               DEBUG_AGENT             = "pocrd.tester";
+    private static final Serializer<Response> apiResponseSerializer   = POJOSerializerProvider.getSerializer(Response.class);
 
-    private final int            internalPort     = Integer.MIN_VALUE;
-    private final int            sslPort          = Integer.MIN_VALUE;
-    private final String         staticSignPwd    = null;
-    private final String         debugAgent       = null;
-    private final String         zkAddress        = null;
-    private final RsaHelper      rsaSignHelper    = null;
-    private final EccHelper      eccSignHelper    = null;
-    private final RsaHelper      rsaDecryptHelper = null;
-    private final AESTokenHelper aesTokenHelper   = null;
-    private final ApiManager     apiManager       = null;
+    private final ApiContext apiContext = new ApiContext();
+
+    public ApiContext getApiContext() {
+        return apiContext;
+    }
+
+    private RsaHelper      rsaDecryptHelper = null;
+    private AESTokenHelper aesTokenHelper   = null;
+    private ApiManager     apiManager       = null;
+
+    private HttpRequestExecuter() {
+    }
+
+    private static final ThreadLocal<HttpRequestExecuter> executer = new ThreadLocal<HttpRequestExecuter>();
+
+    public static HttpRequestExecuter get() {
+        return executer.get();
+    }
+
+    public static boolean createIfNull(ApiManager apiManager) {
+        HttpRequestExecuter exe = executer.get();
+        if (exe == null) {
+            CommonConfig config = CommonConfig.getInstance();
+            exe = new HttpRequestExecuter();
+            exe.rsaDecryptHelper = new RsaHelper(null, config.getRsaDecryptSecret());
+            exe.aesTokenHelper = new AESTokenHelper(config.getTokenAes());
+            exe.apiManager = apiManager;
+            executer.set(exe);
+            return true;
+        }
+        return false;
+    }
 
     /**
      * 执行web请求
@@ -75,7 +98,6 @@ public class HttpApiExecutor {
         CommonConfig config = CommonConfig.getInstance();
         boolean fatalError = false;
         AbstractReturnCode parseResult = null;
-        ApiContext apiContext = ApiContext.getCurrent();
         long current = System.currentTimeMillis();
         try {
             apiContext.clear();
@@ -195,14 +217,14 @@ public class HttpApiExecutor {
                 }
             } catch (Exception e) {
                 logger.error(SERVLET_MARKER, "output failed.", e);
+            } finally {
+                apiContext.clear();
             }
-
-            apiContext.clear();
         }
     }
 
     private AbstractReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request) {
-        context.isSSL = sslPort == request.getLocalPort();
+        context.isSSL = CommonConfig.getInstance().getInternalPort() == request.getLocalPort();
         String nameString = request.getParameter(CommonParameter.method);
         if (nameString != null && nameString.length() > 0) {
             // 解析多个由','拼接的api名
@@ -328,7 +350,7 @@ public class HttpApiExecutor {
 
             // 调试环境下为带有特殊标识的访问者赋予测试者身份
             if (CompileConfig.isDebug) {
-                if ((context.agent != null && context.agent.contains(debugAgent))) {
+                if ((context.agent != null && context.agent.contains(DEBUG_AGENT))) {
                     if (context.caller == null) {
                         context.caller = CallerInfo.TESTER;
                     }
@@ -363,103 +385,10 @@ public class HttpApiExecutor {
     }
 
     protected AbstractReturnCode checkAuthorization(ApiContext context, int authTarget, HttpServletRequest request) {
-        //        if (SecurityType.Internal.check(authTarget)) {
-        //            return internalPort == request.getLocalPort() ? ApiReturnCode.SUCCESS : ApiReturnCode.ACCESS_DENIED;
-        //        }
-        //
-        //        if (SecurityType.Integrated.check(authTarget)) {//对标注了needVerify==true的Integrated接口进行访问权限的校验
-        //            if (!context.apiCallInfos.get(0).method.needVerfiy) {
-        //                //业务方自己负责验证权限
-        //                return ApiReturnCode.SUCCESS;
-        //            }
-        //            Map<String, ThirdpartyInfo> thirdpartyInfoMap = ThirdpartyConfig.getInstance().getThirdpartyInfoMap();
-        //            if (thirdpartyInfoMap != null) {
-        //                ThirdpartyInfo thirdpartyInfo = thirdpartyInfoMap.get(context.thirdPartyId);
-        //                if (thirdpartyInfo != null) {
-        //                    Set<String> thirdpartyRes = thirdpartyInfo.getApiSet();
-        //                    if (thirdpartyRes != null && thirdpartyRes.contains(
-        //                            context.apiCallInfos.get(0).method.methodName) && thirdpartyInfo.getStatus() == Status.ACTIVATE) {//该第三方允许访问该接口，并且状态为激活状态
-        //                        return ApiReturnCode.SUCCESS;
-        //                    } else {
-        //                        return ApiReturnCode.ACCESS_DENIED;
-        //                    }
-        //                } else {
-        //                    logger.info("unkown thirdparty id,thirdpartyId:{}", context.thirdPartyId);
-        //                    return ApiReturnCode.ACCESS_DENIED;
-        //                }
-        //            } else {
-        //                logger.warn("thirdparty info map is empty!");
-        //                return ApiReturnCode.ACCESS_DENIED;
-        //            }
-        //        }
-        //
-        //        CallerInfo caller = context.caller;
-        //        if (caller == null) {
-        //            if (!RiskManager.allowAccess(context.appid, context.deviceId, 0, context.cid, context.clientIP)) {
-        //                return ApiReturnCode.RISK_MANAGER_DENIED;
-        //            }
-        //        } else {
-        //            if (!RiskManager.allowAccess(context.appid, caller.deviceId, caller.uid, context.cid, context.clientIP)) {
-        //                return ApiReturnCode.RISK_MANAGER_DENIED;
-        //            }
-        //        }
-        //
-        //        if (SecurityType.isNone(authTarget)) {// 不进行权限控制
-        //            return ApiReturnCode.SUCCESS;
-        //        }
-        //
-        //        if ((authTarget & caller.securityLevel) != authTarget) {
-        //            logger.error("securityLevel missmatch. expact:" + authTarget + " actual:" + caller.securityLevel);
-        //            return ApiReturnCode.SECURITY_LEVEL_MISSMATCH;
-        //        }
         return ApiReturnCode.SUCCESS;
     }
 
     protected boolean checkIntegratedSignature(ApiContext context, HttpServletRequest request) {
-        //        // 拼装被签名参数列表
-        //        StringBuilder sb = getSortedParameters(request);
-        //        // 验证签名
-        //        String sig = request.getParameter(CommonParameter.signature);
-        //        //integrated级别接口只允许单接口调用,allowThirdPartyIds在接口注册时已进行校验
-        //        Map<String, ThirdpartyInfo> thirdpartyInfoMap = ThirdpartyConfig.getInstance().getThirdpartyInfoMap();
-        //        if (thirdpartyInfoMap != null) {
-        //            boolean needVerify = context.apiCallInfos.get(0).method.needVerfiy;
-        //            if (!needVerify) {
-        //                //业务方自己负责验证签名
-        //                return true;
-        //            }
-        //            ThirdpartyInfo thirdpartyInfo = thirdpartyInfoMap.get(context.thirdPartyId);
-        //            if (thirdpartyInfo != null) {
-        //                String sm = request.getParameter(CommonParameter.signatureMethod);
-        //                if (SignatureAlgorithm.RSA.getAlgorithm().equalsIgnoreCase(sm)) {
-        //                    byte[] pubKey = thirdpartyInfo.getRsaPublicKeyBytes();
-        //                    if (pubKey != null) {
-        //                        boolean isSuccess = false;
-        //                        try {
-        //                            isSuccess = RsaHelper.verify(Base64Util.decode(sig), sb.toString().getBytes(ConstField.UTF8), pubKey);
-        //                        } catch (Throwable e) {
-        //                            isSuccess = false;
-        //                        }
-        //                        return isSuccess;
-        //                    }
-        //                } else {
-        //                    String md5Key = thirdpartyInfo.getMd5Key();
-        //                    if (md5Key != null) {
-        //                        sb.append(md5Key);
-        //                        return Md5Util.computeToHex(sb.toString().getBytes(ConstField.UTF8)).equals(sig);
-        //                    }
-        //                }
-        //                return false;
-        //            } else {
-        //                //未知的第三方编号
-        //                logger.info("unkown thirdparty id,thirdpartyId:{}", context.thirdPartyId);
-        //                return false;
-        //            }
-        //        } else {
-        //            logger.warn("thirdparty info map is empty!");
-        //            //未配置任何合作方
-        //            return true;
-        //        }
         return false;
     }
 
@@ -482,6 +411,7 @@ public class HttpApiExecutor {
                 sa = SignatureAlgorithm.valueOf(sm.toUpperCase());
             }
             if (SecurityType.isNone(securityLevel)) {
+                String staticSignPwd = CommonConfig.getInstance().getStaticSignPwd();
                 switch (sa) {
                     case MD5: {
                         byte[] expect = HexStringUtil.toByteArray(sig);
@@ -546,7 +476,7 @@ public class HttpApiExecutor {
                     reference.setUrl(targetDubboURL);
                 } else {
                     // 连接注册中心配置
-                    String[] addressArray = zkAddress.split(" ");
+                    String[] addressArray = CommonConfig.getInstance().getZkAddress().split(" ");
                     List<RegistryConfig> registryConfigList = new LinkedList<RegistryConfig>();
                     for (String zkAddress : addressArray) {
                         RegistryConfig registry = new RegistryConfig();
@@ -580,7 +510,7 @@ public class HttpApiExecutor {
             }
         }
         if (api.roleSet != null) {
-            CallerInfo caller = ApiContext.getCurrent().caller;
+            CallerInfo caller = apiContext.caller;
             boolean hasRole = false;
             if (caller != null && caller.role != null) {
                 hasRole = api.roleSet.contains(caller.role);
@@ -934,8 +864,6 @@ public class HttpApiExecutor {
      */
     private void executeApiCall(ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
         try {
-            ApiContext context = ApiContext.getCurrent();
-
             // 当接口声明了静态 mock 返回值或被标记为短路时
             if (call.method.staticMockValue != null) {
                 call.result = call.method.staticMockValue;
@@ -1000,7 +928,7 @@ public class HttpApiExecutor {
                     } else if (ConstField.SET_COOKIE_TOKEN.equals(entry.getKey())) {
                         HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
                         if (value != null && value.length() > 0) {
-                            Cookie tk_cookie = new Cookie(context.appid + CommonParameter.token, URLEncoder.encode(value, "utf-8"));
+                            Cookie tk_cookie = new Cookie(apiContext.appid + CommonParameter.token, URLEncoder.encode(value, "utf-8"));
                             tk_cookie.setMaxAge(-1);
                             tk_cookie.setHttpOnly(true);
                             tk_cookie.setSecure(false);
@@ -1018,7 +946,7 @@ public class HttpApiExecutor {
                             } catch (Exception e) {
                                 logger.error("parse stk expire time error." + stk);
                             }
-                            Cookie stk_cookie = new Cookie(context.appid + CommonParameter.stoken,
+                            Cookie stk_cookie = new Cookie(apiContext.appid + CommonParameter.stoken,
                                     notifications.get(ConstField.SET_COOKIE_STOKEN) == null ? "" : URLEncoder.encode(
                                             stk, "utf-8"));
                             stk_cookie.setMaxAge(duration);
@@ -1027,40 +955,41 @@ public class HttpApiExecutor {
                             stk_cookie.setPath("/");
 
                             // 用于提示客户端当前token是否存在
-                            Cookie ct_cookie = new Cookie(context.appid + "_ct", "1");
+                            Cookie ct_cookie = new Cookie(apiContext.appid + "_ct", "1");
                             ct_cookie.setMaxAge(-1);
                             ct_cookie.setHttpOnly(false);
                             ct_cookie.setSecure(false);
                             ct_cookie.setPath("/");
 
+                            String domain = map.get(apiContext.host);
                             if (CompileConfig.isDebug) {
                                 logger.info(
-                                        "host:" + context.host + " in map:" + map.containsKey(context.host) + " domain:" + map.get(context.host));
+                                        "host:" + apiContext.host + " in map:" + map.containsKey(apiContext.host) + " domain:" + domain);
                             }
 
-                            if (context.host != null && map.containsKey(context.host)) {
-                                tk_cookie.setDomain(map.get(context.host));
-                                stk_cookie.setDomain(map.get(context.host));
-                                ct_cookie.setDomain(map.get(context.host));
+                            if (apiContext.host != null && map.containsKey(apiContext.host)) {
+                                tk_cookie.setDomain(domain);
+                                stk_cookie.setDomain(domain);
+                                ct_cookie.setDomain(domain);
                             }
                             response.addCookie(tk_cookie);
                             response.addCookie(stk_cookie);
                             response.addCookie(ct_cookie);
-                            context.clearUserToken = false; // user token will be override.
+                            apiContext.clearUserToken = false; // user token will be override.
                         } else { // 删除cookie
-                            context.clearUserToken = true;
+                            apiContext.clearUserToken = true;
                         }
                     } else if (ConstField.SET_COOKIE_USER_INFO.equals(entry.getKey())) {
                         HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
                         if (value != null) {
-                            Cookie userInfo_cookie = new Cookie(context.appid + "_uinfo", URLEncoder.encode(value, "utf-8"));
+                            Cookie userInfo_cookie = new Cookie(apiContext.appid + "_uinfo", URLEncoder.encode(value, "utf-8"));
                             userInfo_cookie.setMaxAge(Integer.MAX_VALUE);
                             userInfo_cookie.setHttpOnly(false);
                             userInfo_cookie.setSecure(false);
                             userInfo_cookie.setPath("/");
 
-                            if (context.host != null && map.containsKey(context.host)) {
-                                userInfo_cookie.setDomain(map.get(context.host));
+                            if (apiContext.host != null && map.containsKey(apiContext.host)) {
+                                userInfo_cookie.setDomain(map.get(apiContext.host));
                             }
                             response.addCookie(userInfo_cookie);
                         }
@@ -1077,7 +1006,7 @@ public class HttpApiExecutor {
                     } else if (ConstField.REDIRECT_TO.equals(entry.getKey())) {
                         response.sendRedirect(entry.getValue());
                     } else {
-                        context.addNotification(new KeyValuePair(entry.getKey(), JSONARRAY_PREFIX + value + JSONARRAY_SURFIX));
+                        apiContext.addNotification(new KeyValuePair(entry.getKey(), JSONARRAY_PREFIX + value + JSONARRAY_SURFIX));
                     }
                 }
             }

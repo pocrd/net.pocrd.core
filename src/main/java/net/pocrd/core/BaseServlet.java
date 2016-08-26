@@ -46,7 +46,7 @@ public abstract class BaseServlet {
         this.apiManager = apiManager;
     }
 
-//    private void setResponseHeader(HttpServletRequest request, HttpServletResponse response, ApiContext context) {
+    //    private void setResponseHeader(HttpServletRequest request, HttpServletResponse response, ApiContext context) {
     //        //解决H5跨域问题
     //        {
     //            String origin = request.getHeader("Origin");

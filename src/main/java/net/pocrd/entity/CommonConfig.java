@@ -42,11 +42,17 @@ public class CommonConfig {
                 prop = new Properties();
             }
 
-            instance.setAutogenPath(prop.getProperty("net.pocrd.autogenPath", "/tmp/autogen"));
-            instance.setApigwVersion(prop.getProperty("net.pocrd.apigwVersion", "develop"));
-            instance.setApiInfoXslSite(prop.getProperty("net.pocrd.apiInfoXslSite", "/"));
+            instance.autogenPath = prop.getProperty("net.pocrd.autogenPath", "/tmp/autogen");
+            instance.apigwVersion = prop.getProperty("net.pocrd.apigwVersion", "develop");
+            instance.apiInfoXslSite = prop.getProperty("net.pocrd.apiInfoXslSite", "/");
             instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
-            instance.setDubboAsyncString(prop.getProperty("net.pocrd.dubboAsync", "true"));
+            instance.dubboAsync = "true".equals(prop.getProperty("net.pocrd.dubboAsync", "true"));
+            instance.internalPort = Integer.parseInt(prop.getProperty("net.pocrd.internalPort", "8088"));
+            instance.sslPort = Integer.parseInt(prop.getProperty("net.pocrd.sslPort", "8443"));
+            instance.staticSignPwd = prop.getProperty("net.pocrd.staticSignPwd", "pocrd@2016");
+            instance.zkAddress = prop.getProperty("net.pocrd.zkAddress", "zookeeper://localhost:2181");
+            instance.rsaDecryptSecret = prop.getProperty("net.pocrd.rsaDecryptSecret");
+            instance.tokenAes = prop.getProperty("net.pocrd.tokenAes");
 
             //启动时获取当前机器ip
             try {
@@ -64,13 +70,6 @@ public class CommonConfig {
     }
 
     private String autogenPath;
-
-    private void setAutogenPath(String autogenPath) {
-        this.autogenPath = autogenPath;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.autogenPath:{}", this.autogenPath);
-        }
-    }
 
     public String getAutogenPath() {
         return autogenPath;
@@ -90,13 +89,6 @@ public class CommonConfig {
      */
     private String apigwVersion;
 
-    private void setApigwVersion(String apigwVersion) {
-        this.apigwVersion = apigwVersion;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.apigwVersion:{}", this.apigwVersion);
-        }
-    }
-
     public String getApigwVersion() {
         return apigwVersion;
     }
@@ -105,13 +97,6 @@ public class CommonConfig {
      * 下载apiInfo.xsl的地址，全路径地址
      */
     private String apiInfoXslSite;
-
-    private void setApiInfoXslSite(String apiInfoXslSite) {
-        this.apiInfoXslSite = apiInfoXslSite;
-        if (CompileConfig.isDebug) {
-            logger.info("[CommonConfig.init]net.pocrd.apiInfoXslSite:{}", this.apiInfoXslSite);
-        }
-    }
 
     public String getApiInfoXslSite() {
         return this.apiInfoXslSite;
@@ -146,7 +131,57 @@ public class CommonConfig {
         return this.dubboAsync;
     }
 
-    private void setDubboAsyncString(String async) {
-        this.dubboAsync = "true".equalsIgnoreCase(async);
+    /**
+     * 内网端口号, 允许调用 Internal 接口
+     */
+    private int internalPort = Integer.MIN_VALUE;
+
+    public int getInternalPort() {
+        return internalPort;
+    }
+
+    /**
+     * ssl 入口端口号, 允许调用要求加密传输的接口
+     */
+    private int sslPort = Integer.MIN_VALUE;
+
+    public int getSslPort() {
+        return sslPort;
+    }
+
+    /**
+     * 静态加密字符串, 用于对接口做简单签名验证
+     */
+    private String staticSignPwd = null;
+
+    public String getStaticSignPwd() {
+        return staticSignPwd;
+    }
+
+    /**
+     * zookeeper 地址
+     */
+    private String zkAddress = null;
+
+    public String getZkAddress() {
+        return zkAddress;
+    }
+
+    /**
+     * 与客户端进行密文通信的rsa私钥
+     */
+    private String rsaDecryptSecret = null;
+
+    public String getRsaDecryptSecret() {
+        return rsaDecryptSecret;
+    }
+
+    /**
+     * 用于token解密的aes秘钥
+     */
+    private String tokenAes = null;
+
+    public String getTokenAes() {
+        return tokenAes;
     }
 }

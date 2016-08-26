@@ -2,6 +2,7 @@ package net.pocrd.dubboext;
 
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.fastjson.JSON;
+import net.pocrd.core.HttpRequestExecuter;
 import net.pocrd.define.CommonParameter;
 import net.pocrd.define.ConstField;
 import net.pocrd.entity.ApiContext;
@@ -249,7 +250,7 @@ public class DubboExtProperty {
     }
 
     public static void setClientCallerToAttachment() {
-        ApiContext apiContext = ApiContext.getCurrent();
+        ApiContext apiContext = HttpRequestExecuter.get().getApiContext();
         RpcContext context = RpcContext.getContext();
         context.setAttachment(CommonParameter.callId, apiContext.cid);
         context.setAttachment("clientIP", apiContext.clientIP);
