@@ -32,8 +32,8 @@ import java.util.concurrent.Future;
  * Created by rendong on 16/8/24.
  * 用于解析http请求并转发到后端dubbo服务接口的处理器
  */
-public class HttpRequestExecuter {
-    private static final Logger               logger                  = LoggerFactory.getLogger(HttpRequestExecuter.class);
+public class HttpRequestExecutor {
+    private static final Logger               logger                  = LoggerFactory.getLogger(HttpRequestExecutor.class);
     private static final Marker               SERVLET_MARKER          = MarkerFactory.getMarker("executor");
     //debug 模式下识别http header中dubbo.version参数,将请求路由到指定的dubbo服务上
     private static final String               DEBUG_DUBBOVERSION      = "DUBBO-VERSION";
@@ -68,24 +68,24 @@ public class HttpRequestExecuter {
     private AESTokenHelper aesTokenHelper   = null;
     private ApiManager     apiManager       = null;
 
-    private HttpRequestExecuter() {
+    private HttpRequestExecutor() {
     }
 
-    private static final ThreadLocal<HttpRequestExecuter> executer = new ThreadLocal<HttpRequestExecuter>();
+    private static final ThreadLocal<HttpRequestExecutor> executor = new ThreadLocal<HttpRequestExecutor>();
 
-    public static HttpRequestExecuter get() {
-        return executer.get();
+    public static HttpRequestExecutor get() {
+        return executor.get();
     }
 
     public static boolean createIfNull(ApiManager apiManager) {
-        HttpRequestExecuter exe = executer.get();
+        HttpRequestExecutor exe = executor.get();
         if (exe == null) {
             CommonConfig config = CommonConfig.getInstance();
-            exe = new HttpRequestExecuter();
+            exe = new HttpRequestExecutor();
             exe.rsaDecryptHelper = new RsaHelper(null, config.getRsaDecryptSecret());
             exe.aesTokenHelper = new AESTokenHelper(config.getTokenAes());
             exe.apiManager = apiManager;
-            executer.set(exe);
+            executor.set(exe);
             return true;
         }
         return false;
@@ -496,8 +496,8 @@ public class HttpRequestExecuter {
                 } catch (Exception e) {
                     logger.error("get service failed.", e);
                 }
-                HttpApiExecuter executer = HttpApiProvider.getApiExecuter(name, api);
-                executer.setInstance(service);// 重设服务实例
+                HttpApiExecutor executor = HttpApiProvider.getApiExecutor(name, api);
+                executor.setInstance(service);// 重设服务实例
 
                 // 当接口为 mock 实现时, 将指向客户端指定位置的 dubbo service 注入给 mock 实现
                 if (api.mocked) {
@@ -505,7 +505,7 @@ public class HttpRequestExecuter {
                         ((MockApiImplementation)api.serviceInstance).$setProxy(service);
                     }
                 } else {
-                    return executer.execute(params);
+                    return executor.execute(params);
                 }
             }
         }

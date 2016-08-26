@@ -3,8 +3,7 @@ package net.pocrd.util;
 import net.pocrd.annotation.Description;
 import net.pocrd.core.PocClassLoader;
 import net.pocrd.define.AutowireableParameter;
-import net.pocrd.define.CommonParameter;
-import net.pocrd.define.HttpApiExecuter;
+import net.pocrd.define.HttpApiExecutor;
 import net.pocrd.entity.ApiMethodInfo;
 import net.pocrd.entity.ApiParameterInfo;
 import net.pocrd.entity.CommonConfig;
@@ -25,16 +24,16 @@ public class HttpApiProvider implements Opcodes {
     private static final String REGEX_PREFIX = "regex_";
     private static final String CONST_PREFIX = "const_";
 
-    public synchronized static HttpApiExecuter getApiExecuter(String name, ApiMethodInfo method) {
+    public synchronized static HttpApiExecutor getApiExecutor(String name, ApiMethodInfo method) {
         try {
             Class<?> clazz = method.proxyMethodInfo.getDeclaringClass();
             ApiParameterInfo[] parameterInfos = method.parameterInfos;
-            String className = "net/pocrd/autogen/ApiExecuter_" + name.replace('.', '_');
+            String className = "net/pocrd/autogen/ApiExecutor_" + name.replace('.', '_');
             className = className.replace('$', '_');
             String classDesc = "L" + className + ";";
             ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
             FieldVisitor fv;
-            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", new String[] { Type.getInternalName(HttpApiExecuter.class) });
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, className, null, "java/lang/Object", new String[] { Type.getInternalName(HttpApiExecutor.class) });
             {
                 fv = cw.visitField(ACC_PRIVATE, "instance", "Ljava/lang/Object;", null, null);
                 fv.visitEnd();
@@ -366,12 +365,12 @@ public class HttpApiProvider implements Opcodes {
             if (CompileConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
-                    File folder = new File(CommonConfig.getInstance().getAutogenPath() + File.separator + "ApiExecuter" + File.separator);
+                    File folder = new File(CommonConfig.getInstance().getAutogenPath() + File.separator + "ApiExecutor" + File.separator);
                     if (!folder.exists()) {
                         folder.mkdirs();
                     }
                     fos = new FileOutputStream(
-                            CommonConfig.getInstance().getAutogenPath() + File.separator + "ApiExecuter" + File.separator + name + ".class");
+                            CommonConfig.getInstance().getAutogenPath() + File.separator + "ApiExecutor" + File.separator + name + ".class");
                     fos.write(cw.toByteArray());
                 } finally {
                     if (fos != null) {
@@ -379,8 +378,9 @@ public class HttpApiProvider implements Opcodes {
                     }
                 }
             }
-            HttpApiExecuter e = (HttpApiExecuter)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className.replace('/', '.'),
-                    cw.toByteArray()).newInstance();
+            HttpApiExecutor e = (HttpApiExecutor)new PocClassLoader(Thread.currentThread().getContextClassLoader())
+                    .defineClass(className.replace('/', '.'),
+                            cw.toByteArray()).newInstance();
             e.setInstance(method.serviceInstance);
             return e;
         } catch (Exception e) {

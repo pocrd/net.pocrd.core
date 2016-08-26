@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class ApiManager {
     private static final Logger                       logger      = LoggerFactory.getLogger(ApiManager.class);
-    private              Map<String, HttpApiExecuter> nameToApi   = new ConcurrentHashMap<String, HttpApiExecuter>();
+    private              Map<String, HttpApiExecutor> nameToApi   = new ConcurrentHashMap<String, HttpApiExecutor>();
     private              Map<String, ApiMethodInfo>   apiInfos    = new ConcurrentHashMap<String, ApiMethodInfo>();
     private static final String                       UNDER_SCORE = "_";
 
@@ -61,7 +61,7 @@ public final class ApiManager {
                 }
                 if (api.state == ApiOpenState.OPEN || api.state == ApiOpenState.DEPRECATED) {
                     apiInfos.put(api.methodName, api);
-                    nameToApi.put(api.methodName, HttpApiProvider.getApiExecuter(api.methodName, api));
+                    nameToApi.put(api.methodName, HttpApiProvider.getApiExecutor(api.methodName, api));
                 }
             }
         } catch (Throwable t) {

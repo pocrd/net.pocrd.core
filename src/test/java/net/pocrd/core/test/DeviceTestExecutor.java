@@ -1,6 +1,6 @@
 package net.pocrd.core.test;
 
-import net.pocrd.define.HttpApiExecuter;
+import net.pocrd.define.HttpApiExecutor;
 import net.pocrd.entity.ApiReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.responseEntity.ObjectArrayResp;
@@ -8,7 +8,7 @@ import net.pocrd.responseEntity.ObjectArrayResp;
 /**
  * Created by gkq on 2014/6/6.
  */
-public class DeviceTestExecuter implements HttpApiExecuter {
+public class DeviceTestExecutor implements HttpApiExecutor {
     private Object instance;
 
     public void setInstance(Object obj) {

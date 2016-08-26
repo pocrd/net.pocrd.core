@@ -1,6 +1,6 @@
 package net.pocrd.entity;
 
-import net.pocrd.core.HttpRequestExecuter;
+import net.pocrd.core.HttpRequestExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ public final class AccessLogger {
      * no error
      */
     public void logRequest() {
-        ApiContext apiContext = HttpRequestExecuter.get().getApiContext();
+        ApiContext apiContext = HttpRequestExecutor.get().getApiContext();
         requestFileLogger.info(
                 apiContext.getRequestString().replace("\n", "") + ACCESS_SPLITTER + apiContext.agent + ACCESS_SPLITTER + apiContext.clientIP
                         + ACCESS_SPLITTER
@@ -40,7 +40,7 @@ public final class AccessLogger {
      * @param data
      */
     public void logRequest(String errorMsg, String data) {
-        ApiContext apiContext = HttpRequestExecuter.get().getApiContext();
+        ApiContext apiContext = HttpRequestExecutor.get().getApiContext();
         requestFileLogger.info(
                 apiContext.getRequestString().replace("\n", "") + ACCESS_SPLITTER + apiContext.agent + ACCESS_SPLITTER + apiContext.clientIP
                         + ACCESS_SPLITTER + apiContext.token + ACCESS_SPLITTER + errorMsg + ACCESS_SPLITTER + data + ACCESS_SPLITTER
@@ -60,7 +60,7 @@ public final class AccessLogger {
      */
     public void logAccess(int costTime, String methodName, int returnCode, int orginReturnCode, int resultLen, String callMsg,
             String serviceLog) {
-        ApiContext apiContext = HttpRequestExecuter.get().getApiContext();
+        ApiContext apiContext = HttpRequestExecutor.get().getApiContext();
         accessFileLogger.info(costTime + ACCESS_SPLITTER + methodName + ACCESS_SPLITTER + returnCode + ACCESS_SPLITTER + orginReturnCode
                 + ACCESS_SPLITTER + resultLen + ACCESS_SPLITTER + (callMsg == null ? "" : callMsg.replace("\n", "")) + ACCESS_SPLITTER +
                 apiContext.startTime + ":" + serviceLog);
