@@ -338,6 +338,10 @@ public final class ApiManager {
                             } else if (n.annotationType() == ApiAutowired.class) {
                                 ApiAutowired p = (ApiAutowired)n;
                                 pInfo.name = p.value().name();
+                                if (AutowireableParameter.postBody.name().equals(pInfo.name) && parameterTypes.length != 1) {
+                                    throw new RuntimeException(
+                                            "one parameter only for postBody " + api.name() + "  " + clazz.getName());
+                                }
                                 pInfo.isAutowired = true;
                                 break;
                             } else if (n.annotationType() == DesignedParameter.class) {

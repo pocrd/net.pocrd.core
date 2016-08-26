@@ -72,6 +72,28 @@ public class ApiContext {
         }
     }
 
+    public final String recoverRequestBody() {
+        StringBuilder sb = new StringBuilder(100);
+        if (requestInfo != null) {
+            try {
+                for (String key : requestInfo.keySet()) {
+                    if (key != null) {
+                        sb.append(key);
+                        sb.append("=");
+                        sb.append(URLEncoder.encode(requestInfo.get(key), "UTF-8"));
+                        sb.append("&");
+                    }
+                }
+                if (sb.length() > 0) {
+                    sb.setLength(sb.length() - 1);
+                }
+            } catch (UnsupportedEncodingException e) {
+                logger.error("URLEncoder encode the post data failad", e);
+            }
+        }
+        return sb.toString();
+    }
+
     public final String getRequestString() {
         StringBuilder sb = new StringBuilder(100);
         sb.append(isSSL ? "https://" : "http://");

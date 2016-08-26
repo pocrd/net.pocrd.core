@@ -13,7 +13,7 @@ public enum SecurityType {
     None(0x00),
 
     /**
-     * 不是独立的认证方式, 带有该标识的token只在ssl信道中传递, 用于处理跨domain的csrftoken同步. 该安全级别不能用于访问任何接口
+     * 带有该标识的token只在ssl信道中传递, 用于处理跨domain的csrftoken同步. 该安全级别不能用于访问任何接口
      */
     SeceretUserToken(0x01),
 
@@ -115,18 +115,22 @@ public enum SecurityType {
         return auth == 0;
     }
 
+    private static final int EXPIRABLE = OAuthVerified.code | User.code | UserLogin.code | SeceretUserToken.code;
+
     /**
-     * 判断auth是否会过期, 包含 OAuthVerified, User, UserLogin
+     * 判断auth是否会过期, 包含 OAuthVerified, User, UserLogin, SeceretUserToken
      * 其中之一的auth都可能会过期
      */
     public static boolean expirable(int auth) {
-        return (auth & 0x0322) != 0;
+        return (auth & EXPIRABLE) != 0;
     }
+
+    private static final int TOKEN_REQUIRED = RegisteredDevice.code | OAuthVerified.code | User.code | UserLogin.code;
 
     /**
      * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserLogin
      */
-    public static boolean requireToken(int auth){
-        return (auth & 0x0332) != 0;
+    public static boolean requireToken(int auth) {
+        return (auth & TOKEN_REQUIRED) != 0;
     }
 }

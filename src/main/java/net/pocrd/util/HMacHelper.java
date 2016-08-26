@@ -43,17 +43,13 @@ public class HMacHelper {
     }
 
     public byte[] sign(byte[] content) {
-        //        synchronized (this) {
         return mac.doFinal(content);
-        //        }
     }
 
     public boolean verify(byte[] sig, byte[] content) {
         try {
             byte[] result = null;
-            //            synchronized (this) {
             result = mac.doFinal(content);
-            //            }
             return Arrays.equals(sig, result);
         } catch (Exception e) {
             logger.error("varify sig failed.", e);
