@@ -16,7 +16,9 @@ import net.pocrd.entity.*;
 import net.pocrd.responseEntity.KeyValuePair;
 import net.pocrd.util.*;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -34,7 +36,6 @@ import java.util.concurrent.Future;
  */
 public class HttpRequestExecutor {
     private static final Logger               logger                  = LoggerFactory.getLogger(HttpRequestExecutor.class);
-    private static final Marker               SERVLET_MARKER          = MarkerFactory.getMarker("executor");
     //debug 模式下识别http header中dubbo.version参数,将请求路由到指定的dubbo服务上
     private static final String               DEBUG_DUBBOVERSION      = "DUBBO-VERSION";
     //debug 模式下识别http header中dubbo.service.ip参数,将请求路由到指定的dubbo服务上
@@ -68,7 +69,7 @@ public class HttpRequestExecutor {
     private AESTokenHelper aesTokenHelper   = null;
     private ApiManager     apiManager       = null;
 
-    private HttpRequestExecutor() {
+    protected HttpRequestExecutor() {
     }
 
     private static final ThreadLocal<HttpRequestExecutor> executor = new ThreadLocal<HttpRequestExecutor>();
@@ -81,7 +82,11 @@ public class HttpRequestExecutor {
         HttpRequestExecutor exe = executor.get();
         if (exe == null) {
             CommonConfig config = CommonConfig.getInstance();
-            exe = new HttpRequestExecutor();
+            try {
+                exe = (HttpRequestExecutor)config.getExecutorFactory().newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("load http request executor failed. ", e);
+            }
             exe.rsaDecryptHelper = new RsaHelper(null, config.getRsaDecryptSecret());
             exe.aesTokenHelper = new AESTokenHelper(config.getTokenAes());
             exe.apiManager = apiManager;
@@ -94,7 +99,7 @@ public class HttpRequestExecutor {
     /**
      * 执行web请求
      */
-    private void processRequest(HttpServletRequest request, HttpServletResponse response) {
+    public void processRequest(HttpServletRequest request, HttpServletResponse response) {
         CommonConfig config = CommonConfig.getInstance();
         boolean fatalError = false;
         AbstractReturnCode parseResult = null;
@@ -114,7 +119,7 @@ public class HttpRequestExecutor {
                 }
             }
         } catch (Exception e) {
-            logger.error(SERVLET_MARKER, "init request failed.", e);
+            logger.error("init request failed.", e);
             fatalError = true;
         }
         try {
@@ -141,7 +146,7 @@ public class HttpRequestExecutor {
                 MDC.remove(CommonParameter.method);
             }
         } catch (Throwable t) {
-            logger.error(SERVLET_MARKER, "api execute error.", t);
+            logger.error("api execute error.", t);
             fatalError = true;
         } finally {
             try {
@@ -206,17 +211,17 @@ public class HttpRequestExecutor {
                     // 访问被拒绝(如签名验证失败)
                     Exception e = output(apiContext, parseResult, EMPTY_METHOD_CALL_ARRAY, response);
                     if (e != null) {
-                        logger.error(SERVLET_MARKER, "output failed.", e);
+                        logger.error("output failed.", e);
                     }
                 } else {
                     Exception e = output(apiContext, ApiReturnCode.SUCCESS,
                             apiContext.apiCallInfos.toArray(new ApiMethodCall[apiContext.apiCallInfos.size()]), response);
                     if (e != null) {
-                        logger.error(SERVLET_MARKER, "output failed.", e);
+                        logger.error("output failed.", e);
                     }
                 }
             } catch (Exception e) {
-                logger.error(SERVLET_MARKER, "output failed.", e);
+                logger.error("output failed.", e);
             } finally {
                 apiContext.clear();
             }
@@ -537,7 +542,7 @@ public class HttpRequestExecutor {
                 }
             }
         } catch (Exception e) {
-            logger.error(SERVLET_MARKER, "parse token failed.", e);
+            logger.error("parse token failed.", e);
         }
     }
 
@@ -582,7 +587,7 @@ public class HttpRequestExecutor {
                         context.clearUserToken = true;
                     }
                 } catch (Exception e) {
-                    logger.error(SERVLET_MARKER, "deviceId error " + context.deviceIdStr, e);
+                    logger.error("deviceId error " + context.deviceIdStr, e);
                     setDeviceIDinCookie(context, response);
                 }
             } else {
@@ -655,7 +660,7 @@ public class HttpRequestExecutor {
             //设置序列化异常错误码
             call.resultLen = 0;
             call.replaceReturnCode(ApiReturnCode.SERIALIZE_FAILED);
-            logger.error(SERVLET_MARKER, "serialize object failed.", e);
+            logger.error("serialize object failed.", e);
         } finally {
             apiContext.serializeCount++;
         }
@@ -719,7 +724,7 @@ public class HttpRequestExecutor {
                                 context.token = URLDecoder.decode(c.getValue(), "utf-8");
                             }
                         } catch (Exception e) {
-                            logger.error(SERVLET_MARKER, "token in cookie error " + c.getValue(), e);
+                            logger.error("token in cookie error " + c.getValue(), e);
                             context.clearUserToken = true;
                         }
                     } else if (stokenName.equals(c.getName())) {
@@ -728,7 +733,7 @@ public class HttpRequestExecutor {
                                 context.stoken = URLDecoder.decode(c.getValue(), "utf-8");
                             }
                         } catch (Exception e) {
-                            logger.error(SERVLET_MARKER, "stoken in cookie error " + c.getValue(), e);
+                            logger.error("stoken in cookie error " + c.getValue(), e);
                             context.clearUserToken = true;
                         }
                     } else if (CommonParameter.cookieDeviceId.equals(c.getName())) {
@@ -790,7 +795,7 @@ public class HttpRequestExecutor {
         for (String key : map.keySet()) {
             String[] values = map.get(key);
             if (values.length > 1) {
-                logger.error(SERVLET_MARKER, "parameter " + key + " has " + values.length + " values " + StringUtils.join(values, "|||"));
+                logger.error("parameter " + key + " has " + values.length + " values " + StringUtils.join(values, "|||"));
             }
             context.requestInfo.put(key, (values == null || values.length == 0) ? "" : values[0]);
         }
@@ -1014,30 +1019,30 @@ public class HttpRequestExecutor {
         } catch (ReturnCodeException rce) {//APIGW内部异常传递,RuntimeException
             call.setReturnCode(rce.getCode());
             if (rce.getCode() == ApiReturnCode.PARAMETER_ERROR || rce.getCode() == ApiReturnCode.ROLE_DENIED) {
-                logger.error(SERVLET_MARKER, "servlet catch an api error. " + rce.getMessage());
+                logger.error("servlet catch an api error. " + rce.getMessage());
             } else {
-                logger.error(SERVLET_MARKER, "servlet catch an api error.", rce);
+                logger.error("servlet catch an api error.", rce);
             }
         } catch (Throwable t) {
             if (t instanceof ServiceException) {
                 ServiceException se = (ServiceException)t;
-                logger.error(SERVLET_MARKER, "service exception. code:" + se.getCode() + " msg:" + se.getMsg());
+                logger.error("service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof ServiceException) {
                 ServiceException se = (ServiceException)t.getCause();
-                logger.error(SERVLET_MARKER, "inner service exception. code:" + se.getCode() + " msg:" + se.getMsg());
+                logger.error("inner service exception. code:" + se.getCode() + " msg:" + se.getMsg());
                 call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.TimeoutException) {
-                logger.error(SERVLET_MARKER, "dubbo timeout.", t);
+                logger.error("dubbo timeout.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_TIMEOUT_ERROR);
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.RemotingException) {
-                logger.error(SERVLET_MARKER, "dubbo service exception.", t);
+                logger.error("dubbo service exception.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_ERROR);
             } else if (t instanceof com.alibaba.dubbo.rpc.RpcException) {
-                logger.error(SERVLET_MARKER, "dubbo exception.", t);
+                logger.error("dubbo exception.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_NOTFOUND_ERROR);
             } else {
-                logger.error(SERVLET_MARKER, "internal error.", t);
+                logger.error("internal error.", t);
                 call.setReturnCode(ApiReturnCode.INTERNAL_SERVER_ERROR);
             }
         } finally {
@@ -1115,7 +1120,7 @@ public class HttpRequestExecutor {
         return outputException;
     }
 
-    private StringBuilder getSortedParameters(HttpServletRequest request) {
+    public static StringBuilder getSortedParameters(HttpServletRequest request) {
         // 拼装被签名参数列表
         StringBuilder sb = new StringBuilder(128);
         {

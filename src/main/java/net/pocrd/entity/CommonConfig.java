@@ -1,10 +1,12 @@
 package net.pocrd.entity;
 
+import net.pocrd.core.HttpRequestExecutor;
 import net.pocrd.util.Md5Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
+import java.lang.reflect.Constructor;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Properties;
@@ -53,6 +55,7 @@ public class CommonConfig {
             instance.zkAddress = prop.getProperty("net.pocrd.zkAddress", "zookeeper://localhost:2181");
             instance.rsaDecryptSecret = prop.getProperty("net.pocrd.rsaDecryptSecret");
             instance.tokenAes = prop.getProperty("net.pocrd.tokenAes");
+            instance.setExecutorFactory(prop.getProperty("net.pocrd.httpRequestExecutor"));
 
             //启动时获取当前机器ip
             try {
@@ -183,5 +186,29 @@ public class CommonConfig {
 
     public String getTokenAes() {
         return tokenAes;
+    }
+
+    /**
+     * 用于处理http请求的执行器, 必须是 HttpRequestExecutor 的子类
+     */
+    private Constructor executorFactory = null;
+
+    public Constructor getExecutorFactory() {
+        return executorFactory;
+    }
+
+    public void setExecutorFactory(String executorName) {
+        Class clazz = null;
+        try {
+            if (executorName != null) {
+                clazz = Class.forName(executorName);
+            } else {
+                clazz = HttpRequestExecutor.class;
+            }
+            executorFactory = clazz.getDeclaredConstructor();
+            executorFactory.setAccessible(true);
+        } catch (Exception e) {
+            logger.error("load http request executor failed. name:" + executorName, e);
+        }
     }
 }

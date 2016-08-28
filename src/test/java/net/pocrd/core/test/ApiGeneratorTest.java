@@ -59,20 +59,20 @@ public class ApiGeneratorTest {
     @Test
     public void testJavaGenertorViaJar() throws ParserConfigurationException, IOException, SAXException {
         new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build()
-                .generateViaJar("/home/admin/api/demo-api.jar");
+                .generateViaJar("/home/admin/api/apigwtest-api.jar");
     }
 
     @Test
     public void testObjcGenertor() throws ParserConfigurationException, IOException, SAXException {
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/tmp/").setClassPrefix("SF").build().generateViaApiMethodInfo(infoList);
+        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/tmp/").setClassPrefix("PoC").build().generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testGenerateFromNetResource() {
         new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/autogen/oc").setClassPrefix("SF").build().generateWithApiInfo(
                 "http://115.28.160.84/info.api?raw");
-        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/autogen/java").setPackagePrefix("com.sfht.m.app.client").build()
+        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/autogen/java").setPackagePrefix("net.pocrd.m.app.client").build()
                 .generateWithApiInfo("http://115.28.160.84/info.api?raw");
     }
 
