@@ -228,6 +228,33 @@ public class HttpRequestExecutor {
         }
     }
 
+    protected AbstractReturnCode checkAuthorization(ApiContext context, int authTarget, HttpServletRequest request) {
+        return ApiReturnCode.SUCCESS;
+    }
+
+    protected boolean checkIntegratedSignature(ApiContext context, HttpServletRequest request) {
+        return false;
+    }
+
+    /**
+     * 解析调用者身份(在验证签名正确前此身份不受信任)
+     */
+    protected void parseCallerInfo(ApiContext context) {
+        try {
+            // user token存在时解析出调用者信息
+            if (context.token != null) {
+                if (context.token != null && context.token.length() > 0) {
+                    context.caller = aesTokenHelper.parseToken(context.token);
+                    if (context.caller != null && context.caller.uid != 0) {
+                        MDC.put(CommonParameter.userId, String.valueOf(context.caller.uid));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("parse token failed.", e);
+        }
+    }
+
     private AbstractReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request) {
         context.isSSL = CommonConfig.getInstance().getInternalPort() == request.getLocalPort();
         String nameString = request.getParameter(CommonParameter.method);
@@ -389,71 +416,7 @@ public class HttpRequestExecutor {
         return ApiReturnCode.REQUEST_PARSE_ERROR;
     }
 
-    protected AbstractReturnCode checkAuthorization(ApiContext context, int authTarget, HttpServletRequest request) {
-        return ApiReturnCode.SUCCESS;
-    }
-
-    protected boolean checkIntegratedSignature(ApiContext context, HttpServletRequest request) {
-        return false;
-    }
-
-    /**
-     * 签名验证，在debug编译的环境中允许使用特定user agent跳过签名验证
-     */
-    protected boolean checkSignature(CallerInfo caller, int securityLevel, HttpServletRequest request) {
-        // 拼装被签名参数列表
-        StringBuilder sb = getSortedParameters(request);
-
-        // 验证签名
-        String sig = request.getParameter(CommonParameter.signature);
-        if (sig != null && sig.length() > 0) {
-            // 安全级别为None的接口仅进行静态秘钥签名验证,sha1,md5
-            String sm = request.getParameter(CommonParameter.signatureMethod);
-            SignatureAlgorithm sa = null;
-            if (sm == null) {
-                sa = SignatureAlgorithm.SHA1;
-            } else {
-                sa = SignatureAlgorithm.valueOf(sm.toUpperCase());
-            }
-            if (SecurityType.isNone(securityLevel)) {
-                String staticSignPwd = CommonConfig.getInstance().getStaticSignPwd();
-                switch (sa) {
-                    case MD5: {
-                        byte[] expect = HexStringUtil.toByteArray(sig);
-                        byte[] actual = Md5Util.compute(sb.append(staticSignPwd).toString().getBytes(ConstField.UTF8));
-                        return Arrays.equals(expect, actual);
-                    }
-                    case SHA1: {
-                        byte[] expect = Base64Util.decode(sig);
-                        byte[] actual = SHAUtil.computeSHA1(sb.append(staticSignPwd).toString().getBytes(ConstField.UTF8));
-                        return Arrays.equals(expect, actual);
-                    }
-                }
-            } else if (caller != null) {// 所有有安全验证需求的接口需要检测动态签名，
-                switch (sa) {
-                    case MD5: {
-                        sb.append(HexStringUtil.toHexString(caller.key));
-                        return Arrays.equals(HexStringUtil.toByteArray(sig), Md5Util.compute(sb.toString().getBytes(ConstField.UTF8)));
-                    }
-                    case SHA1: {
-                        sb.append(HexStringUtil.toHexString(caller.key));
-                        return Arrays.equals(Base64Util.decode(sig), SHAUtil.computeSHA1(sb.toString().getBytes(ConstField.UTF8)));
-                    }
-                    case RSA: {
-                        return RsaHelper.verify(Base64Util.decode(sig), sb.toString().getBytes(ConstField.UTF8), caller.key);
-                    }
-                    case ECC: {
-                        return EccHelper.verify(Base64Util.decode(sig), sb.toString().getBytes(ConstField.UTF8), caller.key);
-                    }
-                }
-            } else {
-                return false;
-            }
-        }
-        return false;
-    }
-
-    protected Object processCall(String name, String[] params) {
+    private Object processCall(String name, String[] params) {
         ApiMethodInfo api = apiManager.getApiMethodInfo(name);
         if (CompileConfig.isDebug) {
             String targetDubboVersion = null;
@@ -525,25 +488,6 @@ public class HttpRequestExecutor {
             }
         }
         return apiManager.processRequest(name, params);
-    }
-
-    /**
-     * 解析调用者身份(在验证签名正确前此身份不受信任)
-     */
-    protected void parseCallerInfo(ApiContext context) {
-        try {
-            // user token存在时解析出调用者信息
-            if (context.token != null) {
-                if (context.token != null && context.token.length() > 0) {
-                    context.caller = aesTokenHelper.parseToken(context.token);
-                    if (context.caller != null && context.caller.uid != 0) {
-                        MDC.put(CommonParameter.userId, String.valueOf(context.caller.uid));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.error("parse token failed.", e);
-        }
     }
 
     private void setResponseHeader(HttpServletRequest request, HttpServletResponse response, ApiContext context) {
@@ -1053,7 +997,7 @@ public class HttpRequestExecutor {
     /**
      * 输出返回到调用端
      */
-    private Exception output(ApiContext apiContext, AbstractReturnCode code, ApiMethodCall[] calls, HttpServletResponse response) {
+    private static Exception output(ApiContext apiContext, AbstractReturnCode code, ApiMethodCall[] calls, HttpServletResponse response) {
         Exception outputException = null;
 
         try {
@@ -1118,6 +1062,62 @@ public class HttpRequestExecutor {
             outputException = e;
         }
         return outputException;
+    }
+
+    /**
+     * 签名验证，在debug编译的环境中允许使用特定user agent跳过签名验证
+     */
+    public static boolean checkSignature(CallerInfo caller, int securityLevel, HttpServletRequest request) {
+        // 拼装被签名参数列表
+        StringBuilder sb = getSortedParameters(request);
+
+        // 验证签名
+        String sig = request.getParameter(CommonParameter.signature);
+        if (sig != null && sig.length() > 0) {
+            // 安全级别为None的接口仅进行静态秘钥签名验证,sha1,md5
+            String sm = request.getParameter(CommonParameter.signatureMethod);
+            SignatureAlgorithm sa = null;
+            if (sm == null) {
+                sa = SignatureAlgorithm.SHA1;
+            } else {
+                sa = SignatureAlgorithm.valueOf(sm.toUpperCase());
+            }
+            if (SecurityType.isNone(securityLevel)) {
+                String staticSignPwd = CommonConfig.getInstance().getStaticSignPwd();
+                switch (sa) {
+                    case MD5: {
+                        byte[] expect = HexStringUtil.toByteArray(sig);
+                        byte[] actual = Md5Util.compute(sb.append(staticSignPwd).toString().getBytes(ConstField.UTF8));
+                        return Arrays.equals(expect, actual);
+                    }
+                    case SHA1: {
+                        byte[] expect = Base64Util.decode(sig);
+                        byte[] actual = SHAUtil.computeSHA1(sb.append(staticSignPwd).toString().getBytes(ConstField.UTF8));
+                        return Arrays.equals(expect, actual);
+                    }
+                }
+            } else if (caller != null) {// 所有有安全验证需求的接口需要检测动态签名，
+                switch (sa) {
+                    case MD5: {
+                        sb.append(HexStringUtil.toHexString(caller.key));
+                        return Arrays.equals(HexStringUtil.toByteArray(sig), Md5Util.compute(sb.toString().getBytes(ConstField.UTF8)));
+                    }
+                    case SHA1: {
+                        sb.append(HexStringUtil.toHexString(caller.key));
+                        return Arrays.equals(Base64Util.decode(sig), SHAUtil.computeSHA1(sb.toString().getBytes(ConstField.UTF8)));
+                    }
+                    case RSA: {
+                        return RsaHelper.verify(Base64Util.decode(sig), sb.toString().getBytes(ConstField.UTF8), caller.key);
+                    }
+                    case ECC: {
+                        return EccHelper.verify(Base64Util.decode(sig), sb.toString().getBytes(ConstField.UTF8), caller.key);
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+        return false;
     }
 
     public static StringBuilder getSortedParameters(HttpServletRequest request) {
