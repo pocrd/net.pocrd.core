@@ -23,6 +23,7 @@ import org.slf4j.MDC;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.URLDecoder;
@@ -317,7 +318,13 @@ public class HttpRequestExecutor {
                                         break;
                                     case postBody:
                                         if (SecurityType.Integrated.check(method.securityLevel)) {
-                                            parameters[i] = context.recoverRequestBody();
+                                            String contentType = request.getHeader("Content-Type");
+                                            if (contentType == null || contentType.length() == 0 || contentType
+                                                    .startsWith("application/x-www-form-urlencoded")) {
+                                                parameters[i] = context.recoverRequestBody();
+                                            } else {
+                                                parameters[i] = readPostBody(request);
+                                            }
                                         }
                                         break;
                                     case channel:
@@ -992,6 +999,22 @@ public class HttpRequestExecutor {
         } finally {
             DubboExtProperty.clearNotificaitons();
         }
+    }
+
+    private String readPostBody(HttpServletRequest request) {
+        StringBuffer sb = new StringBuffer();
+        String line = null;
+        try {
+            BufferedReader reader = request.getReader();
+            while ((line = reader.readLine()) != null) {
+                sb.append(line);
+            }
+        } catch (Exception e) {
+            if (CompileConfig.isDebug) {
+                logger.error("read post body failed.", e);
+            }
+        }
+        return sb.toString();
     }
 
     /**

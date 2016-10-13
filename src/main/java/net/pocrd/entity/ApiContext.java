@@ -80,31 +80,7 @@ public class ApiContext {
         sb.append(isSSL ? "https://" : "http://");
         sb.append(host);
         sb.append("/m.api?");
-        if (requestInfo != null) {
-            if (CompileConfig.isDebug) {  // 开发环境下用于将打印到日志的url还原成能够直接放到浏览器请求的编码格式。
-                try {
-                    for (String key : requestInfo.keySet()) {
-                        if (key != null) {
-                            sb.append(key);
-                            sb.append("=");
-                            sb.append(URLEncoder.encode(requestInfo.get(key), "UTF-8"));
-                            sb.append("&");
-                        }
-                    }
-                } catch (UnsupportedEncodingException e) {
-                    logger.error("URLEncoder encode the post data failad", e);
-                }
-            } else {
-                for (String key : requestInfo.keySet()) {
-                    if (key != null) {
-                        sb.append(key);
-                        sb.append("=");
-                        sb.append(requestInfo.get(key));
-                        sb.append("&");
-                    }
-                }
-            }
-        }
+        sb.append(recoverRequestBody());
         return sb.toString();
     }
 
