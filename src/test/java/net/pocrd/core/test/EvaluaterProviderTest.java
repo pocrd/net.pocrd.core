@@ -1,11 +1,6 @@
 package net.pocrd.core.test;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import com.alibaba.fastjson.JSON;
-
 import net.pocrd.core.test.model.Evaluater_Left;
 import net.pocrd.core.test.model.Evaluater_Right;
 import net.pocrd.define.ConstField;
@@ -13,6 +8,10 @@ import net.pocrd.define.Evaluater;
 import net.pocrd.entity.CallerInfo;
 import net.pocrd.util.EvaluaterProvider;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -82,10 +81,10 @@ public class EvaluaterProviderTest {
     }
 
     public static class Left {
-        public Date data;
-        public long data2;
-        public long data3;
-        public Date data4;
+        public  Date data;
+        public  long data2;
+        public  long data3;
+        public  Date data4;
         private Date data5;
 
         public Date getData5() {
@@ -131,8 +130,8 @@ public class EvaluaterProviderTest {
     }
 
     public static class Right {
-        public long data;
-        public Date data2;
+        public  long data;
+        public  Date data2;
         private Date data3;
 
         public Date getData3() {
@@ -153,8 +152,8 @@ public class EvaluaterProviderTest {
             this.data4 = data4;
         }
 
-        public long data5;
-        public Date data6;
+        public  long data5;
+        public  Date data6;
         private long data7;
 
         public long getData7() {
@@ -176,7 +175,7 @@ public class EvaluaterProviderTest {
         }
 
         public List<Right> data9;
-        public List<Left> data10;
+        public List<Left>  data10;
     }
 
     @Test

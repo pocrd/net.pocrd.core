@@ -20,8 +20,7 @@ public class EvaluaterProvider implements Opcodes {
     private static ConcurrentHashMap<String, Evaluater<?, ?>> cache = new ConcurrentHashMap<String, Evaluater<?, ?>>();
 
     @SuppressWarnings("unchecked")
-    public synchronized static <TLeft, TRight> Evaluater<TLeft, TRight> getEvaluater(Class<TLeft> leftClass,
-            Class<TRight> rightClass) {
+    public synchronized static <TLeft, TRight> Evaluater<TLeft, TRight> getEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
         String key = leftClass.getName() + "_" + rightClass.getName();
         Evaluater<TLeft, TRight> evaluater = (Evaluater<TLeft, TRight>)cache.get(key);
         if (evaluater == null) {
@@ -37,8 +36,7 @@ public class EvaluaterProvider implements Opcodes {
     }
 
     @SuppressWarnings("unchecked")
-    private static <TLeft, TRight> Evaluater<TLeft, TRight> createEvaluater(Class<TLeft> leftClass,
-            Class<TRight> rightClass) {
+    private static <TLeft, TRight> Evaluater<TLeft, TRight> createEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
         ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
         MethodVisitor mv;
         String l_name = Type.getInternalName(leftClass);
@@ -91,9 +89,8 @@ public class EvaluaterProvider implements Opcodes {
                 for (Method mr : rightClass.getMethods()) {
                     int mod = mr.getModifiers();
                     String name = mr.getName();
-                    if (Modifier.isPublic(mod) && !Modifier.isStatic(mod) && name.length() > 3 && (name.startsWith(
-                            "get") || name.startsWith(
-                            "is") && mr.getReturnType() == boolean.class) && mr.getParameterTypes().length == 0) {
+                    if (Modifier.isPublic(mod) && !Modifier.isStatic(mod) && name.length() > 3 && (name.startsWith("get")
+                            || name.startsWith("is") && mr.getReturnType() == boolean.class) && mr.getParameterTypes().length == 0) {
                         name = name.startsWith("get") ? name.substring(3) : name.substring(2);
                         if (name.length() > 1) {
                             name = name.substring(0, 1).toLowerCase() + name.substring(1);
