@@ -4,11 +4,7 @@ import net.pocrd.core.PocClassLoader;
 import net.pocrd.define.Evaluater;
 import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.CompileConfig;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -24,7 +20,8 @@ public class EvaluaterProvider implements Opcodes {
     private static ConcurrentHashMap<String, Evaluater<?, ?>> cache = new ConcurrentHashMap<String, Evaluater<?, ?>>();
 
     @SuppressWarnings("unchecked")
-    public synchronized static <TLeft, TRight> Evaluater<TLeft, TRight> getEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
+    public synchronized static <TLeft, TRight> Evaluater<TLeft, TRight> getEvaluater(Class<TLeft> leftClass,
+            Class<TRight> rightClass) {
         String key = leftClass.getName() + "_" + rightClass.getName();
         Evaluater<TLeft, TRight> evaluater = (Evaluater<TLeft, TRight>)cache.get(key);
         if (evaluater == null) {
@@ -40,12 +37,14 @@ public class EvaluaterProvider implements Opcodes {
     }
 
     @SuppressWarnings("unchecked")
-    private static <TLeft, TRight> Evaluater<TLeft, TRight> createEvaluater(Class<TLeft> leftClass, Class<TRight> rightClass) {
+    private static <TLeft, TRight> Evaluater<TLeft, TRight> createEvaluater(Class<TLeft> leftClass,
+            Class<TRight> rightClass) {
         ClassWriter cw = new PocClassWriter(ClassWriter.COMPUTE_FRAMES);
         MethodVisitor mv;
         String l_name = Type.getInternalName(leftClass);
         String r_name = Type.getInternalName(rightClass);
-        String className = "net.pocrd.autogen.Evaluator_" + l_name.substring(l_name.lastIndexOf('/') + 1).replace("/", "") + "_" + r_name.substring(
+        String className = "net.pocrd.autogen.Evaluator_" + l_name.substring(l_name.lastIndexOf('/') + 1).replace("/",
+                "") + "_" + r_name.substring(
                 r_name.lastIndexOf('/') + 1).replace("/", "");
         className = className.replace('$', '_');
         String c_name = className.replace('.', '/');
@@ -54,8 +53,9 @@ public class EvaluaterProvider implements Opcodes {
         String l_desc = Type.getDescriptor(leftClass);
         String r_desc = Type.getDescriptor(rightClass);
         try {
-            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name, "Ljava/lang/Object;Lnet/pocrd/define/Evaluater<" + l_desc + r_desc + ">;",
-                     "java/lang/Object", new String[]{e_name});
+            cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name,
+                    "Ljava/lang/Object;Lnet/pocrd/define/Evaluater<" + l_desc + r_desc + ">;",
+                    "java/lang/Object", new String[] { e_name });
             {
                 mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
                 mv.visitCode();
@@ -91,7 +91,8 @@ public class EvaluaterProvider implements Opcodes {
                 for (Method mr : rightClass.getMethods()) {
                     int mod = mr.getModifiers();
                     String name = mr.getName();
-                    if (Modifier.isPublic(mod) && !Modifier.isStatic(mod) && name.length() > 3 && (name.startsWith("get") || name.startsWith(
+                    if (Modifier.isPublic(mod) && !Modifier.isStatic(mod) && name.length() > 3 && (name.startsWith(
+                            "get") || name.startsWith(
                             "is") && mr.getReturnType() == boolean.class) && mr.getParameterTypes().length == 0) {
                         name = name.startsWith("get") ? name.substring(3) : name.substring(2);
                         if (name.length() > 1) {
@@ -109,10 +110,12 @@ public class EvaluaterProvider implements Opcodes {
                         if (frs.containsKey(name)) {
                             Field fr = frs.get(name);
                             if (fl.getType() == fr.getType()) {
-                                mv.visitVarInsn(ALOAD, 1);
-                                mv.visitVarInsn(ALOAD, 2);
-                                mv.visitFieldInsn(GETFIELD, r_name, name, Type.getDescriptor(fl.getType()));
-                                mv.visitFieldInsn(PUTFIELD, l_name, name, Type.getDescriptor(fl.getType()));
+                                if (fl.getGenericType().getTypeName().equals(fr.getGenericType().getTypeName())) {
+                                    mv.visitVarInsn(ALOAD, 1);
+                                    mv.visitVarInsn(ALOAD, 2);
+                                    mv.visitFieldInsn(GETFIELD, r_name, name, Type.getDescriptor(fl.getType()));
+                                    mv.visitFieldInsn(PUTFIELD, l_name, name, Type.getDescriptor(fl.getType()));
+                                }
                             } else if (fl.getType() == Date.class && fr.getType() == long.class) {
                                 //允许long到dateTime的拷贝
                                 mv.visitVarInsn(ALOAD, 2);
@@ -145,10 +148,12 @@ public class EvaluaterProvider implements Opcodes {
                         } else if (mrs.containsKey(name)) {
                             Method mr = mrs.get(name);
                             if (fl.getType() == mr.getReturnType()) {
-                                mv.visitVarInsn(ALOAD, 1);
-                                mv.visitVarInsn(ALOAD, 2);
-                                mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), Type.getMethodDescriptor(mr));
-                                mv.visitFieldInsn(PUTFIELD, l_name, name, Type.getDescriptor(fl.getType()));
+                                if (fl.getGenericType().getTypeName().equals(mr.getGenericReturnType().getTypeName())) {
+                                    mv.visitVarInsn(ALOAD, 1);
+                                    mv.visitVarInsn(ALOAD, 2);
+                                    mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), Type.getMethodDescriptor(mr));
+                                    mv.visitFieldInsn(PUTFIELD, l_name, name, Type.getDescriptor(fl.getType()));
+                                }
                             } else if (fl.getType() == Date.class && mr.getReturnType() == long.class) {
                                 //允许long到dateTime的双向拷贝
                                 mv.visitVarInsn(ALOAD, 2);
@@ -184,7 +189,8 @@ public class EvaluaterProvider implements Opcodes {
                 for (Method ml : leftClass.getMethods()) {
                     int mod = ml.getModifiers();
                     String name = ml.getName();
-                    if (Modifier.isPublic(mod) && name.length() > 3 && name.startsWith("set") && ml.getParameterTypes().length == 1) {
+                    if (Modifier.isPublic(mod) && name.length() > 3 && name.startsWith("set")
+                            && ml.getParameterTypes().length == 1) {
                         name = name.substring(3);
                         if (name.length() > 1) {
                             name = name.substring(0, 1).toLowerCase() + name.substring(1);
@@ -194,10 +200,12 @@ public class EvaluaterProvider implements Opcodes {
                         if (frs.containsKey(name)) {
                             Field fr = frs.get(name);
                             if (ml.getParameterTypes()[0] == fr.getType()) {
-                                mv.visitVarInsn(ALOAD, 1);
-                                mv.visitVarInsn(ALOAD, 2);
-                                mv.visitFieldInsn(GETFIELD, r_name, name, Type.getDescriptor(fr.getType()));
-                                mv.visitMethodInsn(INVOKEVIRTUAL, l_name, ml.getName(), Type.getMethodDescriptor(ml));
+                                if (ml.getGenericReturnType().getTypeName().equals(fr.getGenericType().getTypeName())) {
+                                    mv.visitVarInsn(ALOAD, 1);
+                                    mv.visitVarInsn(ALOAD, 2);
+                                    mv.visitFieldInsn(GETFIELD, r_name, name, Type.getDescriptor(fr.getType()));
+                                    mv.visitMethodInsn(INVOKEVIRTUAL, l_name, ml.getName(), Type.getMethodDescriptor(ml));
+                                }
                             } else if (ml.getParameterTypes()[0] == Date.class && fr.getType() == long.class) {
                                 mv.visitVarInsn(ALOAD, 2);
                                 mv.visitFieldInsn(GETFIELD, r_name, name, "J");
@@ -229,10 +237,12 @@ public class EvaluaterProvider implements Opcodes {
                         } else if (mrs.containsKey(name)) {
                             Method mr = mrs.get(name);
                             if (ml.getParameterTypes()[0] == mr.getReturnType()) {
-                                mv.visitVarInsn(ALOAD, 1);
-                                mv.visitVarInsn(ALOAD, 2);
-                                mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), Type.getMethodDescriptor(mr));
-                                mv.visitMethodInsn(INVOKEVIRTUAL, l_name, ml.getName(), Type.getMethodDescriptor(ml));
+                                if (ml.getGenericReturnType().getTypeName().equals(ml.getGenericReturnType().getTypeName())) {
+                                    mv.visitVarInsn(ALOAD, 1);
+                                    mv.visitVarInsn(ALOAD, 2);
+                                    mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), Type.getMethodDescriptor(mr));
+                                    mv.visitMethodInsn(INVOKEVIRTUAL, l_name, ml.getName(), Type.getMethodDescriptor(ml));
+                                }
                             } else if (ml.getParameterTypes()[0] == Date.class && mr.getReturnType() == long.class) {
                                 mv.visitVarInsn(ALOAD, 2);
                                 mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), "()J");
@@ -275,7 +285,8 @@ public class EvaluaterProvider implements Opcodes {
                 mv.visitEnd();
             }
             {
-                mv = cw.visitMethod(ACC_PUBLIC + ACC_BRIDGE + ACC_SYNTHETIC, "evaluate", "(Ljava/lang/Object;Ljava/lang/Object;)V", null, null);
+                mv = cw.visitMethod(ACC_PUBLIC + ACC_BRIDGE + ACC_SYNTHETIC, "evaluate",
+                        "(Ljava/lang/Object;Ljava/lang/Object;)V", null, null);
                 mv.visitCode();
                 Label l0 = new Label();
                 mv.visitLabel(l0);
@@ -293,12 +304,14 @@ public class EvaluaterProvider implements Opcodes {
             if (CompileConfig.isDebug) {
                 FileOutputStream fos = null;
                 try {
-                    File folder = new File(CommonConfig.getInstance().getAutogenPath() + File.separator + "Evaluater" + File.separator);
+                    File folder = new File(
+                            CommonConfig.getInstance().getAutogenPath() + File.separator + "Evaluater" + File.separator);
                     if (!folder.exists()) {
                         folder.mkdirs();
                     }
                     fos = new FileOutputStream(
-                            CommonConfig.getInstance().getAutogenPath() + File.separator + "Evaluater" + File.separator + className + ".class");
+                            CommonConfig.getInstance().getAutogenPath() + File.separator + "Evaluater" + File.separator
+                                    + className + ".class");
                     fos.write(cw.toByteArray());
                 } finally {
                     if (fos != null) {
@@ -306,8 +319,9 @@ public class EvaluaterProvider implements Opcodes {
                     }
                 }
             }
-            return (Evaluater<TLeft, TRight>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
-                                                                                                                      cw.toByteArray()).newInstance();
+            return (Evaluater<TLeft, TRight>)new PocClassLoader(Thread.currentThread().getContextClassLoader())
+                    .defineClass(className,
+                            cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(className, e);
         }

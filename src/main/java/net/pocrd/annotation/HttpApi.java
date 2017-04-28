@@ -2,7 +2,6 @@ package net.pocrd.annotation;
 
 import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
-import net.pocrd.util.StringUtil;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
