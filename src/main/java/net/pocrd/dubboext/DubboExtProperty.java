@@ -26,7 +26,7 @@ public class DubboExtProperty {
     //非dubbo provider调用用来暂存notification,例如:单元测试等
     final static         ThreadLocal<Map<String, String>> notifications        = new ThreadLocal<Map<String, String>>();
 
-    static void addNotifications(String key, String value) {
+    static void addNotification(String key, String value) {
         Map<String, String> map = notifications.get();
         if (map == null) {
             map = new HashMap<String, String>();
@@ -36,7 +36,7 @@ public class DubboExtProperty {
     }
 
     //do value copy
-    public static void addNotifications(Map<String, String> rpcMap) {
+    static void addNotifications(Map<String, String> rpcMap) {
         if (rpcMap != null && !rpcMap.isEmpty()) {
             Map<String, String> map = notifications.get();
             if (map == null) {
@@ -49,7 +49,7 @@ public class DubboExtProperty {
                     String currentErrorCode = map.get(entry.getKey());
                     if (currentErrorCode != null && !currentErrorCode.isEmpty()) {
                         logger.info(
-                                "provider return an error code ,but current service has set an error code.current error code:{},return error code:{}",
+                                "provider return an error code, but current service has set an error code. current error code:{},return error code:{}",
                                 currentErrorCode, entry.getValue());
                     } else {
                         map.put(entry.getKey(), entry.getValue());
@@ -100,10 +100,10 @@ public class DubboExtProperty {
      */
     public static void setCookieToken(String token, String stoken, int stkDuration) {
         if (token != null) {
-            addNotifications(ConstField.SET_COOKIE_TOKEN, token);
+            addNotification(ConstField.SET_COOKIE_TOKEN, token);
         }
         if (stoken != null) {
-            addNotifications(ConstField.SET_COOKIE_STOKEN, stoken + "|" + stkDuration);
+            addNotification(ConstField.SET_COOKIE_STOKEN, stoken + "|" + stkDuration);
         }
     }
 
@@ -115,10 +115,10 @@ public class DubboExtProperty {
      */
     public static void setCookieToken(String token, String stoken) {
         if (token != null) {
-            addNotifications(ConstField.SET_COOKIE_TOKEN, token);
+            addNotification(ConstField.SET_COOKIE_TOKEN, token);
         }
         if (stoken != null) {
-            addNotifications(ConstField.SET_COOKIE_STOKEN, stoken);
+            addNotification(ConstField.SET_COOKIE_STOKEN, stoken);
         }
     }
 
@@ -137,7 +137,7 @@ public class DubboExtProperty {
      */
     public static void setCookieUserInfo(String info) {
         if (info != null) {
-            addNotifications(ConstField.SET_COOKIE_USER_INFO, info);
+            addNotification(ConstField.SET_COOKIE_USER_INFO, info);
         }
     }
 
@@ -152,7 +152,7 @@ public class DubboExtProperty {
      */
     public static void setRedirectUrl(String url) {
         if (url != null) {
-            addNotifications(ConstField.REDIRECT_TO, url);
+            addNotification(ConstField.REDIRECT_TO, url);
         }
     }
 
@@ -169,9 +169,9 @@ public class DubboExtProperty {
         if (creditInfo != null) {
             String tmp = getValue(ConstField.CREDIT);
             if (tmp == null) {
-                addNotifications(ConstField.CREDIT, JSON.toJSONString(creditInfo));
+                addNotification(ConstField.CREDIT, JSON.toJSONString(creditInfo));
             } else {
-                addNotifications(ConstField.CREDIT,
+                addNotification(ConstField.CREDIT,
                         tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(creditInfo));
             }
         }
@@ -190,9 +190,9 @@ public class DubboExtProperty {
         if (msgInfo != null) {
             String tmp = getValue(ConstField.MSG);
             if (tmp == null) {
-                addNotifications(ConstField.MSG, JSON.toJSONString(msgInfo));
+                addNotification(ConstField.MSG, JSON.toJSONString(msgInfo));
             } else {
-                addNotifications(ConstField.MSG, tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(msgInfo));
+                addNotification(ConstField.MSG, tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(msgInfo));
             }
         }
     }
@@ -220,7 +220,7 @@ public class DubboExtProperty {
                 if (log.length() > 500) {
                     logger.warn("append log failed ,length of log is large than 500 ,actually length:{}", log.length());
                 } else {
-                    addNotifications(ConstField.SERVICE_LOG, log);
+                    addNotification(ConstField.SERVICE_LOG, log);
                 }
             } else {
                 StringBuilder sb = new StringBuilder(tmp);
@@ -228,7 +228,7 @@ public class DubboExtProperty {
                 if (log.length() > 500) {
                     logger.warn("append log failed ,length of log is large than 500 ,actually length:{}", log.length());
                 } else {
-                    addNotifications(ConstField.SERVICE_LOG, sb.toString());
+                    addNotification(ConstField.SERVICE_LOG, sb.toString());
                 }
             }
         }

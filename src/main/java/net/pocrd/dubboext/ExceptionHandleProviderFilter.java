@@ -14,32 +14,41 @@ import org.slf4j.LoggerFactory;
  *
  * @author rendong
  */
-@Activate(group = Constants.PROVIDER)
+@Activate(group = Constants.PROVIDER, order = 1)
 public class ExceptionHandleProviderFilter implements Filter {
     private static final Logger logger = LoggerFactory.getLogger(ExceptionHandleProviderFilter.class);
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        Result res = null;
+        Result res;
         try {
             res = invoker.invoke(invocation);
-        } catch (ServiceRuntimeException sre) {
-            if (sre.getCause() != null) {
-                logger.error("api failed.", sre);
+            if (res.hasException() && res.getException().getClass() != ServiceException.class) {
+                RpcResult result = new RpcResult(wrapException(res.getException()));
+                result.setNotifications(res.getNotifications());
+                result.setValue(res.getValue());
+                res = result;
             }
-            res = new RpcResult(new ServiceException("api failed.", sre));
         } catch (Throwable t) {
-            if (t instanceof ServiceException) {
-                if (t.getCause() != null) {
-                    logger.error("api failed.", t);
-                }
-                res = new RpcResult(t);
-            } else {
-                logger.error("api failed.", t);
-                res = new RpcResult(new ServiceException(ApiReturnCode.DUBBO_SERVICE_ERROR, "api failed."));
-            }
+            res = new RpcResult(wrapException(t));
         }
 
         return res;
+    }
+
+    private ServiceException wrapException(Throwable t) {
+        ServiceException e;
+        if (t instanceof ServiceRuntimeException) {
+            logger.error("api service runtime exception.", t);
+            ServiceRuntimeException sre = (ServiceRuntimeException)t;
+            e = new ServiceException("error code catched.", sre);
+        } else if (t instanceof ServiceException) {
+            logger.error("api service exception.", t);
+            e = (ServiceException)t;
+        } else {
+            logger.error("api undesigned exception.", t);
+            e = new ServiceException(ApiReturnCode.DUBBO_SERVICE_ERROR, "api failed. msg:" + t.getMessage(), t);
+        }
+        return e;
     }
 }

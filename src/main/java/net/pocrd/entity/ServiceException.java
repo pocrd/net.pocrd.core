@@ -31,12 +31,12 @@ public class ServiceException extends Exception implements Serializable {
         this.msg = msg;
     }
 
-    public ServiceException(AbstractReturnCode code, Exception e) {
-        this(code, e.getMessage(), e);
+    public ServiceException(AbstractReturnCode code, Throwable t) {
+        this(code, code.getDesc(), t);
     }
 
-    public ServiceException(AbstractReturnCode code, String msg, Exception e) {
-        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg, e);
+    public ServiceException(AbstractReturnCode code, String msg, Throwable t) {
+        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg, t);
         this.code = code.getCode();
         this.displayCode = code.getDisplay().getCode();
         this.description = code.getDisplay().getDesc();

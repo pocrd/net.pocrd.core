@@ -5,13 +5,13 @@ import com.alibaba.dubbo.config.ReferenceConfig;
 import com.alibaba.dubbo.config.RegistryConfig;
 import com.alibaba.dubbo.remoting.exchange.ResponseCallback;
 import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.RpcResult;
 import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import com.alibaba.fastjson.JSON;
 import net.pocrd.define.*;
 import net.pocrd.document.CallState;
 import net.pocrd.document.Response;
 import net.pocrd.dubboext.DubboExtProperty;
+import net.pocrd.dubboext.NotificationCallback;
 import net.pocrd.entity.*;
 import net.pocrd.responseEntity.KeyValuePair;
 import net.pocrd.util.*;
@@ -829,21 +829,7 @@ public class HttpRequestExecutor {
                     final ResponseCallback callback = fa.getFuture().getCallback();
                     // 异步调用会导致dubbo filter处理返回值的部分失效(因为异步返回并触发filter的时候并没有返回任何值),
                     // 因此在这里进行补偿操作。
-                    fa.getFuture().setCallback(new ResponseCallback() {
-                        @Override
-                        public void done(Object response) {
-                            callback.done(response);
-                            if (RpcResult.class.isInstance(response)) {
-                                RpcResult rpcResult = (RpcResult)response;
-                                DubboExtProperty.addNotifications(rpcResult.getNotifications());
-                            }
-                        }
-
-                        @Override
-                        public void caught(Throwable exception) {
-                            callback.caught(exception);
-                        }
-                    });
+                    fa.getFuture().setCallback(new NotificationCallback(callback));
                 }
                 // 根据客户端在Header中设定的目标dubbo服务的版本号或者url，绕过注册中心调用对应的dubbo服务，仅在DEBUG模式下允许使用
                 if (CompileConfig.isDebug) {
@@ -952,7 +938,7 @@ public class HttpRequestExecutor {
                     } else if (ConstField.ERROR_CODE_EXT.equals(entry.getKey())) {
                         try {
                             int c = Integer.parseInt(value);
-                            call.setReturnCode(c, c, "ServiceException");
+                            call.setReturnCode(c, c, "");
                         } catch (Exception e) {
                             logger.error("service return an illegal code " + value, e);
                             call.setReturnCode(ApiReturnCode.INTERNAL_SERVER_ERROR);
@@ -978,11 +964,11 @@ public class HttpRequestExecutor {
             if (t instanceof ServiceException) {
                 ServiceException se = (ServiceException)t;
                 logger.error("service exception. code:" + se.getCode() + " msg:" + se.getMsg());
-                call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
+                call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getCode() == se.getDisplayCode() ? se.getMsg() : se.getDescription());
             } else if (t.getCause() instanceof ServiceException) {
                 ServiceException se = (ServiceException)t.getCause();
                 logger.error("inner service exception. code:" + se.getCode() + " msg:" + se.getMsg());
-                call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getMsg());
+                call.setReturnCode(se.getCode(), se.getDisplayCode(), se.getCode() == se.getDisplayCode() ? se.getMsg() : se.getDescription());
             } else if (t.getCause() instanceof com.alibaba.dubbo.remoting.TimeoutException) {
                 logger.error("dubbo timeout.", t);
                 call.setReturnCode(ApiReturnCode.DUBBO_SERVICE_TIMEOUT_ERROR);

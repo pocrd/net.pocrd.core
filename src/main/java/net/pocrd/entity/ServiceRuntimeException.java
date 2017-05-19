@@ -31,12 +31,12 @@ public class ServiceRuntimeException extends RuntimeException implements Seriali
         this.msg = msg;
     }
 
-    public ServiceRuntimeException(AbstractReturnCode code, Exception e) {
-        this(code, e.getMessage(), e);
+    public ServiceRuntimeException(AbstractReturnCode code, Throwable t) {
+        this(code, code.getDesc(), t);
     }
 
-    public ServiceRuntimeException(AbstractReturnCode code, String msg, Exception e) {
-        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg, e);
+    public ServiceRuntimeException(AbstractReturnCode code, String msg, Throwable t) {
+        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg, t);
         this.code = code.getCode();
         this.displayCode = code.getDisplay().getCode();
         this.description = code.getDisplay().getDesc();

@@ -16,7 +16,7 @@ public abstract class AbstractReturnCode implements Serializable {
     private final AbstractReturnCode display;
 
     /**
-     * 初始化一个对外暴露的ReturnCodeSuper(用于客户端异常处理)
+     * 初始化一个对外暴露的ReturnCode(用于客户端异常处理)
      */
     public AbstractReturnCode(String desc, int code) {
         this.desc = desc;
@@ -25,7 +25,7 @@ public abstract class AbstractReturnCode implements Serializable {
     }
 
     /**
-     * 初始化一个不对外暴露的ReturnCodeSuper(仅用于服务端数据分析)
+     * 初始化一个不对外暴露的ReturnCode(仅用于服务端数据分析)
      */
     public AbstractReturnCode(int code, AbstractReturnCode shadow) {
         this.desc = null;
@@ -36,21 +36,27 @@ public abstract class AbstractReturnCode implements Serializable {
     public String getDesc() {
         return desc;
     }
+
     public int getCode() {
         return code;
     }
+
     public AbstractReturnCode getDisplay() {
         return display;
     }
+
     public String getName() {
         return name;
     }
+
     public void setName(String name) {
         this.name = name;
     }
+
     public String getService() {
         return service;
     }
+
     public void setService(String service) {
         this.service = service;
     }
