@@ -45,7 +45,6 @@ public class CommonConfig {
             }
 
             instance.autogenPath = prop.getProperty("net.pocrd.autogenPath", "/tmp/autogen");
-            instance.apigwVersion = prop.getProperty("net.pocrd.apigwVersion", "develop");
             instance.apiInfoXslSite = prop.getProperty("net.pocrd.apiInfoXslSite", "/");
             instance.setOriginWhiteList(prop.getProperty("net.pocrd.originWhiteList"));
             instance.dubboAsync = "true".equals(prop.getProperty("net.pocrd.dubboAsync", "true"));
@@ -85,15 +84,6 @@ public class CommonConfig {
 
     public String getServerAddress() {
         return serverAddress;
-    }
-
-    /**
-     * 当前apigw发布的版本号
-     */
-    private String apigwVersion;
-
-    public String getApigwVersion() {
-        return apigwVersion;
     }
 
     /**

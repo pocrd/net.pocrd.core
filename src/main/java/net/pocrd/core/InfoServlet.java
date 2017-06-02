@@ -29,19 +29,23 @@ import java.util.List;
  */
 //@WebServlet("/info.api")
 public class InfoServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
-    private static final Logger logger = LoggerFactory.getLogger(InfoServlet.class);
-    private static final Serializer<Document> docs = POJOSerializerProvider.getSerializer(Document.class);
-    private static final String XML_RESP_CONTENT_TYPE = "application/xml";
-    private static final String JSON_RESP_CONTENT_TYPE = "application/json";
-    private static final String RESP_CHARSET = "UTF-8";
-    private static byte[] XML_HEAD = ("<?xml version='1.0' encoding='utf-8'?><?xml-stylesheet type='text/xsl' href='" + CommonConfig.getInstance().getApiInfoXslSite() + "'?>").getBytes(
-            ConstField.UTF8);
+    private static final long                 serialVersionUID       = 1L;
+    private static final Logger               logger                 = LoggerFactory.getLogger(InfoServlet.class);
+    private static final Serializer<Document> docs                   = POJOSerializerProvider.getSerializer(Document.class);
+    private static final String               XML_RESP_CONTENT_TYPE  = "application/xml";
+    private static final String               JSON_RESP_CONTENT_TYPE = "application/json";
+    private static final String               RESP_CHARSET           = "UTF-8";
+    private static       byte[]               XML_HEAD               = (
+            "<?xml version='1.0' encoding='utf-8'?><?xml-stylesheet type='text/xsl' href='" + CommonConfig.getInstance().getApiInfoXslSite() + "'?>")
+            .getBytes(
+                    ConstField.UTF8);
     private static ApiMethodInfo[] apiMethodInfos;
-    private static Document document;
+    private static Document        document;
     private static Object lock = new Object();
+    private static String Version;
 
-    public static void setApiMethodInfos(final ApiMethodInfo[]... infos) {
+    public static void setApiMethodInfos(String version, final ApiMethodInfo[]... infos) {
+        Version = version;
         if (CompileConfig.isDebug) {
             synchronized (lock) {
                 if (infos != null && infos.length > 0) {
@@ -73,7 +77,7 @@ public class InfoServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         if (CompileConfig.isDebug) {
             try {
-//                reloadDocument();
+                //                reloadDocument();
                 OutputStream out = resp.getOutputStream();
                 resp.setCharacterEncoding(RESP_CHARSET);
                 String queryString = req.getQueryString();
@@ -83,7 +87,7 @@ public class InfoServlet extends HttpServlet {
                     docs.toXml(document, out, true);
                 } else if (queryString.contains("json")) {
                     resp.setContentType(JSON_RESP_CONTENT_TYPE);
-//                    docs.toJson(document, out, true);
+                    //                    docs.toJson(document, out, true);
                     //文档解析避免出现$ref
                     out.write(JSON.toJSONBytes(document, SerializerFeature.DisableCircularReferenceDetect));
                 } else if (queryString.contains("raw")) {
@@ -103,7 +107,7 @@ public class InfoServlet extends HttpServlet {
             OutputStream out = resp.getOutputStream();
             resp.setContentType("plain/text");
             resp.setCharacterEncoding("utf-8");
-            out.write(CommonConfig.getInstance().getApigwVersion().getBytes(ConstField.UTF8));
+            out.write(Version.getBytes(ConstField.UTF8));
         }
     }
 }
