@@ -30,7 +30,7 @@ public class RsaHelper {
     }
 
     public RsaHelper(String publicKey, String privateKey) {
-        this(Base64Util.decode(publicKey), Base64Util.decode(privateKey));
+        this(publicKey == null ? null : Base64Util.decode(publicKey), privateKey == null ? null : Base64Util.decode(privateKey));
     }
 
     public RsaHelper(byte[] publicKey, byte[] privateKey) {
