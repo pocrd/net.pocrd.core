@@ -74,15 +74,17 @@ public class HttpRequestExecutor {
     }
 
     private static final ThreadLocal<HttpRequestExecutor> executor = new ThreadLocal<HttpRequestExecutor>();
+    private static String ZkAddress;
 
     public static HttpRequestExecutor get() {
         return executor.get();
     }
 
-    public static boolean createIfNull(ApiManager apiManager) {
+    public static boolean createIfNull(ApiManager apiManager, String zkAddress) {
         HttpRequestExecutor exe = executor.get();
         if (exe == null) {
             CommonConfig config = CommonConfig.getInstance();
+            ZkAddress = zkAddress;
             try {
                 exe = (HttpRequestExecutor)config.getExecutorFactory().newInstance();
             } catch (Exception e) {
@@ -453,15 +455,15 @@ public class HttpRequestExecutor {
                     reference.setUrl(targetDubboURL);
                 } else {
                     // 连接注册中心配置
-                    String[] addressArray = CommonConfig.getInstance().getZkAddress().split(" ");
+                    String[] addressArray = ZkAddress.split(" ");
                     List<RegistryConfig> registryConfigList = new LinkedList<RegistryConfig>();
                     for (String zkAddress : addressArray) {
                         RegistryConfig registry = new RegistryConfig();
                         registry.setAddress(zkAddress);
                         registry.setProtocol("dubbo");
                         registryConfigList.add(registry);
-                        reference.setRegistries(registryConfigList);// 多个注册中心可以用setRegistries()
                     }
+                    reference.setRegistries(registryConfigList);// 多个注册中心可以用setRegistries()
                 }
                 reference.setInterface(api.dubboInterface);
                 reference.setRetries(0);

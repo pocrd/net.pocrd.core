@@ -51,7 +51,6 @@ public class CommonConfig {
             instance.internalPort = Integer.parseInt(prop.getProperty("net.pocrd.internalPort", "8088"));
             instance.sslPort = Integer.parseInt(prop.getProperty("net.pocrd.sslPort", "8443"));
             instance.staticSignPwd = prop.getProperty("net.pocrd.staticSignPwd", "pocrd@2016");
-            instance.zkAddress = prop.getProperty("net.pocrd.zkAddress", "zookeeper://localhost:2181");
             instance.rsaDecryptSecret = prop.getProperty("net.pocrd.rsaDecryptSecret");
             instance.tokenAes = prop.getProperty("net.pocrd.tokenAes");
             instance.setExecutorFactory(prop.getProperty("net.pocrd.httpRequestExecutor"));
@@ -149,15 +148,6 @@ public class CommonConfig {
 
     public String getStaticSignPwd() {
         return staticSignPwd;
-    }
-
-    /**
-     * zookeeper 地址
-     */
-    private String zkAddress = null;
-
-    public String getZkAddress() {
-        return zkAddress;
     }
 
     /**
