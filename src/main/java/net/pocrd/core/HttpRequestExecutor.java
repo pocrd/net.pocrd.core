@@ -88,7 +88,9 @@ public class HttpRequestExecutor {
             } catch (Exception e) {
                 throw new RuntimeException("load http request executor failed. ", e);
             }
-            exe.rsaDecryptHelper = new RsaHelper(null, config.getRsaDecryptSecret());
+            if (config.getRsaDecryptSecret() != null) {
+                exe.rsaDecryptHelper = new RsaHelper(null, config.getRsaDecryptSecret());
+            }
             exe.aesTokenHelper = new AESTokenHelper(config.getTokenAes());
             exe.apiManager = apiManager;
             executor.set(exe);
