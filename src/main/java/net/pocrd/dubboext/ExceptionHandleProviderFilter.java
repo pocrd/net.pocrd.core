@@ -23,7 +23,7 @@ public class ExceptionHandleProviderFilter implements Filter {
         Result res;
         try {
             res = invoker.invoke(invocation);
-            if (res.hasException() && res.getException().getClass() != ServiceException.class) {
+            if (res.hasException()) {
                 RpcResult result = new RpcResult(wrapException(res.getException()));
                 result.setNotifications(res.getNotifications());
                 result.setValue(res.getValue());

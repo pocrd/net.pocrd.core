@@ -484,7 +484,7 @@ public class HttpRequestExecutor {
                         ((MockApiImplementation)api.serviceInstance).$setProxy(service);
                     }
                 } else {
-                    return executor.execute(params);
+                    return api.wrapper.wrap(executor.execute(params));
                 }
             }
         }

@@ -39,4 +39,6 @@ public class MethodInfo {
     public boolean             encryptionOnly;
     @Description("Integared级别接口是否需要网关对请求进行签名验证")
     public boolean             needVerify;
+    @Description("可访问该接口的角色列表")
+    public String              roles;
 }

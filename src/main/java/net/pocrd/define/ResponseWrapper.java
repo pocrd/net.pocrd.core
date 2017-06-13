@@ -3,6 +3,7 @@ package net.pocrd.define;
 import net.pocrd.responseEntity.*;
 
 import java.util.Collection;
+import java.util.Date;
 
 /**
  * Created by rendong on 15/11/12.
@@ -31,17 +32,17 @@ public interface ResponseWrapper {
         }
     };
 
-    public static final ResponseWrapper floatArrayWrapper = new ResponseWrapper() {
-        @Override
-        public Object wrap(Object obj) {
-            return obj == null ? null : DoubleArrayResp.convert((float[])obj);
-        }
-    };
-
     public static final ResponseWrapper doubleWrapper = new ResponseWrapper() {
         @Override
         public Object wrap(Object obj) {
             return obj == null ? null : DoubleResp.convert((Double)obj);
+        }
+    };
+
+    public static final ResponseWrapper floatArrayWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : DoubleArrayResp.convert((float[])obj);
         }
     };
 
@@ -73,31 +74,17 @@ public interface ResponseWrapper {
         }
     };
 
-    public static final ResponseWrapper charArrayWrapper = new ResponseWrapper() {
-        @Override
-        public Object wrap(Object obj) {
-            return obj == null ? null : NumberArrayResp.convert((char[])obj);
-        }
-    };
-
-    public static final ResponseWrapper shotArrayWrapper = new ResponseWrapper() {
-        @Override
-        public Object wrap(Object obj) {
-            return obj == null ? null : NumberArrayResp.convert((short[])obj);
-        }
-    };
-
-    public static final ResponseWrapper intArrayWrapper = new ResponseWrapper() {
-        @Override
-        public Object wrap(Object obj) {
-            return obj == null ? null : NumberArrayResp.convert((int[])obj);
-        }
-    };
-
     public static final ResponseWrapper byteWrapper = new ResponseWrapper() {
         @Override
         public Object wrap(Object obj) {
             return obj == null ? null : NumberResp.convert((Byte)obj);
+        }
+    };
+
+    public static final ResponseWrapper charArrayWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : NumberArrayResp.convert((char[])obj);
         }
     };
 
@@ -108,10 +95,24 @@ public interface ResponseWrapper {
         }
     };
 
+    public static final ResponseWrapper shotArrayWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : NumberArrayResp.convert((short[])obj);
+        }
+    };
+
     public static final ResponseWrapper shortWrapper = new ResponseWrapper() {
         @Override
         public Object wrap(Object obj) {
             return obj == null ? null : NumberResp.convert((Short)obj);
+        }
+    };
+
+    public static final ResponseWrapper intArrayWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : NumberArrayResp.convert((int[])obj);
         }
     };
 
@@ -129,7 +130,7 @@ public interface ResponseWrapper {
         }
     };
 
-    public static final ResponseWrapper collectionWrapper = new ResponseWrapper() {
+    public static final ResponseWrapper objectCollectionWrapper = new ResponseWrapper() {
         @Override
         public Object wrap(Object obj) {
             return obj == null ? null : ObjectArrayResp.convert((Collection)obj);
@@ -161,6 +162,27 @@ public interface ResponseWrapper {
         @Override
         public Object wrap(Object obj) {
             return obj == null ? null : StringResp.convert((String)obj);
+        }
+    };
+
+    public static final ResponseWrapper dateArrayWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : DateArrayResp.convert((Date[])obj);
+        }
+    };
+
+    public static final ResponseWrapper dateCollectionWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : DateArrayResp.convert((Collection<Date>)obj);
+        }
+    };
+
+    public static final ResponseWrapper dateWrapper = new ResponseWrapper() {
+        @Override
+        public Object wrap(Object obj) {
+            return obj == null ? null : DateResp.convert((Date)obj);
         }
     };
 }

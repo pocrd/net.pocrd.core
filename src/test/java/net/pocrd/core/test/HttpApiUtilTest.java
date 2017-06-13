@@ -10,15 +10,13 @@ import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.responseEntity.ObjectArrayResp;
 import net.pocrd.util.POJOSerializerProvider;
 import net.pocrd.util.RawString;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,10 +34,14 @@ public class HttpApiUtilTest {
     public static class TestEntity implements Serializable {
         public TestEntity(String str) {
             this.str = str;
+            this.date = new Date(1234567890000L);
         }
 
         @Description("str")
         public String str;
+
+        @Description("date")
+        public Date date;
     }
 
     @HttpApi(name = "test.test1", desc = "测试1", security = SecurityType.None, owner = "guankaiqiang")
@@ -353,6 +355,27 @@ public class HttpApiUtilTest {
         return list;
     }
 
+    @HttpApi(name = "test.test25", desc = "测试25", security = SecurityType.None, owner = "guankaiqiang")
+    public List<Date> execute(
+            @ApiParameter(required = true, name = "date1", desc = "参数1")
+                    Date d1,
+            @ApiParameter(required = true, name = "date2", desc = "参数2")
+                    Date[] d2) {
+        List<Date> dl = new ArrayList<Date>(d2 == null ? 1 : 1 + d2.length);
+        StringBuilder sb = new StringBuilder();
+        sb.append(d1.getTime());
+        sb.append(";");
+        dl.add(d1);
+        if (d2 != null) {
+            for (Date d : d2) {
+                sb.append(d.getTime()).append(";");
+                dl.add(d);
+            }
+        }
+        System.out.println(sb.toString());
+        return dl;
+    }
+
     public static enum E1 {
         T1,
         T2,
@@ -537,6 +560,12 @@ public class HttpApiUtilTest {
             }
             {
                 ObjectArrayResp result = (ObjectArrayResp)manager.processRequest("test.test22", new String[] { "123", "456" });
+                Assert.assertTrue(result != null);
+                Assert.assertTrue(result.value != null);
+                Assert.assertTrue(result.value.length > 0);
+                Assert.assertTrue(result.value[0] instanceof TestEntity);
+                Assert.assertEquals(((TestEntity)result.value[0]).str, "testest");
+                Assert.assertEquals(((TestEntity)result.value[0]).date.getTime(), 1234567890000L);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
                 Serializer.objectArrayRespSerializer.toJson(result, baos, true);
                 String re = baos.toString();
@@ -575,6 +604,28 @@ public class HttpApiUtilTest {
             }
         } catch (SecurityException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void testDate() {
+        ApiManager manager = new ApiManager();
+        manager.register(ApiManager.parseApi(HttpApiUtilTest.class, new HttpApiUtilTest()));
+        {
+            String[] darray = new String[3];
+            darray[0] = "1234567891000";
+            darray[1] = "1234567892000";
+            darray[2] = "1234567893000";
+            Object result = manager.processRequest("test.test25", new String[] { "1234567890000", JSON.toJSONString(darray) });
+            System.out.println(result);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
+            ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
+            String re = baos.toString();
+            System.out.println("json:" + re);
+            baos = new ByteArrayOutputStream(1024);
+            ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toXml(result, baos, true);
+            re = baos.toString();
+            System.out.println("xml:" + re);
         }
     }
 }

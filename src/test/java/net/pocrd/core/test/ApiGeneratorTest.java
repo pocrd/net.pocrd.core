@@ -12,6 +12,7 @@ import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.SecurityType;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.entity.ApiMethodInfo;
+import net.pocrd.entity.CommonConfig;
 import net.pocrd.util.RawString;
 import org.junit.Test;
 import org.xml.sax.SAXException;
@@ -46,48 +47,55 @@ public class ApiGeneratorTest {
     @Test
     public void testHtmlDocGenertor() {
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        new HtmlApiDocGenerator.Builder().setOutputPath("/home/admin/tmp/").setXsltPath("http://dl.fengqucdn.com/tmp/java.xslt").build()
+        new HtmlApiDocGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/html")
+                .setXsltPath("http://www.pocrd.net/xslt/java.xslt").build()
                 .generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testJavaGenertor() throws ParserConfigurationException, IOException, SAXException {
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build().generateViaApiMethodInfo(infoList);
+        new ApiSdkJavaGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/java").build()
+                .generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testJavaGenertorViaJar() throws ParserConfigurationException, IOException, SAXException {
-        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/tmp/").build()
-                .generateViaJar("/home/admin/api/apigwtest-api.jar");
+        new ApiSdkJavaGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/javaFromJar").build()
+                .generateViaJar("/Users/rendong/workspace/github/net.pocrd.api/apigw-test/apigwtest-api/target/apigwtest-api.jar");
     }
 
     @Test
     public void testObjcGenertor() throws ParserConfigurationException, IOException, SAXException {
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/tmp/").setClassPrefix("PoC").build().generateViaApiMethodInfo(infoList);
+        new ApiSdkObjectiveCGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/objectivec").setClassPrefix("PoC")
+                .build()
+                .generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testGenerateFromNetResource() {
-        new ApiSdkObjectiveCGenerator.Builder().setOutputPath("/home/admin/autogen/oc").setClassPrefix("SF").build().generateWithApiInfo(
-                "http://115.28.160.84/info.api?raw");
-        new ApiSdkJavaGenerator.Builder().setOutputPath("/home/admin/autogen/java").setPackagePrefix("net.pocrd.m.app.client").build()
-                .generateWithApiInfo("http://115.28.160.84/info.api?raw");
+        new ApiSdkObjectiveCGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/ocFromNet").setClassPrefix("PoC")
+                .build().generateWithApiInfo("http://www.pocrd.net/info.api?raw");
+        new ApiSdkJavaGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/javaFromNet")
+                .setPackagePrefix("net.pocrd.app.client").build()
+                .generateWithApiInfo("http://www.pocrd.net/info.api?raw");
     }
 
     @Test
     public void testJsGenertor() throws ParserConfigurationException, IOException, SAXException {
         List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
-        new ApiSdkJavaScriptGenerator.Builder().setOutputPath("/home/admin/autogen/js/").build().generateViaApiMethodInfo(infoList);
+        new ApiSdkJavaScriptGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/js")
+                .build().generateViaApiMethodInfo(infoList);
     }
 
     @Test
     public void testGenerateJsSdkFromNetResource() {
-        ApiSdkJavaScriptGenerator instance = new ApiSdkJavaScriptGenerator.Builder().setOutputPath("/home/admin/autogen/js")
-                .setPackagePrefix("sf.b2c.mall").build();
+        ApiSdkJavaScriptGenerator instance = new ApiSdkJavaScriptGenerator.Builder()
+                .setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/jsFromNet")
+                .setPackagePrefix("net.pocrd.app.client").build();
         instance.setApiGroups("logistics,order,payment,products,shopcart,user");
         instance.setSecurityTypes(SecurityType.UserLogin, SecurityType.None, SecurityType.RegisteredDevice);
-        instance.generateWithApiInfo("http://115.28.160.84/info.api?raw");
+        instance.generateWithApiInfo("http://www.pocrd.net/info.api?raw");
     }
 }

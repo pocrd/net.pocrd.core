@@ -246,7 +246,9 @@ public class PocMethodVisitor extends MethodVisitor implements Opcodes {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Boolean", "valueOf", "(Z)Ljava/lang/Boolean;");
             } else if (clazz == double.class) {
                 mv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "valueOf", "(D)Ljava/lang/Double;");
-            } else if (clazz == long.class) { mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;"); } else {
+            } else if (clazz == long.class) {
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Long", "valueOf", "(J)Ljava/lang/Long;");
+            } else {
                 throw new RuntimeException("不支持的类型" + clazz.getName());
             }
         }
@@ -257,11 +259,13 @@ public class PocMethodVisitor extends MethodVisitor implements Opcodes {
      */
     void doReturn(Class<?> clazz) {
         if (clazz.isPrimitive()) {
-            if (clazz == int.class || clazz == char.class || clazz == short.class || clazz == byte.class || clazz == float.class || clazz == boolean.class) {
+            if (clazz == int.class || clazz == char.class || clazz == short.class || clazz == byte.class || clazz == float.class
+                    || clazz == boolean.class) {
                 mv.visitInsn(IRETURN);
             } else if (clazz == double.class) { mv.visitInsn(DRETURN); } else if (clazz == long.class) {
                 mv.visitInsn(LRETURN);
-            } else if (clazz == void.class) { mv.visitInsn(RETURN); } else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if (clazz == void.class) { mv.visitInsn(RETURN); } else
+                throw new RuntimeException("不支持的类型" + clazz.getName());
         } else {
             mv.visitInsn(ARETURN);
         }
@@ -285,7 +289,8 @@ public class PocMethodVisitor extends MethodVisitor implements Opcodes {
                 type = "java/lang/Boolean";
             } else if (clazz == double.class) {
                 type = "java/lang/Double";
-            } else if (clazz == long.class) { type = "java/lang/Long"; } else throw new RuntimeException("不支持的类型" + clazz.getName());
+            } else if (clazz == long.class) { type = "java/lang/Long"; } else
+                throw new RuntimeException("不支持的类型" + clazz.getName());
         } else {
             type = clazz.getName().replace('.', '/');
         }

@@ -12,7 +12,7 @@ import org.objectweb.asm.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 
 /**
@@ -243,6 +243,9 @@ public class HttpApiProvider implements Opcodes {
                             pmv.visitMethodInsn(INVOKESTATIC, "java/lang/Double", "parseDouble", "(Ljava/lang/String;)D");
                         } else if (parameterType == String.class) {
                             // Do nothing
+                        } else if (parameterType == Date.class) {
+                            pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/util/DateUtil", "parseDateFromPOSIXTimeString",
+                                    "(Ljava/lang/String;)Ljava/util/Date;");
                         } else if (parameterType.isEnum()) {
                             pmv.visitMethodInsn(INVOKESTATIC, parameterType.getName().replace('.', '/'), "valueOf",
                                     "(Ljava/lang/String;)" + Type.getDescriptor(parameterType));
@@ -310,52 +313,66 @@ public class HttpApiProvider implements Opcodes {
                             Type.getMethodDescriptor(method.proxyMethodInfo));
                 }
 
-                if (String.class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/StringResp", "convert",
-                            "(Ljava/lang/String;)Lnet/pocrd/responseEntity/StringResp;");
-                } else if (String[].class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/StringArrayResp", "convert",
-                            "([Ljava/lang/String;)Lnet/pocrd/responseEntity/StringArrayResp;");
-                } else if (boolean.class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/BoolResp", "convert", "(Z)Lnet/pocrd/responseEntity/BoolResp;");
-                } else if (boolean[].class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/BoolArrayResp", "convert",
-                            "([Z)Lnet/pocrd/responseEntity/BoolArrayResp;");
-                } else if (byte.class == method.returnType || short.class == method.returnType || char.class == method.returnType
-                        || int.class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/NumberResp", "convert",
-                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/NumberResp;");
-                } else if (byte[].class == method.returnType || short[].class == method.returnType || char[].class == method.returnType
-                        || int[].class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/NumberArrayResp", "convert",
-                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/NumberArrayResp;");
-                } else if (long.class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/LongResp", "convert", "(J)Lnet/pocrd/responseEntity/LongResp;");
-                } else if (long[].class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/LongArrayResp", "convert",
-                            "([J)Lnet/pocrd/responseEntity/LongArrayResp;");
-                } else if (double.class == method.returnType || float.class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DoubleResp", "convert",
-                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/DoubleResp;");
-                } else if (double[].class == method.returnType || float[].class == method.returnType) {
-                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DoubleArrayResp", "convert",
-                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/DoubleArrayResp;");
-                } else if (Collection.class.isAssignableFrom(method.returnType)) {//support Collection
-                    if (String.class == method.actuallyGenericReturnType) {
-                        pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/StringArrayResp", "convert",
-                                "(Ljava/util/Collection;)Lnet/pocrd/responseEntity/StringArrayResp;");
-                    } else {
-                        pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/ObjectArrayResp", "convert",
-                                "(Ljava/util/Collection;)Lnet/pocrd/responseEntity/ObjectArrayResp;");
-                    }
-                } else if (method.returnType.isArray()) {
-                    //下面这句话已经support了object array，不过pojo未支持
-                    //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/ObjectArrayResp", "convert",
-                    //                                        "([Ljava/lang/Object;)Lnet/pocrd/responseEntity/ObjectArrayResp;");
-                    throw new RuntimeException(
-                            String.format("unsupport return type,object array is not support now.type:%s,groupName:%s,methodName:%s",
-                                    method.returnType, method.groupName, method.methodName));
+                if (method.returnType.isPrimitive()) {
+                    pmv.doInbox(method.returnType);
                 }
+
+                //                此段逻辑已被 ResponseWrapper 取代
+                //                if (String.class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/StringResp", "convert",
+                //                            "(Ljava/lang/String;)Lnet/pocrd/responseEntity/StringResp;");
+                //                } else if (String[].class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/StringArrayResp", "convert",
+                //                            "([Ljava/lang/String;)Lnet/pocrd/responseEntity/StringArrayResp;");
+                //                } else if (Date.class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DateResp", "convert",
+                //                            "(Ljava/util/Date;)Lnet/pocrd/responseEntity/DateResp;");
+                //                } else if (Date[].class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DateArrayResp", "convert",
+                //                            "([Ljava/util/Date;)Lnet/pocrd/responseEntity/DateArrayResp;");
+                //                } else if (boolean.class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/BoolResp", "convert", "(Z)Lnet/pocrd/responseEntity/BoolResp;");
+                //                } else if (boolean[].class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/BoolArrayResp", "convert",
+                //                            "([Z)Lnet/pocrd/responseEntity/BoolArrayResp;");
+                //                } else if (byte.class == method.returnType || short.class == method.returnType || char.class == method.returnType
+                //                        || int.class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/NumberResp", "convert",
+                //                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/NumberResp;");
+                //                } else if (byte[].class == method.returnType || short[].class == method.returnType || char[].class == method.returnType
+                //                        || int[].class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/NumberArrayResp", "convert",
+                //                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/NumberArrayResp;");
+                //                } else if (long.class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/LongResp", "convert", "(J)Lnet/pocrd/responseEntity/LongResp;");
+                //                } else if (long[].class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/LongArrayResp", "convert",
+                //                            "([J)Lnet/pocrd/responseEntity/LongArrayResp;");
+                //                } else if (double.class == method.returnType || float.class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DoubleResp", "convert",
+                //                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/DoubleResp;");
+                //                } else if (double[].class == method.returnType || float[].class == method.returnType) {
+                //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DoubleArrayResp", "convert",
+                //                            "(" + Type.getDescriptor(method.returnType) + ")Lnet/pocrd/responseEntity/DoubleArrayResp;");
+                //                } else if (Collection.class.isAssignableFrom(method.returnType)) {//support Collection
+                //                    if (String.class == method.actuallyGenericReturnType) {
+                //                        pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/StringArrayResp", "convert",
+                //                                "(Ljava/util/Collection;)Lnet/pocrd/responseEntity/StringArrayResp;");
+                //                    } else if (Date.class == method.actuallyGenericReturnType) {
+                //                        pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/DateArrayResp", "convert",
+                //                                "(Ljava/util/Collection;)Lnet/pocrd/responseEntity/DateArrayResp;");
+                //                    } else {
+                //                        pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/ObjectArrayResp", "convert",
+                //                                "(Ljava/util/Collection;)Lnet/pocrd/responseEntity/ObjectArrayResp;");
+                //                    }
+                //                } else if (method.returnType.isArray()) {
+                //                    //下面这句话已经support了object array，不过pojo未支持
+                //                    //                    pmv.visitMethodInsn(INVOKESTATIC, "net/pocrd/responseEntity/ObjectArrayResp", "convert",
+                //                    //                                        "([Ljava/lang/Object;)Lnet/pocrd/responseEntity/ObjectArrayResp;");
+                //                    throw new RuntimeException(
+                //                            String.format("unsupport return type, object array is not support now. type:%s, groupName:%s, methodName:%s",
+                //                                    method.returnType, method.groupName, method.methodName));
+                //                }
 
                 pmv.visitInsn(ARETURN);
                 pmv.visitMaxs(0, 0);
@@ -383,8 +400,6 @@ public class HttpApiProvider implements Opcodes {
                             cw.toByteArray()).newInstance();
             e.setInstance(method.serviceInstance);
             return e;
-        } catch (Exception e) {
-            throw new RuntimeException("generator failed. " + name, e);
         } catch (Throwable t) {
             throw new RuntimeException("generator failed. " + name, t);
         }

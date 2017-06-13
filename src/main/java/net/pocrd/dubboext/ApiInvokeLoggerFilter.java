@@ -2,12 +2,7 @@ package net.pocrd.dubboext;
 
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.Activate;
-import com.alibaba.dubbo.rpc.Filter;
-import com.alibaba.dubbo.rpc.Invocation;
-import com.alibaba.dubbo.rpc.Invoker;
-import com.alibaba.dubbo.rpc.Result;
-import com.alibaba.dubbo.rpc.RpcContext;
-import com.alibaba.dubbo.rpc.RpcException;
+import com.alibaba.dubbo.rpc.*;
 import net.pocrd.define.CommonParameter;
 import org.slf4j.MDC;
 
@@ -18,8 +13,10 @@ import org.slf4j.MDC;
  */
 @Activate(group = Constants.PROVIDER)
 public class ApiInvokeLoggerFilter implements Filter {
+    private static ThreadLocal<String> callId = new ThreadLocal<>();
     private static boolean hasSlf4jMDC;
     private static boolean hasLog4jMDC;
+
     static {
         try {
             Class.forName("org.slf4j.MDC");
@@ -36,6 +33,11 @@ public class ApiInvokeLoggerFilter implements Filter {
             hasLog4jMDC = false;
         }
     }
+
+    public static String getCallId() {
+        return callId.get();
+    }
+
     private void put(String key, String value) {
         if (key != null && value != null) {
             if (hasSlf4jMDC) {
@@ -45,6 +47,7 @@ public class ApiInvokeLoggerFilter implements Filter {
             }
         }
     }
+
     private void remove(String key) {
         if (key != null) {
             if (hasSlf4jMDC) {
@@ -54,12 +57,15 @@ public class ApiInvokeLoggerFilter implements Filter {
             }
         }
     }
+
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         RpcContext context = RpcContext.getContext();
         String cid = context.getAttachment(CommonParameter.callId);
         put(CommonParameter.callId, cid);
+        callId.set(cid);
         Result res = invoker.invoke(invocation);
+        callId.remove();
         remove(CommonParameter.callId);
         return res;
     }

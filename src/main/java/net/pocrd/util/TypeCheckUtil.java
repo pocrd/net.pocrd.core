@@ -9,6 +9,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 
 public class TypeCheckUtil {
@@ -19,6 +20,8 @@ public class TypeCheckUtil {
         {
             add(String.class);
             add(String[].class);
+            add(Date.class);
+            add(Date[].class);
             add(boolean.class);
             add(boolean[].class);
             add(byte.class);
@@ -46,6 +49,7 @@ public class TypeCheckUtil {
     private final static HashSet<Class<?>> INPUT_ACCEPT_CLAZZ_SET = new HashSet<Class<?>>() {
         {
             add(String.class);
+            add(Date.class);
             add(boolean.class);
             add(byte.class);
             add(short.class);
@@ -204,7 +208,8 @@ public class TypeCheckUtil {
                                 throw new RuntimeException("can not get generic type, " + returnType + " in " + serviceInterfaceName, exception);
                             }
                             try {
-                                fieldActualClazz = Class.forName(((Class<?>)fieldActuallyGenericType).getName(), true, Thread.currentThread().getContextClassLoader());
+                                fieldActualClazz = Class.forName(((Class<?>)fieldActuallyGenericType).getName(), true,
+                                        Thread.currentThread().getContextClassLoader());
                             } catch (ClassNotFoundException e) {
                                 throw new RuntimeException("generic type unsupported, " + fieldActuallyGenericType + " in " + serviceInterfaceName,
                                         e);
@@ -283,7 +288,8 @@ public class TypeCheckUtil {
                             throw new RuntimeException("can not get generic type, " + inputType + " in " + serviceInterfaceName, exception);
                         }
                         try {
-                            fieldActualClazz = Class.forName(((Class)fieldActuallyGenericType).getName(), true, Thread.currentThread().getContextClassLoader());
+                            fieldActualClazz = Class
+                                    .forName(((Class)fieldActuallyGenericType).getName(), true, Thread.currentThread().getContextClassLoader());
                         } catch (ClassNotFoundException e) {
                             throw new RuntimeException("generic type unsupported, " + fieldActuallyGenericType + " in " + serviceInterfaceName,
                                     e);

@@ -416,6 +416,9 @@ public class POJOSerializerProvider implements Opcodes {
                     pmv.deleteLocal("obj");
                 }
             } else {//非String/enum以及基础类型的序列化
+                if (t.getName().startsWith("java.lang.")) {
+                    throw new RuntimeException("unsupport complex type,type:" + t.getName());
+                }
                 if (isCollection) {
                     pmv.loadArg(1); // load instance
                     pmv.visitFieldInsn(GETFIELD, t_className, name, Type.getDescriptor(fd.getType()));//attention:t是actually generic types

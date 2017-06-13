@@ -114,7 +114,7 @@ public class EvaluaterProvider implements Opcodes {
                                     mv.visitFieldInsn(PUTFIELD, l_name, name, Type.getDescriptor(fl.getType()));
                                 }
                             } else if (fl.getType() == Date.class && fr.getType() == long.class) {
-                                //允许long到dateTime的拷贝
+                                //允许long到date的拷贝
                                 mv.visitVarInsn(ALOAD, 2);
                                 mv.visitFieldInsn(GETFIELD, r_name, name, "J");
                                 mv.visitInsn(LCONST_0);
@@ -152,7 +152,7 @@ public class EvaluaterProvider implements Opcodes {
                                     mv.visitFieldInsn(PUTFIELD, l_name, name, Type.getDescriptor(fl.getType()));
                                 }
                             } else if (fl.getType() == Date.class && mr.getReturnType() == long.class) {
-                                //允许long到dateTime的双向拷贝
+                                //允许long到date的双向拷贝
                                 mv.visitVarInsn(ALOAD, 2);
                                 mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), "()J");
                                 mv.visitInsn(LCONST_0);
@@ -197,7 +197,7 @@ public class EvaluaterProvider implements Opcodes {
                         if (frs.containsKey(name)) {
                             Field fr = frs.get(name);
                             if (ml.getParameterTypes()[0] == fr.getType()) {
-                                if (ml.getGenericReturnType().getTypeName().equals(fr.getGenericType().getTypeName())) {
+                                if (ml.getGenericParameterTypes()[0].getTypeName().equals(fr.getGenericType().getTypeName())) {
                                     mv.visitVarInsn(ALOAD, 1);
                                     mv.visitVarInsn(ALOAD, 2);
                                     mv.visitFieldInsn(GETFIELD, r_name, name, Type.getDescriptor(fr.getType()));
@@ -234,7 +234,7 @@ public class EvaluaterProvider implements Opcodes {
                         } else if (mrs.containsKey(name)) {
                             Method mr = mrs.get(name);
                             if (ml.getParameterTypes()[0] == mr.getReturnType()) {
-                                if (ml.getGenericReturnType().getTypeName().equals(ml.getGenericReturnType().getTypeName())) {
+                                if (ml.getGenericParameterTypes()[0].getTypeName().equals(mr.getGenericReturnType().getTypeName())) {
                                     mv.visitVarInsn(ALOAD, 1);
                                     mv.visitVarInsn(ALOAD, 2);
                                     mv.visitMethodInsn(INVOKEVIRTUAL, r_name, mr.getName(), Type.getMethodDescriptor(mr));

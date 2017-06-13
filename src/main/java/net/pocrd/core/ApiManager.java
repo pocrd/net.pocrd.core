@@ -96,7 +96,7 @@ public final class ApiManager {
      * 处理Api请求
      */
     public final Object processRequest(String name, String[] parameters) {
-        return nameToApi.get(name).execute(parameters);
+        return apiInfos.get(name).wrapper.wrap(nameToApi.get(name).execute(parameters));
     }
 
     /**
@@ -172,6 +172,14 @@ public final class ApiManager {
                     apiInfo.methodName = api.name();
                     apiInfo.owner = api.owner();
                     apiInfo.groupOwner = groupAnnotation.owner();
+                    Roles roles = mInfo.getAnnotation(Roles.class);
+                    if (roles != null && roles.value() != null) {
+                        String[] rs = roles.value();
+                        apiInfo.roleSet = new HashSet<String>();
+                        for (String role : rs) {
+                            apiInfo.roleSet.add(role);
+                        }
+                    }
                     DesignedErrorCode errors = mInfo.getAnnotation(DesignedErrorCode.class);
                     if (errors != null && errors.value() != null) {
                         int[] es = errors.value();
@@ -378,12 +386,6 @@ public final class ApiManager {
                             new PublicFieldChecker());
                     apiInfo.dubboInterface = clazz;
                     apiInfo.securityLevel = api.security();
-                    if (api.roles().length() > 0) {
-                        apiInfo.roleSet = new HashSet<String>();
-                        for (String role : api.roles().split(",")) {
-                            apiInfo.roleSet.add(role);
-                        }
-                    }
                     //对于Integrated级别接口需要指定可访问该接口的第三方编号
                     if (SecurityType.Integrated.check(apiInfo.securityLevel)) {
                         if (api.needVerify()) {
@@ -503,6 +505,12 @@ public final class ApiManager {
         } else if (String[].class == apiInfo.returnType) {//不适用ObjectArrayResp，考虑到代码生成的时候会生成重复代码
             apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
             apiInfo.wrapper = ResponseWrapper.stringArrayWrapper;
+        } else if (Date.class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(StringResp.class);
+            apiInfo.wrapper = ResponseWrapper.dateWrapper;
+        } else if (Date[].class == apiInfo.returnType) {
+            apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
+            apiInfo.wrapper = ResponseWrapper.dateArrayWrapper;
         } else if (boolean.class == apiInfo.returnType) {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(BoolResp.class);
             apiInfo.wrapper = ResponseWrapper.boolWrapper;
@@ -576,7 +584,10 @@ public final class ApiManager {
                 apiInfo.wrapper = ResponseWrapper.stringCollectionWrapper;
             } else if (genericClazz.getAnnotation(Description.class) != null) {
                 apiInfo.serializer = Serializer.objectArrayRespSerializer;
-                apiInfo.wrapper = ResponseWrapper.collectionWrapper;
+                apiInfo.wrapper = ResponseWrapper.objectCollectionWrapper;
+            } else if (Date.class == genericClazz) {
+                apiInfo.serializer = POJOSerializerProvider.getSerializer(DateArrayResp.class);
+                apiInfo.wrapper = ResponseWrapper.dateCollectionWrapper;
             } else {
                 throw new RuntimeException("unsupported return type, genericType:" + genericClazz.getName() + " method name:" + mInfo.getName());
             }

@@ -62,6 +62,7 @@ public class HtmlApiDocGenerator extends ApiCodeGenerator {
             TransformerFactory tFactory = TransformerFactory.newInstance();
             Source xslSource = getXsltSource(xslt, new StreamSource(customizeXslt(defaultStream)));
             Transformer trasform = tFactory.newTransformer(xslSource);
+            FileUtil.recreateDir(output);
             trasform.transform(new StreamSource(apiInfo), new StreamResult(output + "/apidoc.html"));
         } catch (Exception e) {
             logger.error("generator doc failed!", e);

@@ -45,9 +45,4 @@ public @interface HttpApi {
      * SecurityType.Integrated 级别接口是否需要apigw进行签名验证,false:验证由服务提供方完成,true:apigw负责签名验证
      */
     boolean needVerify() default true;
-
-    /**
-     * 可以访问该资源的角色列表 半角逗号分隔
-     */
-    String roles() default "";
 }
