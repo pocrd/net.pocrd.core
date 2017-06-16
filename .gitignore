@@ -26,6 +26,7 @@
 *~
 *.sass-cache
 *.ruby-version
+*.iml
 
 # OS or Editor folders
 .DS_Store
