@@ -44,7 +44,6 @@ net/pocrd/core/test/RsaHelperTest.class
 net/pocrd/core/test/RsaDemo.class
 net/pocrd/core/test/HttpApiUtilTestExtend.class
 net/pocrd/core/test/ApiGeneratorTest$ApiTestReturnCode.class
-net/pocrd/core/test/FastjsonTest.class
 net/pocrd/core/test/AESTokenHelperTest.class
 net/pocrd/core/test/EvaluaterProviderTest$Right.class
 net/pocrd/core/test/MultithreadTestHelper.class

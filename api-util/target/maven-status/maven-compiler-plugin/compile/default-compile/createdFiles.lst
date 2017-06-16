@@ -15,6 +15,7 @@ net/pocrd/annotation/ApiMockInterfaceImpl.class
 net/pocrd/define/Serializer.class
 net/pocrd/annotation/ApiAutowired.class
 net/pocrd/entity/AbstractReturnCode.class
+net/pocrd/annotation/ConsoleOption.class
 net/pocrd/define/MockApiImplementation.class
 net/pocrd/annotation/ApiParameter.class
 net/pocrd/core/generator/ApiSdkJavaScriptGenerator$Builder.class
@@ -106,6 +107,7 @@ net/pocrd/define/ResponseWrapper$4.class
 net/pocrd/entity/ApiReturnCode.class
 net/pocrd/responseEntity/CreditNotification.class
 net/pocrd/util/Base64Util$Encoder.class
+net/pocrd/annotation/ConsoleJoinPoint.class
 net/pocrd/define/ResponseWrapper$14.class
 net/pocrd/define/ResponseWrapper$24.class
 net/pocrd/define/ResponseWrapper$11.class
@@ -177,6 +179,7 @@ net/pocrd/core/generator/ApiSdkObjectiveCGenerator$Builder.class
 net/pocrd/core/LocalException.class
 net/pocrd/define/MockApiReturnObject.class
 net/pocrd/define/Serializer$2.class
+net/pocrd/annotation/ConsoleArgument.class
 net/pocrd/annotation/ThreadSafe.class
 net/pocrd/util/PocMethodVisitor.class
 net/pocrd/util/HttpApiProvider.class

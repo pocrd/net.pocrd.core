@@ -1,5 +1,8 @@
 package net.pocrd.core.generator;
 
+import net.pocrd.annotation.ConsoleArgument;
+import net.pocrd.annotation.ConsoleJoinPoint;
+import net.pocrd.annotation.ConsoleOption;
 import net.pocrd.define.ConstField;
 import net.pocrd.entity.CompileConfig;
 import org.slf4j.Logger;
@@ -21,12 +24,12 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
-import java.util.HashMap;
 import java.util.HashSet;
 
 /**
  * Created by guankaiqiang521 on 2014/9/25.
  */
+@ConsoleJoinPoint(command = "api-oc-gen", desc = "生成Objective-C客户端接口文件")
 public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
     private static final Logger logger = LoggerFactory.getLogger(ApiSdkObjectiveCGenerator.class);
 
@@ -378,25 +381,25 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         }
     }
 
-    public static void main(String[] args) {
-        if (args.length >= 4 && args.length % 2 == 0) {
-            ApiCodeGenerator gen = new Builder().setClassPrefix(args[2]).setOutputPath(args[3]).build();
-            HashMap<String, String> map = new HashMap<String, String>();
-            for (int i = 5; i < args.length; ) {
-                map.put(args[i - 1], args[i]);
-                i += 2;
-            }
-            gen.setApiGroups(map.get("-g"));
-            gen.setSecurityTypes(map.get("-s"));
-            gen.setRejectApis(map.get("-ra"));
-            if ("jar".equals(args[0])) {
-                gen.generateViaJar(args[1]);
-            } else if ("url".equals(args[0])) {
-                gen.generateWithApiInfo(args[1]);
-            }
+    public static void execute(
+            @ConsoleOption(name = "g", desc = "需要生成的api组名", sample = "groupA,groupB") String groups,
+            @ConsoleOption(name = "s", desc = "需要生成的安全级别", sample = "None,UserLogin") String securityTypes,
+            @ConsoleOption(name = "ra", desc = "不生成的接口列表", sample = "user.getInfo,device.register") String rejectApis,
+            @ConsoleOption(name = "o", desc = "输出文件目录") String outputPath,
+            @ConsoleOption(name = "jar", desc = "根据jar文件生成时给出jar文件地址") String jarFile,
+            @ConsoleOption(name = "url", desc = "根据在线文档生成时给出文档url", sample = "http://www.pocrd.net/info.api?raw") String url,
+            @ConsoleArgument(name = "prefix", desc = "oc类名前缀", sample = "net.pocrd.js") String prefix
+    ) {
+        ApiCodeGenerator gen = new Builder().setClassPrefix(prefix).setOutputPath(outputPath).build();
+        gen.setApiGroups(groups);
+        gen.setSecurityTypes(securityTypes);
+        gen.setRejectApis(rejectApis);
+        if (jarFile != null) {
+            gen.generateViaJar(jarFile);
+        } else if (url != null) {
+            gen.generateWithApiInfo(url);
         } else {
-            System.out.println(
-                    "error parameter. {jar/url} {jar/url path} {package prefix} {output path} {-g accept_group_names} {-s accept_security_types} {-ra reject_api_names}");
+            throw new RuntimeException("either jar or url must be specified.");
         }
     }
 }

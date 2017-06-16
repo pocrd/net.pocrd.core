@@ -1,5 +1,7 @@
 package net.pocrd.core.generator;
 
+import net.pocrd.annotation.ConsoleJoinPoint;
+import net.pocrd.annotation.ConsoleOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +16,7 @@ import java.io.InputStream;
 /**
  * Created by guankaiqiang521 on 2014/9/24.
  */
+@ConsoleJoinPoint(command = "api-doc-gen", desc = "生成html格式的api文档")
 public class HtmlApiDocGenerator extends ApiCodeGenerator {
     private static final Logger logger = LoggerFactory.getLogger(HtmlApiDocGenerator.class);
 
@@ -82,16 +85,18 @@ public class HtmlApiDocGenerator extends ApiCodeGenerator {
         }
     }
 
-    public static void main(String[] args) {
-        if (args.length == 3) {
-            if ("jar".equals(args[0])) {
-                new Builder().setOutputPath(args[2]).build().generateViaJar(args[1]);
-                return;
-            } else if ("url".equals(args[0])) {
-                new Builder().setOutputPath(args[2]).build().generateWithApiInfo(args[1]);
-                return;
-            }
+    public static void execute(
+            @ConsoleOption(name = "o", desc = "输出文件目录") String outputPath,
+            @ConsoleOption(name = "jar", desc = "根据jar文件生成时给出jar文件地址") String jarFile,
+            @ConsoleOption(name = "url", desc = "根据在线文档生成时给出文档url", sample = "http://www.pocrd.net/info.api?raw") String url
+    ) {
+        ApiCodeGenerator gen = new Builder().setOutputPath(outputPath).build();
+        if (jarFile != null) {
+            gen.generateViaJar(jarFile);
+        } else if (url != null) {
+            gen.generateWithApiInfo(url);
+        } else {
+            throw new RuntimeException("either jar or url must be specified.");
         }
-        System.out.println("error parameter. {jar/url} {jar/url path} {output path}");
     }
 }

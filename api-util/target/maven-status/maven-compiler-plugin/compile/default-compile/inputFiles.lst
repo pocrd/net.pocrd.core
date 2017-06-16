@@ -22,6 +22,7 @@
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/core/InfoServlet.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/entity/ServiceException.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/util/MiscUtil.java
+/Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/annotation/ConsoleOption.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/define/ResponseWrapper.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/annotation/NotThreadSafe.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/entity/ApiParameterInfo.java
@@ -57,6 +58,7 @@
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/responseEntity/KeyValueList.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/responseEntity/DoubleResp.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/define/SecurityType.java
+/Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/annotation/ConsoleJoinPoint.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/entity/ReturnCodeContainer.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/responseEntity/JSONString.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/responseEntity/MessageNotification.java
@@ -92,6 +94,7 @@
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/responseEntity/StringArrayResp.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/util/MethodVisitorWrapper.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/util/XmlFileConfigUtil.java
+/Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/annotation/ConsoleArgument.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/util/HttpApiProvider.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/util/SingletonUtil.java
 /Users/rendong/workspace/github/net.pocrd.core/api-util/src/main/java/net/pocrd/entity/ApiReturnCode.java

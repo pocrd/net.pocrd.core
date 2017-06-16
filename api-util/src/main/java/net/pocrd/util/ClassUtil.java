@@ -5,12 +5,15 @@ import net.pocrd.define.ConstField;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 
 /**
  * 获取命名空间下的所有类
@@ -23,14 +26,25 @@ public class ClassUtil {
             ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
             String path = packageName.replace('.', '/');
             Enumeration<URL> resources = classLoader.getResources(path);
-            List<File> dirs = new LinkedList<File>();
+            List<File> dirs = new LinkedList<>();
+            List<URL> jars = new LinkedList<>();
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
-                dirs.add(new File(resource.getFile()));
+                String protocol = resource.getProtocol();
+                if ("file".equals(protocol)) {
+                    // 本地自己可见的代码
+                    dirs.add(new File(resource.getFile()));
+                } else if ("jar".equals(protocol)) {
+                    // 引用第三方jar的代码
+                    jars.add(resource);
+                }
             }
             List<Class<?>> classes = new LinkedList<Class<?>>();
             for (File directory : dirs) {
                 classes.addAll(findClasses(directory, packageName));
+            }
+            for (URL url : jars) {
+                classes.addAll(findClasses(url, packageName));
             }
             return classes.toArray(new Class[classes.size()]);
         } catch (Exception e) {
@@ -56,6 +70,26 @@ public class ClassUtil {
         return classes;
     }
 
+    private static List<Class<?>> findClasses(URL url, String packageName) {
+        List<Class<?>> classes = new LinkedList<Class<?>>();
+        try {
+            JarURLConnection jarURLConnection = (JarURLConnection)url.openConnection();
+            JarFile jarFile = jarURLConnection.getJarFile();
+            Enumeration<JarEntry> jarEntries = jarFile.entries();
+            while (jarEntries.hasMoreElements()) {
+                JarEntry jarEntry = jarEntries.nextElement();
+                String jarEntryName = jarEntry.getName(); // 类似：sun/security/internal/interfaces/TlsMasterSecret.class
+                String className = jarEntryName.replace("/", ".");
+                if (className.startsWith(packageName) && className.endsWith(".class")) {
+                    classes.add(loadClass(className.substring(0, className.length() - 6)));
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("parse class failed from " + url.toString(), e);
+        }
+        return classes;
+    }
+
     private static ClassLoader getTCL() {
         ClassLoader cl;
         if (System.getSecurityManager() == null) {
@@ -76,7 +110,7 @@ public class ClassUtil {
         try {
             return getTCL().loadClass(className);
         } catch (final Throwable e) {
-            return Class.forName(className, true, Thread.currentThread().getContextClassLoader());
+            return Class.forName(className, false, Thread.currentThread().getContextClassLoader());
         }
     }
 

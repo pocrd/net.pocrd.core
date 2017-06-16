@@ -1,6 +1,8 @@
 package net.pocrd.core.generator;
 
-import net.pocrd.entity.CompileConfig;
+import net.pocrd.annotation.ConsoleArgument;
+import net.pocrd.annotation.ConsoleJoinPoint;
+import net.pocrd.annotation.ConsoleOption;
 import net.pocrd.util.WebRequestUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import java.io.InputStream;
 /**
  * Created by rendong on 16/2/17.
  */
+@ConsoleJoinPoint(command = "api-logger-gen", desc = "根据api文档生成每个接口的日志分析代码")
 public class ApiLogParserGenerator {
     private static final Logger logger = LoggerFactory.getLogger(ApiLogParserGenerator.class);
 
@@ -46,15 +49,9 @@ public class ApiLogParserGenerator {
         }
     }
 
-    public static void main(String[] args) {
-        if (args.length == 2 && args[0] != null && args[1] != null) {
-            generate(args[0], args[1]);
-        } else {
-            if (CompileConfig.isDebug) {
-                generate("http://115.28.160.84/info.api?raw", "/Users/rendong/Desktop");
-            } else {
-                System.out.println("error parameter.  args[0]:source url   args[1]:output path");
-            }
-        }
+    public static void execute(
+            @ConsoleOption(name = "o", desc = "输出目录") String outputPath,
+            @ConsoleArgument(name = "url", desc = "api文档地址", sample = "http://www.pocrd.net/info.api?raw") String url) {
+        generate(url, outputPath == null ? "." : outputPath);
     }
 }
