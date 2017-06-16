@@ -8,10 +8,10 @@
 .classpath
 .metadata
 .settings/
-/build/
-/bin/
-/debug/
-/target/
+**/build/
+**/bin/
+**/debug/
+**/target/
 
 # Numerous always-ignore extensions
 *.diff
