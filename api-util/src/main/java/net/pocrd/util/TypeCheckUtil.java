@@ -92,6 +92,9 @@ public class TypeCheckUtil {
     public static class PublicFieldChecker implements TypeChecker {
         @Override
         public boolean accept(Class<?> returnType, String desc) {
+            if (INPUT_ACCEPT_CLAZZ_SET.contains(returnType) || returnType.isEnum()) {
+                return true;
+            }
             boolean hasPublicField = false;
             Field[] fields = returnType.getDeclaredFields();
             if (fields != null) {
@@ -172,7 +175,9 @@ public class TypeCheckUtil {
                 parsedOutputTypes.set(new WeakReference<HashSet<Class<?>>>(types));
             }
             if (types.contains(returnType)) {
-                return;
+                if (actuallyGenericType == null || types.contains(actuallyGenericType)) {
+                    return;
+                }
             } else {
                 types.add(returnType);
             }

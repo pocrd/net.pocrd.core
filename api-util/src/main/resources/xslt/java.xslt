@@ -3,10 +3,11 @@
   <xsl:template name="ApiMethodInfo" match="api">
     <xsl:variable name="methodName" select="methodName"/>
     <xsl:variable name="requiredParamNumber" select="0"/>// Auto Generated.  DO NOT EDIT!
-    
+
 package ${pkg}.api.request;
 <xsl:if test="./parameterInfoList/parameterInfo[isList='true']">
-import java.util.List;</xsl:if>
+import java.util.List;</xsl:if><xsl:if test="./parameterInfoList/parameterInfo[type='date']">
+import java.util.Date;</xsl:if>
 import com.google.gson.*;
 <xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
 import ${pkg}.ApiContext;
@@ -55,7 +56,7 @@ public class <xsl:call-template name="getClassName">
         }
         return response.code;
     }
-    
+
     /**
      * 不要直接调用这个方法，API使用者应该访问基类的getResponse()获取接口的返回值
      */
@@ -200,6 +201,7 @@ public class <xsl:call-template name="getClassName">
     <xsl:param name="type"/>
     <xsl:choose>
       <xsl:when test="$type = 'string'">String</xsl:when>
+      <xsl:when test="$type = 'date'">Date</xsl:when>
       <xsl:otherwise><xsl:value-of select="$type"/></xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -216,6 +218,7 @@ public class <xsl:call-template name="getClassName">
       <xsl:when test="$type = 'float'">String.valueOf(<xsl:value-of select="$value"/>)</xsl:when>
       <xsl:when test="$type = 'double'">String.valueOf(<xsl:value-of select="$value"/>)</xsl:when>
       <xsl:when test="$type = 'string'"><xsl:value-of select="$value"/></xsl:when>
+      <xsl:when test="$type = 'date'">String.valueOf(<xsl:value-of select="$value"/>.getTime())</xsl:when>
         <xsl:otherwise>
         <xsl:value-of select="$value"/>.serialize().toString()</xsl:otherwise>
     </xsl:choose>
@@ -411,6 +414,8 @@ package ${pkg}.api.resp;
 <xsl:if test="./fieldList/field[isList='true']">
 import java.util.ArrayList;
 import java.util.List;
+</xsl:if><xsl:if test="./fieldList/field[type='date']">
+import java.util.Date;
 </xsl:if>
 import com.google.gson.*;
 
@@ -432,7 +437,7 @@ public class <xsl:value-of select="name" /> {
         }
         return null;
     }
-    
+
     /**
      * 反序列化函数，用于从json节点对象反序列化本类型实例
      */
@@ -457,7 +462,7 @@ public class <xsl:value-of select="name" /> {
         }
         return null;
     }
-    
+
     /**
      * 序列化函数，用于从对象生成数据字典
      */
@@ -521,6 +526,7 @@ public class <xsl:value-of select="name" /> {
                   <xsl:when test="$type = 'int'">result.<xsl:value-of select="$name" /> = new int[len];</xsl:when>
                   <xsl:when test="$type = 'long'">result.<xsl:value-of select="$name" /> = new long[len];</xsl:when>
                   <xsl:when test="$type = 'string'">result.<xsl:value-of select="$name" /> = new ArrayList<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text>String<xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text>(len);</xsl:when>
+                  <xsl:when test="$type = 'date'">result.<xsl:value-of select="$name" /> = new Date[len];</xsl:when>
                   <xsl:otherwise>result.<xsl:value-of select="name" /> = new ArrayList<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text>
                   <xsl:value-of select="$type" /><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text>(len);</xsl:otherwise>
           </xsl:choose>
@@ -565,6 +571,7 @@ public class <xsl:value-of select="name" /> {
                     } else {
                         result.<xsl:value-of select="name" />.add(i, null);
                     }</xsl:when>
+          <xsl:when test="$type = 'date'">result.<xsl:value-of select="name" />[i] = new Date(<xsl:value-of select="name" />Array.get(i).getAsLong());</xsl:when>          
           <xsl:otherwise>JsonObject jo = <xsl:value-of select="name" />Array.get(i).getAsJsonObject();
                     if (jo != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !jo.isJsonNull()) {
                         result.<xsl:value-of select="name" />.add(<xsl:value-of select="type" />.deserialize(jo));
@@ -582,6 +589,7 @@ public class <xsl:value-of select="name" /> {
           <xsl:when test="$type = 'int'">result.<xsl:value-of select="$name" /> = element.getAsInt();</xsl:when>
           <xsl:when test="$type = 'long'">result.<xsl:value-of select="$name" /> = element.getAsLong();</xsl:when>
           <xsl:when test="$type = 'string'">result.<xsl:value-of select="$name" /> = element.getAsString();</xsl:when>
+          <xsl:when test="$type = 'date'">result.<xsl:value-of select="$name" /> = new Date(element.getAsLong());</xsl:when>
           <xsl:otherwise>result.<xsl:value-of select="$name" /> = <xsl:value-of select="type" />.deserialize(json.get("<xsl:value-of select="name" />").getAsJsonObject());</xsl:otherwise>
         </xsl:choose>
       </xsl:otherwise>
@@ -632,6 +640,7 @@ public class <xsl:value-of select="name" /> {
           <xsl:when test="$type = 'int'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
           <xsl:when test="$type = 'long'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
           <xsl:when test="$type = 'string'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value));</xsl:when>
+          <xsl:when test="$type = 'date'"><xsl:value-of select="$objcName" />Array.add(new JsonPrimitive(value.getTime()));</xsl:when>
           <xsl:otherwise>if (value != null) {
                     <xsl:value-of select="$objcName" />Array.add(value.serialize());
                 }</xsl:otherwise>
@@ -656,6 +665,8 @@ public class <xsl:value-of select="name" /> {
           <xsl:when test="$type = 'long'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
           <xsl:when test="$type = 'string'">if(this.<xsl:value-of select="$objcName" /> != null) { json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />); }
+          </xsl:when>
+          <xsl:when test="$type = 'date'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />.getTime());
           </xsl:when>
           <xsl:otherwise>if (this.<xsl:value-of select="$objcName" /> != null) { json.add("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />.serialize()); }
           </xsl:otherwise>

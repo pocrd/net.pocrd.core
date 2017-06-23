@@ -885,8 +885,8 @@ public class HttpRequestExecutor {
                             try {
                                 int index = stk.lastIndexOf("|");
                                 if (index > 0) {
-                                    stk = stk.substring(0, index);
                                     duration = Integer.valueOf(stk.substring(index + 1));
+                                    stk = stk.substring(0, index);
                                 }
 
                             } catch (Exception e) {

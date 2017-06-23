@@ -211,6 +211,7 @@
         <xsl:when test="$type = 'int'">NSInteger</xsl:when>
         <xsl:when test="$type = 'long'">long long</xsl:when>
         <xsl:when test="$type = 'string'">NSString *</xsl:when>
+        <xsl:when test="$type = 'date'">long long</xsl:when>
         <xsl:otherwise>${prefix}<xsl:value-of select="$type"/> *</xsl:otherwise>
       </xsl:choose>
     </xsl:if>
@@ -226,11 +227,12 @@
         <xsl:when test="$type = 'byte'">[[NSNumber numberWithChar:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
         <xsl:when test="$type = 'char'">[[NSNumber numberWithUnsignedShort:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
         <xsl:when test="$type = 'short'">[[NSNumber numberWithShort:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
-        <xsl:when test="$type = 'double'">[[NSNumber numberWithDouble:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
-        <xsl:when test="$type = 'float'">[[NSNumber numberWithFloat:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
+        <xsl:when test="$type = 'double'">[NSString stringWithFormat:@"%.2f",<xsl:value-of select="$value"/>]</xsl:when>
+        <xsl:when test="$type = 'float'">[NSString stringWithFormat:@"%.2f",<xsl:value-of select="$value"/>]</xsl:when>
         <xsl:when test="$type = 'int'">[[NSNumber numberWithInteger:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
         <xsl:when test="$type = 'long'">[[NSNumber numberWithLongLong:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
         <xsl:when test="$type = 'string'"><xsl:value-of select="$value"/></xsl:when>
+        <xsl:when test="$type = 'date'">[[NSNumber numberWithLongLong:<xsl:value-of select="$value"/>] stringValue]</xsl:when>
         <xsl:when test="substring($type, 1, 4) = 'Api_'"><xsl:value-of select="$value"/> == nil ? @"" : [[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:[<xsl:value-of select="$value"/> serialize] options:0 error:nil] encoding:NSUTF8StringEncoding]</xsl:when>
         <xsl:otherwise>
           <xsl:value-of select="$value"/> == nil ? @"" : [[NSString alloc] initWithData:[NSJSONSerialization dataWithJSONObject:<xsl:value-of select="$value"/> options:0 error:nil] encoding:NSUTF8StringEncoding]
@@ -285,6 +287,10 @@
         <xsl:when test="$type = 'string'">
 /* <xsl:value-of select="$desc" /> */
 @property (nonatomic, strong) NSString *<xsl:value-of select="$objcName"/>;
+</xsl:when>
+        <xsl:when test="$type = 'date'">
+/* <xsl:value-of select="$desc" /> */
+@property (nonatomic, assign) long long <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:otherwise>
 /* <xsl:value-of select="$desc" /> */
@@ -573,6 +579,7 @@ typedef enum {
           <xsl:when test="$type = 'int'">    [result.<xsl:value-of select="$objcName" /> addObject:[<xsl:value-of select="$objcName" />Array objectAtIndex:i]];</xsl:when>
           <xsl:when test="$type = 'long'">    [result.<xsl:value-of select="$objcName" /> addObject:[<xsl:value-of select="$objcName" />Array objectAtIndex:i]];</xsl:when>
           <xsl:when test="$type = 'string'">    [result.<xsl:value-of select="$objcName" /> addObject:[<xsl:value-of select="$objcName" />Array objectAtIndex:i]];</xsl:when>
+          <xsl:when test="$type = 'date'">    [result.<xsl:value-of select="$objcName" /> addObject:[<xsl:value-of select="$objcName" />Array objectAtIndex:i]];</xsl:when>
           <xsl:otherwise>NSDictionary *dict = [<xsl:value-of select="$objcName" />Array objectAtIndex:i];
                if (dict<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![dict isKindOfClass:[NSNull class]]) {
                    [result.<xsl:value-of select="$objcName" /> addObject:[${prefix}<xsl:value-of select="type" /> deserialize:dict]];
@@ -588,9 +595,9 @@ typedef enum {
               </xsl:when>
               <xsl:when test="$type = 'short'">    result.<xsl:value-of select="$objcName" /> = [[json objectForKey:@"<xsl:value-of select="name" />"] shortValue];
               </xsl:when>
-              <xsl:when test="$type = 'float'">    result.<xsl:value-of select="$objcName" /> = [[json objectForKey:@"<xsl:value-of select="name" />"] floatValue];
+              <xsl:when test="$type = 'float'">    result.<xsl:value-of select="$objcName" /> = (int)(([[json objectForKey:@"<xsl:value-of select="name" />"] floatValue] + 0.00005) * 100) / 100.00;
               </xsl:when>
-              <xsl:when test="$type = 'double'">    result.<xsl:value-of select="$objcName" /> = [[json objectForKey:@"<xsl:value-of select="name" />"] doubleValue];
+              <xsl:when test="$type = 'double'">    result.<xsl:value-of select="$objcName" /> = (int)(([[json objectForKey:@"<xsl:value-of select="name" />"] doubleValue] + 0.00005) * 100) / 100.00;
               </xsl:when>
               <xsl:when test="$type = 'int'">    result.<xsl:value-of select="$objcName" /> = [[json objectForKey:@"<xsl:value-of select="name" />"] integerValue];
               </xsl:when>
@@ -598,6 +605,8 @@ typedef enum {
               </xsl:when>
               <xsl:when test="$type = 'string'">    result.<xsl:value-of select="$objcName" /> = [json objectForKey:@"<xsl:value-of select="name" />"];
         if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { result.<xsl:value-of select="$objcName" /> = nil; }
+              </xsl:when>
+              <xsl:when test="$type = 'date'">    result.<xsl:value-of select="$objcName" /> = [[json objectForKey:@"<xsl:value-of select="name" />"] longLongValue];
               </xsl:when>
               <xsl:otherwise>    result.<xsl:value-of select="$objcName" /> = [${prefix}<xsl:value-of select="type" /> deserialize:[json objectForKey:@"<xsl:value-of select="name" />"]];
         if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { result.<xsl:value-of select="$objcName" /> = nil; }
@@ -636,6 +645,7 @@ typedef enum {
                 <xsl:when test="$type = 'int'">NSNumber</xsl:when>
                 <xsl:when test="$type = 'long'">NSNumber</xsl:when>
                 <xsl:when test="$type = 'string'">NSString</xsl:when>
+                <xsl:when test="$type = 'date'">NSNumber</xsl:when>
                 <xsl:otherwise>${prefix}<xsl:value-of select="$type" /></xsl:otherwise>
             </xsl:choose> *value = self.<xsl:value-of select="$objcName" />[i];
             if (value<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![value isKindOfClass:[NSNull class]]) {
@@ -674,6 +684,7 @@ typedef enum {
           <xsl:when test="$type = 'int'">[<xsl:value-of select="$objcName" />Array addObject:value];</xsl:when>
           <xsl:when test="$type = 'long'">[<xsl:value-of select="$objcName" />Array addObject:value];</xsl:when>
           <xsl:when test="$type = 'string'">[<xsl:value-of select="$objcName" />Array addObject:value];</xsl:when>
+          <xsl:when test="$type = 'date'">[<xsl:value-of select="$objcName" />Array addObject:value];</xsl:when>
           <xsl:otherwise>if (value != nil) {
               [<xsl:value-of select="$objcName" />Array addObject:[value serialize]];
               }</xsl:otherwise>
@@ -698,6 +709,8 @@ typedef enum {
           <xsl:when test="$type = 'long'">[dict setObject:[NSNumber numberWithLongLong:self.<xsl:value-of select="$objcName" />] forKey:@"<xsl:value-of select="name" />"];
           </xsl:when>
           <xsl:when test="$type = 'string'">if (self.<xsl:value-of select="$objcName" /> != nil) [dict setObject:self.<xsl:value-of select="$objcName" /> forKey:@"<xsl:value-of select="name" />"];
+          </xsl:when>
+          <xsl:when test="$type = 'date'">[dict setObject:[NSNumber numberWithLongLong:self.<xsl:value-of select="$objcName" />] forKey:@"<xsl:value-of select="name" />"];
           </xsl:when>
           <xsl:otherwise>if (self.<xsl:value-of select="$objcName" /> != nil) [dict setObject:[self.<xsl:value-of select="$objcName" /> serialize] forKey:@"<xsl:value-of select="name" />"];
           </xsl:otherwise>
