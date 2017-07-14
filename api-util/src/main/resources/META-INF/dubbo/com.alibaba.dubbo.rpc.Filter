@@ -1,3 +1,4 @@
 notificationConsumer=net.pocrd.dubboext.NotificationConsumerFilter
-apiInvokeLogger=net.pocrd.dubboext.ApiInvokeLoggerFilter
+traceInfoConsumer=net.pocrd.dubboext.TraceInfoConsumerFilter
+traceInfoProvider=net.pocrd.dubboext.TraceInfoProviderFilter
 exceptionHandleProvider=net.pocrd.dubboxext.ExceptionHandleProviderFilter
