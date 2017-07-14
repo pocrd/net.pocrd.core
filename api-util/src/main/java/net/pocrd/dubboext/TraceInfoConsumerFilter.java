@@ -15,10 +15,11 @@ public class TraceInfoConsumerFilter implements Filter {
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         TraceInfo traceInfo = TraceInfo.getTraceInfo();
         RpcContext context = RpcContext.getContext();
-        context.setAttachment(AttachmentKey.TRACE_ID, traceInfo.traceid);
-        context.setAttachment(AttachmentKey.SYS_INFO, traceInfo.sysinfo);
-        context.setAttachment(AttachmentKey.USER_INFO, traceInfo.userinfo);
-
+        if (traceInfo != null) {
+            context.setAttachment(AttachmentKey.TRACE_ID, traceInfo.traceid);
+            context.setAttachment(AttachmentKey.SYS_INFO, traceInfo.sysinfo);
+            context.setAttachment(AttachmentKey.USER_INFO, traceInfo.userinfo);
+        }
         return invoker.invoke(invocation);
     }
 }

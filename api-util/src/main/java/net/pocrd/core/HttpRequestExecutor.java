@@ -11,6 +11,7 @@ import net.pocrd.define.*;
 import net.pocrd.document.CallState;
 import net.pocrd.document.Response;
 import net.pocrd.dubboext.NotificationManager;
+import net.pocrd.dubboext.TraceInfo;
 import net.pocrd.entity.*;
 import net.pocrd.responseEntity.KeyValuePair;
 import net.pocrd.util.*;
@@ -256,6 +257,12 @@ public class HttpRequestExecutor {
             }
         } catch (Exception e) {
             logger.error("parse token failed.", e);
+        } finally {
+            TraceInfo.setTraceInfo(
+                    new TraceInfo(context.cid,
+                            context.appid + "|" + context.deviceIdStr + "|" + context.versionCode + "|" + context.clientIP,
+                            context.caller == null ? null : context.caller.uid + "|" + context.caller.oauthid + "|" + context.caller.role)
+            );
         }
     }
 
