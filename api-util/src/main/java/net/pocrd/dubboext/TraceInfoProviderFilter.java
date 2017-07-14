@@ -3,17 +3,17 @@ package net.pocrd.dubboext;
 import com.alibaba.dubbo.common.Constants;
 import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.rpc.*;
+import net.pocrd.define.AttachmentKey;
 import net.pocrd.define.CommonParameter;
 import org.slf4j.MDC;
 
 /**
- * 拓传调用编号
+ * 暂存访问者信息并在当前日志中打印调用编号
  *
  * @author guankaiqiang
  */
 @Activate(group = Constants.PROVIDER)
-public class ApiInvokeLoggerFilter implements Filter {
-    private static ThreadLocal<String> callId = new ThreadLocal<>();
+public class TraceInfoProviderFilter implements Filter {
     private static boolean hasSlf4jMDC;
     private static boolean hasLog4jMDC;
 
@@ -32,10 +32,6 @@ public class ApiInvokeLoggerFilter implements Filter {
         } catch (ClassNotFoundException cnfe) {
             hasLog4jMDC = false;
         }
-    }
-
-    public static String getCallId() {
-        return callId.get();
     }
 
     private void put(String key, String value) {
@@ -60,12 +56,13 @@ public class ApiInvokeLoggerFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        RpcContext context = RpcContext.getContext();
-        String cid = context.getAttachment(CommonParameter.callId);
-        put(CommonParameter.callId, cid);
-        callId.set(cid);
+        String traceid = invocation.getAttachment(AttachmentKey.TRACE_ID);
+        String sysinfo = invocation.getAttachment(AttachmentKey.SYS_INFO);
+        String userinfo = invocation.getAttachment(AttachmentKey.USER_INFO);
+        put(CommonParameter.callId, traceid);
+        TraceInfo.setTraceInfo(new TraceInfo(traceid, sysinfo, userinfo));
         Result res = invoker.invoke(invocation);
-        callId.remove();
+        TraceInfo.clear();
         remove(CommonParameter.callId);
         return res;
     }

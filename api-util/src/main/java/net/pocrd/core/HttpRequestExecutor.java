@@ -10,8 +10,7 @@ import com.alibaba.fastjson.JSON;
 import net.pocrd.define.*;
 import net.pocrd.document.CallState;
 import net.pocrd.document.Response;
-import net.pocrd.dubboext.DubboExtProperty;
-import net.pocrd.dubboext.NotificationCallback;
+import net.pocrd.dubboext.NotificationManager;
 import net.pocrd.entity.*;
 import net.pocrd.responseEntity.KeyValuePair;
 import net.pocrd.util.*;
@@ -784,8 +783,7 @@ public class HttpRequestExecutor {
             apiContext.currentCall = call;
             MDC.put(CommonParameter.method, call.method.methodName);
             call.startTime = (count == 0) ? apiContext.startTime : System.currentTimeMillis();
-            RpcContext.getContext().setAttachment(CommonParameter.businessId, call.businessId);
-            DubboExtProperty.setClientCallerToAttachment();
+
             // dubbo 在调用结束后不会清除 Future 为了避免拿到之前接口对应的 Future 在这里统一清除
             RpcContext.getContext().setFuture(null);
             executeApiCall(call, request, response, null);
@@ -824,6 +822,7 @@ public class HttpRequestExecutor {
      */
     private void executeApiCall(ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
         try {
+            RpcContext context = RpcContext.getContext();
             // 当接口声明了静态 mock 返回值或被标记为短路时
             if (call.method.staticMockValue != null) {
                 call.result = call.method.staticMockValue;
@@ -833,7 +832,7 @@ public class HttpRequestExecutor {
                     final ResponseCallback callback = fa.getFuture().getCallback();
                     // 异步调用会导致dubbo filter处理返回值的部分失效(因为异步返回并触发filter的时候并没有返回任何值),
                     // 因此在这里进行补偿操作。
-                    fa.getFuture().setCallback(new NotificationCallback(callback));
+                    fa.getFuture().setCallback(new NotificationManager(callback));
                 }
                 // 根据客户端在Header中设定的目标dubbo服务的版本号或者url，绕过注册中心调用对应的dubbo服务，仅在DEBUG模式下允许使用
                 if (CompileConfig.isDebug) {
@@ -847,7 +846,7 @@ public class HttpRequestExecutor {
                     parameters[call.parameters.length + 1] = request.getHeader(DEBUG_DUBBOSERVICE_URL);
                     if (future == null) {
                         call.result = processCall(call.method.methodName, parameters);
-                        if (RpcContext.getContext().getFuture() != null) {
+                        if (context.getFuture() != null) {
                             return;
                         }
                     } else {
@@ -856,7 +855,7 @@ public class HttpRequestExecutor {
                 } else {
                     if (future == null) {
                         call.result = processCall(call.method.methodName, call.parameters);
-                        if (RpcContext.getContext().getFuture() != null) {
+                        if (context.getFuture() != null) {
                             return;
                         }
                     } else {
@@ -865,7 +864,7 @@ public class HttpRequestExecutor {
                 }
             }
             //dubbo接口能够获取到RpcContext中的notification,非dubbo的接口errorCode不是通过RpcContext传递的。
-            Map<String, String> notifications = DubboExtProperty.getCurrentNotifications();
+            Map<String, String> notifications = NotificationManager.getNotifications();
             if (notifications != null && notifications.size() > 0) {
                 for (Map.Entry<String, String> entry : notifications.entrySet()) {
                     String value = entry.getValue();
@@ -986,8 +985,6 @@ public class HttpRequestExecutor {
                 logger.error("internal error.", t);
                 call.setReturnCode(ApiReturnCode.INTERNAL_SERVER_ERROR);
             }
-        } finally {
-            DubboExtProperty.clearNotificaitons();
         }
     }
 
