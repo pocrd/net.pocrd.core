@@ -14,8 +14,8 @@ public class TraceInfoConsumerFilter implements Filter {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         TraceInfo traceInfo = TraceInfo.getTraceInfo();
-        RpcContext context = RpcContext.getContext();
         if (traceInfo != null) {
+            RpcContext context = RpcContext.getContext();
             context.setAttachment(AttachmentKey.TRACE_ID, traceInfo.traceid);
             context.setAttachment(AttachmentKey.SYS_INFO, traceInfo.sysinfo);
             context.setAttachment(AttachmentKey.USER_INFO, traceInfo.userinfo);

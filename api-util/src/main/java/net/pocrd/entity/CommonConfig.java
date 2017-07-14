@@ -53,7 +53,7 @@ public class CommonConfig {
             instance.staticSignPwd = prop.getProperty("net.pocrd.staticSignPwd", "pocrd@2016");
             instance.rsaDecryptSecret = prop.getProperty("net.pocrd.rsaDecryptSecret");
             instance.tokenAes = prop.getProperty("net.pocrd.tokenAes");
-            instance.setExecutorFactory(prop.getProperty("net.pocrd.httpRequestExecutor"));
+            instance.executorName = prop.getProperty("net.pocrd.httpRequestExecutor");
 
             //启动时获取当前机器ip
             try {
@@ -168,27 +168,35 @@ public class CommonConfig {
         return tokenAes;
     }
 
-    /**
-     * 用于处理http请求的执行器, 必须是 HttpRequestExecutor 的子类
-     */
-    private Constructor executorFactory = null;
+    private static String executorName = null;
 
-    public Constructor getExecutorFactory() {
-        return executorFactory;
+    private static class executorFactoryLazyLoader {
+        /**
+         * 用于处理http请求的执行器, 必须是 HttpRequestExecutor 的子类
+         */
+        private static Constructor executorFactory = null;
+
+        static {
+            Class clazz = null;
+            try {
+                if (executorName != null) {
+                    clazz = Class.forName(executorName);
+                } else {
+                    clazz = HttpRequestExecutor.class;
+                }
+                executorFactory = clazz.getDeclaredConstructor();
+                executorFactory.setAccessible(true);
+            } catch (Throwable e) {
+                logger.error("load http request executor failed. name:" + executorName, e);
+            }
+        }
+
+        public static Constructor getExecutorFactory() {
+            return executorFactory;
+        }
     }
 
-    public void setExecutorFactory(String executorName) {
-        Class clazz = null;
-        try {
-            if (executorName != null) {
-                clazz = Class.forName(executorName);
-            } else {
-                clazz = HttpRequestExecutor.class;
-            }
-            executorFactory = clazz.getDeclaredConstructor();
-            executorFactory.setAccessible(true);
-        } catch (Exception e) {
-            logger.error("load http request executor failed. name:" + executorName, e);
-        }
+    public Constructor getExecutorFactory() {
+        return executorFactoryLazyLoader.getExecutorFactory();
     }
 }
