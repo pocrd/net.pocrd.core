@@ -662,6 +662,8 @@ public class ApiDocumentationHelper {
                     } else {
                         fi.type = getEntityName(groupName, type);
                     }
+                } else {
+                    fi.type = getEntityName(groupName, type);
                 }
                 if (type == DynamicEntity.class) {
                     DynamicStructure ds = f.getAnnotation(DynamicStructure.class);
