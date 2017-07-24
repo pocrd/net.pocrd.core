@@ -4,6 +4,7 @@ import net.pocrd.define.ApiOpenState;
 import net.pocrd.define.ResponseWrapper;
 import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
+import net.pocrd.util.SparseIntArray;
 
 import java.lang.reflect.Method;
 import java.util.Set;
@@ -20,11 +21,12 @@ public class ApiMethodInfo {
     static {
         UnknownMethod.methodName = "Unknown";
         UnknownMethod.description = "未知资源";
-        UnknownMethod.errorCodes = new AbstractReturnCode[]{};
+        UnknownMethod.errorCodes = new AbstractReturnCode[] {};
         UnknownMethod.parameterInfos = null;
         UnknownMethod.proxyMethodInfo = null;
         UnknownMethod.securityLevel = SecurityType.None;
     }
+
     /**
      * 返回值类型
      */
@@ -104,6 +106,11 @@ public class ApiMethodInfo {
      * 该方法可能抛出的业务异常的errorcode集合
      */
     public AbstractReturnCode[] errorCodes;
+
+    /**
+     * 该方法声明的内部业务异常映射
+     */
+    public SparseIntArray innerCodeMap;
 
     /**
      * 该方法可能抛出的业务异常的errorcode int集合, 用于二分查找

@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author guankaiqiang
  */
 @Description("积分通知")
-public class CreditNotification implements Serializable {
+public final class CreditNotification implements Serializable {
     @Description("描述,为何送积分")
     public String description;
     @Description("积分值")

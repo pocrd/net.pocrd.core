@@ -5,6 +5,7 @@ import java.nio.charset.Charset;
 public class ConstField {
     public static final Charset UTF8                 = Charset.forName("utf-8");
     public static final Charset ASCII                = Charset.forName("ascii");
+    public static final String  coreEntityPackage    = "net.pocrd.responseEntity.";
     public static final byte[]  XML_START            = "<xml>".getBytes(UTF8);
     public static final byte[]  XML_END              = "</xml>".getBytes(UTF8);
     public static final byte[]  JSON_START           = "{\"stat\":".getBytes(UTF8);

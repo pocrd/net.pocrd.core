@@ -5,22 +5,15 @@ import net.pocrd.annotation.*;
 import net.pocrd.define.*;
 import net.pocrd.entity.*;
 import net.pocrd.responseEntity.*;
-import net.pocrd.util.HttpApiProvider;
-import net.pocrd.util.POJOSerializerProvider;
-import net.pocrd.util.RawString;
-import net.pocrd.util.TypeCheckUtil;
+import net.pocrd.util.*;
 import net.pocrd.util.TypeCheckUtil.DescriptionAnnotationChecker;
 import net.pocrd.util.TypeCheckUtil.PublicFieldChecker;
 import net.pocrd.util.TypeCheckUtil.SerializableImplChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -180,6 +173,7 @@ public final class ApiManager {
                             apiInfo.roleSet.add(role);
                         }
                     }
+                    SparseIntArray code2index = new SparseIntArray();
                     DesignedErrorCode errors = mInfo.getAnnotation(DesignedErrorCode.class);
                     if (errors != null && errors.value() != null) {
                         int[] es = errors.value();
@@ -209,7 +203,58 @@ public final class ApiManager {
                                 }
                             });
                             Arrays.sort(apiInfo.errors);
+                            for (int i = 0; i < apiInfo.errors.length; i++) {
+                                code2index.put(apiInfo.errors[i], i);
+                            }
                         }
+                    }
+                    ErrorCodeMapping errMapping = mInfo.getAnnotation(ErrorCodeMapping.class);
+                    if (errMapping != null) {
+                        // 获得一个从内部系统code指向当前系统code的映射表
+                        SparseIntArray map = new SparseIntArray();
+                        String methodName = mInfo.getName();
+                        setErrorCodeMapping(map, errMapping.mapping(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping1(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping2(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping3(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping4(), methodName);
+
+                        setErrorCodeMapping(map, errMapping.mapping5(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping6(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping7(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping8(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping9(), methodName);
+
+                        setErrorCodeMapping(map, errMapping.mapping10(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping11(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping12(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping13(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping14(), methodName);
+
+                        setErrorCodeMapping(map, errMapping.mapping15(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping16(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping17(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping18(), methodName);
+                        setErrorCodeMapping(map, errMapping.mapping19(), methodName);
+
+                        int len = map.size();
+                        // 更新上述映射表成为内部系统code指向当前声明的designed error code数组下标的映射表以便在运行时获取designed error code强类型信息
+                        for (int i = 0; i < len; i++) {
+                            int index = code2index.get(map.valueAt(i), -1);
+                            if (index == -1) {
+                                throw new RuntimeException("undefined designed error code " + map.valueAt(i) + " at " + apiInfo.methodName
+                                        + " when inner code mapping");
+                            }
+                            // 检测内部code是否错误的填充了当前系统的code
+                            int innerCode = map.keyAt(i);
+                            if (innerCode >= minCode && innerCode < maxCode) {
+                                throw new RuntimeException(innerCode + " is not an inner code, at " + apiInfo.methodName
+                                        + " when inner code mapping");
+                            }
+                            map.put(innerCode, index);
+                        }
+
+                        apiInfo.innerCodeMap = map;
                     }
                     apiInfo.proxyMethodInfo = mInfo;
                     if (!CompileConfig.isDebug) {
@@ -245,12 +290,13 @@ public final class ApiManager {
                                 if (Collection.class.isAssignableFrom(pInfo.type)) {
                                     Type genericType;
                                     try {
-                                        genericType = ((ParameterizedTypeImpl)mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
+                                        genericType = ((ParameterizedType)mInfo.getGenericParameterTypes()[i]).getActualTypeArguments()[0];
                                     } catch (Throwable t) {
                                         throw new RuntimeException("unsupported input type,get genericType failed, method name:" + mInfo.getName(),
                                                 t);
                                     }
                                     try {
+                                        // 接口入参暂不支持使用动态类型 DynamicEntity
                                         pInfo.actuallyGenericType = Class
                                                 .forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
                                     } catch (Exception e) {
@@ -413,7 +459,7 @@ public final class ApiManager {
             }
             return apis;
         } catch (Throwable t) {
-            logger.error("parse api failed. {}" + clazz.getName(), t);
+            logger.error("parse api failed. " + clazz.getName(), t);
             if (CompileConfig.isDebug) {
                 t.printStackTrace();//为testcase服务,控制台打印错误信息
             }
@@ -566,19 +612,7 @@ public final class ApiManager {
             apiInfo.serializer = Serializer.rawStringSerializer;
             apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (Collection.class.isAssignableFrom(apiInfo.returnType)) {//增加对Collection自定义Object的支持+Collection<String>的支持
-            Type genericType;
-            try {
-                genericType = ((ParameterizedTypeImpl)mInfo.getGenericReturnType()).getActualTypeArguments()[0];
-            } catch (Throwable t) {
-                throw new RuntimeException("unsupported return type, get genericType failed, method name:" + mInfo.getName(), t);
-            }
-            Class<?> genericClazz;
-            try {
-                genericClazz = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
-            } catch (Exception e) {
-                throw new RuntimeException("generic type load failed:" + genericType + " in " + clazz.getName() + " method name:" + mInfo.getName(),
-                        e);
-            }
+            Class<?> genericClazz = TypeCheckUtil.getSupportedGenericClass(mInfo.getGenericReturnType(), mInfo.getName() + " return type.");
             if (String.class == genericClazz) {//如果要支持更多的jdk中已有类型的序列化
                 apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
                 apiInfo.wrapper = ResponseWrapper.stringCollectionWrapper;
@@ -624,5 +658,28 @@ public final class ApiManager {
             }
         }
         return false;
+    }
+
+    private static void setErrorCodeMapping(SparseIntArray map, int[] mapping, String methodName) {
+        if (mapping != null && mapping.length > 0) {
+            if (mapping.length % 2 > 0) {
+                StringBuilder sb = new StringBuilder("invalid error code mapping(1): ");
+                for (int i = 0; i < mapping.length; i++) {
+                    sb.append(mapping[i]).append(",");
+                }
+                throw new RuntimeException(sb.append(" in ").append(methodName).toString());
+            }
+            for (int i = 0; i < mapping.length; ) {
+                if (mapping[i] <= 0 || mapping[i + 1] <= 0) {
+                    throw new RuntimeException("invalid error code mapping(2): " + mapping[i] + "=>" + mapping[i + 1] + " in " + methodName);
+                }
+                if (map.get(mapping[i + 1]) > 0) {
+                    throw new RuntimeException("duplicate inner code mapping: " + map.get(mapping[i + 1]));
+                }
+                map.put(mapping[i + 1], mapping[i]);
+
+                i += 2;
+            }
+        }
     }
 }

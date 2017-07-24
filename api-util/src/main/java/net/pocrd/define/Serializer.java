@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import net.pocrd.entity.ApiReturnCode;
 import net.pocrd.entity.ReturnCodeException;
+import net.pocrd.responseEntity.DynamicEntity;
 import net.pocrd.responseEntity.JSONString;
 import net.pocrd.responseEntity.ObjectArrayResp;
 import net.pocrd.util.POJOSerializerProvider;
@@ -64,6 +65,62 @@ public interface Serializer<T> {
                 }
             } catch (Exception e) {
                 throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, e);
+            }
+        }
+    };
+
+    public static final Serializer<DynamicEntity> dynamicEntitySerializer = new Serializer<DynamicEntity>() {
+        byte[][] bs = new byte[8][];
+
+        {
+            bs[0] = "<DynamicEntity>".getBytes(ConstField.UTF8);
+            bs[1] = "<typeName>".getBytes(ConstField.UTF8);
+            bs[2] = "</typeName>".getBytes(ConstField.UTF8);
+            bs[3] = "<entity>".getBytes(ConstField.UTF8);
+            bs[4] = "</entity>".getBytes(ConstField.UTF8);
+            bs[5] = "</DynamicEntity>".getBytes(ConstField.UTF8);
+            bs[6] = "<![CDATA[".getBytes(ConstField.UTF8);
+            bs[7] = "]]>".getBytes(ConstField.UTF8);
+        }
+
+        @Override
+        public void toXml(DynamicEntity instance, OutputStream out, boolean isRoot) {
+            if (instance == null) {
+                return;
+            }
+            try {
+                if (instance.entity != null) {
+                    instance.typeName = instance.entity.getClass().getSimpleName();
+                }
+                if (isRoot) {
+                    out.write(bs[0]);
+                }
+                if (instance.typeName != null && instance.entity != null) {
+                    out.write(bs[1]);
+                    out.write(instance.typeName.getBytes(ConstField.UTF8));
+                    out.write(bs[2]);
+                    out.write(bs[3]);
+                    Serializer localSerializer = POJOSerializerProvider.getSerializer(instance.entity.getClass());
+                    localSerializer.toXml(instance.entity, out, false);
+                    out.write(bs[4]);
+                }
+                if (isRoot) {
+                    out.write(bs[5]);
+                }
+            } catch (IOException localIOException) {
+                throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, localIOException);
+            }
+        }
+
+        @Override
+        public void toJson(DynamicEntity instance, OutputStream out, boolean isRoot) {
+            try {
+                if (instance != null && instance.entity != null) {
+                    instance.typeName = instance.entity.getClass().getSimpleName();
+                }
+                out.write(JSON.toJSONBytes(instance));
+            } catch (IOException localIOException) {
+                throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, localIOException);
             }
         }
     };

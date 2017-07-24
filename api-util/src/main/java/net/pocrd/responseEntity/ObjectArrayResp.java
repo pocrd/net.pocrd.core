@@ -7,7 +7,7 @@ import java.util.Collection;
 
 //POJOSerializer不能提供ObjectArrayResp的序列化支持,不支持动态类型的序列化
 @Description("对象数组返回值")
-public class ObjectArrayResp implements Serializable {
+public final class ObjectArrayResp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Description("对象数组返回值")

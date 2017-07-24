@@ -10,7 +10,7 @@ import java.util.Date;
  * Created by rendong on 2017/6/8.
  */
 @Description("时间字符串数组返回值")
-public class DateArrayResp implements Serializable {
+public final class DateArrayResp implements Serializable {
     private static final long serialVersionUID = 1L;
     @Description("一组POSIX time毫秒数")
     public long[] value;

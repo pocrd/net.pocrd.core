@@ -8,7 +8,7 @@ import java.io.Serializable;
  * @author guankaiqiang
  */
 @Description("消息通知")
-public class MessageNotification implements Serializable {
+public final class MessageNotification implements Serializable {
     @Description("消息内容")
     public String content;
     @Description("消息Id")

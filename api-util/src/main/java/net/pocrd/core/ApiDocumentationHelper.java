@@ -1,8 +1,10 @@
 package net.pocrd.core;
 
 import net.pocrd.annotation.Description;
+import net.pocrd.annotation.DynamicStructure;
 import net.pocrd.annotation.EnumDef;
 import net.pocrd.define.CommonParameter;
+import net.pocrd.define.ConstField;
 import net.pocrd.document.*;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.entity.ApiMethodInfo;
@@ -11,13 +13,12 @@ import net.pocrd.entity.ReturnCodeContainer;
 import net.pocrd.responseEntity.*;
 import net.pocrd.util.RawString;
 import net.pocrd.util.StringUtil;
+import net.pocrd.util.TypeCheckUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Type;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -254,11 +255,11 @@ public class ApiDocumentationHelper {
         String name;
         if (clazz.isArray()) {
             //返回自定义数组也需要虚构List定义
-            throw new RuntimeException("unsupport array type,groupName:" + groupName + "type:" + clazz.getName());
+            throw new RuntimeException("unsupport array type, groupName:" + groupName + "type:" + clazz.getName());
         } else if (Collection.class.isAssignableFrom(clazz)) {
             if (actuallyGenericType == null) {
                 throw new RuntimeException(
-                        "get typeStruct failed,miss actuallyGenericType,groupname:" + groupName + ",returntype:" + clazz.getName());
+                        "get typeStruct failed, miss actuallyGenericType, groupname:" + groupName + ",returntype:" + clazz.getName());
             }
             if (!hasPublicFields(actuallyGenericType)) {
                 throw new RuntimeException(
@@ -519,7 +520,7 @@ public class ApiDocumentationHelper {
     private TypeStruct buildVirtualListStruct(String groupName, Class<?> clazz) {
         TypeStruct r = new TypeStruct();
         r.fieldList = new ArrayList<FieldInfo>(1);
-        if (!clazz.getName().startsWith("net.pocrd.")) {
+        if (!clazz.getName().startsWith(ConstField.coreEntityPackage)) {
             r.groupName = groupName;
         }
         r.name = getEntityName4CollectionAndArray(groupName, clazz);
@@ -528,7 +529,7 @@ public class ApiDocumentationHelper {
         fi.isList = true;
         Description desc = clazz.getAnnotation(Description.class);
         if (desc == null) {
-            throw new RuntimeException(String.format("return type miss annotation Description,groupName:%s,type:%s", groupName, clazz.getName()));
+            throw new RuntimeException(String.format("return type miss annotation Description, groupName:%s,type:%s", groupName, clazz.getName()));
         } else {
             fi.desc = clazz.getAnnotation(Description.class).value();
             fi.type = getEntityName(groupName, clazz);
@@ -537,14 +538,38 @@ public class ApiDocumentationHelper {
         return r;
     }
 
+    private TypeStruct getDynamicEntityStruct() {
+        TypeStruct t = new TypeStruct();
+        t.fieldList = new LinkedList<>();
+        // net.pocrd.responseEntity 包中的类不设置groupName
+        t.groupName = null;
+        t.name = "Api_DynamicEntity";
+        FieldInfo f_entity = new FieldInfo();
+        f_entity.desc = "动态类型实体";
+        f_entity.type = "<T>";
+        f_entity.isList = false;
+        f_entity.name = "entity";
+        t.fieldList.add(f_entity);
+        FieldInfo f_type_name = new FieldInfo();
+        f_type_name.desc = "动态类型的类型名";
+        f_type_name.type = "string";
+        f_type_name.isList = false;
+        f_type_name.name = "typeName";
+        t.fieldList.add(f_type_name);
+        return t;
+    }
+
     /**
      * 构造请求结构体,注意在处理基本类型以及string的时候不能和入参相同
      */
     private TypeStruct buildTypeStruct(String groupName, Class<?> clazz) {
         try {
+            if (clazz == DynamicEntity.class) {
+                return getDynamicEntityStruct();
+            }
             TypeStruct r = new TypeStruct();
             r.fieldList = new LinkedList<FieldInfo>();
-            if (!clazz.getName().startsWith("net.pocrd.")) {
+            if (!clazz.getName().startsWith(ConstField.coreEntityPackage)) {
                 r.groupName = groupName;
             }
             r.name = getEntityName(groupName, clazz);
@@ -604,31 +629,20 @@ public class ApiDocumentationHelper {
                     fi.type = double.class.getSimpleName();
                 } else if (Collection.class.isAssignableFrom(type) || type.isArray() || isComplexType(type)) {
                     if (Collection.class.isAssignableFrom(type)) {
-                        Type genericType;
-                        try {
-                            genericType = ((ParameterizedTypeImpl)f.getGenericType()).getActualTypeArguments()[0];
-                        } catch (Throwable throwable) {
-                            throw new RuntimeException("can not get generic type of list in " + groupName + " " + clazz.getName() + " " + f.getName(),
-                                    throwable);
-                        }
-                        try {
-                            type = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
-                            if (String.class == type) {
-                                fi.type = "string";
-                                if (ed != null && ed.value() != null) {
-                                    fi.desc = getEnumDescription(ed.value(), fi.desc);
-                                }
-                            } else if (type.isEnum()) {
-                                fi.desc = getEnumDescription(type, fi.desc);
-                                fi.type = "string";
-                            } else if (type == Date.class) {
-                                fi.type = "date";
-                                fi.desc += " 时间格式为POSIX time的毫秒数";
-                            } else {
-                                fi.type = getEntityName(groupName, type);
+                        type = TypeCheckUtil.getSupportedGenericClass(f.getGenericType(), groupName + " " + clazz.getName() + " " + f.getName());
+                        if (String.class == type) {
+                            fi.type = "string";
+                            if (ed != null && ed.value() != null) {
+                                fi.desc = getEnumDescription(ed.value(), fi.desc);
                             }
-                        } catch (Exception e) {
-                            throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
+                        } else if (type.isEnum()) {
+                            fi.desc = getEnumDescription(type, fi.desc);
+                            fi.type = "string";
+                        } else if (type == Date.class) {
+                            fi.type = "date";
+                            fi.desc += " 时间格式为POSIX time的毫秒数";
+                        } else {
+                            fi.type = getEntityName(groupName, type);
                         }
                     } else if (type.isArray()) {
                         if (type.getComponentType().isEnum()) {
@@ -648,6 +662,18 @@ public class ApiDocumentationHelper {
                     } else {
                         fi.type = getEntityName(groupName, type);
                     }
+                }
+                if (type == DynamicEntity.class) {
+                    DynamicStructure ds = f.getAnnotation(DynamicStructure.class);
+                    if (ds == null || ds.value().length == 0) {
+                        throw new RuntimeException("undefined DynamicStructure info in " + clazz.getName() + " field " + f.getName());
+                    }
+                    StringBuilder sb = new StringBuilder(fi.desc);
+                    sb.append(" 本字段为动态数据类型, 可能类型为以下种类:");
+                    for (Class c : ds.value()) {
+                        sb.append(c.getSimpleName()).append(" ");
+                    }
+                    fi.desc = sb.toString();
                 }
                 r.fieldList.add(fi);
             }
@@ -671,17 +697,7 @@ public class ApiDocumentationHelper {
                 continue;
             }
             if (Collection.class.isAssignableFrom(type)) {
-                Type genericType;
-                try {
-                    genericType = ((ParameterizedTypeImpl)f.getGenericType()).getActualTypeArguments()[0];
-                } catch (Throwable throwable) {
-                    throw new RuntimeException("can not get generic type of list in " + clazz.getName(), throwable);
-                }
-                try {
-                    type = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
-                } catch (Exception e) {
-                    throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
-                }
+                type = TypeCheckUtil.getSupportedGenericClass(f.getGenericType(), clazz.getName() + " " + f.getName());
             } else if (type.isArray()) {
                 if (type == byte[].class) {
                     type = byte.class;
@@ -706,7 +722,17 @@ public class ApiDocumentationHelper {
             if (type.isPrimitive() || type == String.class || type.isEnum() || clazz == Date.class) {
                 continue;
             }
-            if (!cs.contains(type) && isComplexType(type)) {
+            if (DynamicEntity.class == type) {
+                DynamicStructure ds = f.getAnnotation(DynamicStructure.class);
+                if (ds == null || ds.value().length == 0) {
+                    throw new RuntimeException("undefined DynamicStructure info in " + clazz.getName() + " field " + f.getName());
+                }
+                cs.add(DynamicEntity.class);
+                for (Class c : ds.value()) {
+                    cs.add(c);
+                    fillTypeDependence(c, cs);
+                }
+            } else if (!cs.contains(type) && isComplexType(type)) {
                 cs.add(type);
                 fillTypeDependence(type, cs);
             }
@@ -727,17 +753,7 @@ public class ApiDocumentationHelper {
                 continue;
             }
             if (Collection.class.isAssignableFrom(type)) {
-                Type genericType;
-                try {
-                    genericType = ((ParameterizedTypeImpl)f.getGenericType()).getActualTypeArguments()[0];
-                } catch (Throwable throwable) {
-                    throw new RuntimeException("can not get generic type of list in " + clazz.getName(), throwable);
-                }
-                try {
-                    type = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
-                } catch (Exception e) {
-                    throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
-                }
+                type = TypeCheckUtil.getSupportedGenericClass(f.getGenericType(), clazz.getName() + " " + f.getName());
             } else if (type.isArray()) {
                 type = type.getComponentType();
             }
@@ -755,7 +771,7 @@ public class ApiDocumentationHelper {
      * 判断是否为可序列化输出的复合类型
      */
     private boolean isComplexType(Class<?> type) {
-        if (type.isPrimitive() || type == String.class || type.isEnum() || type == Date.class) {
+        if (type.isPrimitive() || type == String.class || type.isEnum() || type == Date.class || type == DynamicEntity.class) {
             return false;
         }
         Description an = type.getAnnotation(Description.class);
@@ -793,12 +809,12 @@ public class ApiDocumentationHelper {
 
     private String getEntityName(String group, Class<?> type) {
         return (group == null || group.length() == 0 || type.getName().startsWith(
-                "net.pocrd.")) ? "Api_" + type.getSimpleName() : "Api_" + group.toUpperCase() + "_" + type.getSimpleName();
+                ConstField.coreEntityPackage)) ? "Api_" + type.getSimpleName() : "Api_" + group.toUpperCase() + "_" + type.getSimpleName();
     }
 
     private String getEntityName4CollectionAndArray(String group, Class<?> type) {
         return (group == null || group.length() == 0 || type.getName().startsWith(
-                "net.pocrd.")) ?
+                ConstField.coreEntityPackage)) ?
                 "Api_" + type.getSimpleName() + "_ArrayResp" :
                 "Api_" + group.toUpperCase() + "_" + type.getSimpleName() + "_ArrayResp";
     }

@@ -36,10 +36,10 @@ public class ApiGeneratorTest {
     }
 
     @ApiGroup(name = "apitest", minCode = 0, maxCode = 3000000, codeDefine = ApiTestReturnCode.class, owner = "sunji180")
-    public abstract interface ApiFunctionTestService {
+    public interface ApiFunctionTestService {
         @HttpApi(name = "apitest.testWeiXin", desc = "微信接口测试", security = SecurityType.Integrated, owner = "guankaiqiang",
                  state = ApiOpenState.OPEN)
-        public abstract RawString testWeiXin(
+        RawString testWeiXin(
                 @ApiParameter(required = false, name = "msg", desc = "test")
                         String paramString);
     }

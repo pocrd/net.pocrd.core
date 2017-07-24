@@ -38,7 +38,7 @@ public class SparseArray<E> {
      * number of mappings.
      */
     public SparseArray(int initialCapacity) {
-        initialCapacity = ArrayUtil.idealIntArraySize(initialCapacity);
+        initialCapacity = ArrayUtils.idealIntArraySize(initialCapacity);
 
         mKeys = new int[initialCapacity];
         mValues = new Object[initialCapacity];
@@ -143,7 +143,7 @@ public class SparseArray<E> {
             }
 
             if (mSize >= mKeys.length) {
-                int n = ArrayUtil.idealIntArraySize(mSize + 1);
+                int n = ArrayUtils.idealIntArraySize(mSize + 1);
 
                 int[] nkeys = new int[n];
                 Object[] nvalues = new Object[n];
@@ -247,7 +247,8 @@ public class SparseArray<E> {
         }
 
         for (int i = 0; i < mSize; i++)
-            if (mValues[i] == value) return i;
+            if (mValues[i] == value)
+                return i;
 
         return -1;
     }
@@ -283,7 +284,7 @@ public class SparseArray<E> {
 
         int pos = mSize;
         if (pos >= mKeys.length) {
-            int n = ArrayUtil.idealIntArraySize(pos + 1);
+            int n = ArrayUtils.idealIntArraySize(pos + 1);
 
             int[] nkeys = new int[n];
             Object[] nvalues = new Object[n];
@@ -301,16 +302,96 @@ public class SparseArray<E> {
         mSize = pos + 1;
     }
 
+    public SparseArray<E> getUnmodifiable() {
+        final SparseArray<E> mStorage = this;
+        return new SparseArray<E>() {
+
+            @Override
+            public E get(int key) {
+                return mStorage.get(key);
+            }
+
+            @Override
+            public E get(int key, E valueIfKeyNotFound) {
+                return mStorage.get(key, valueIfKeyNotFound);
+            }
+
+            @Override
+            public void delete(int key) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void remove(int key) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void put(int key, E value) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public int size() {
+                return mStorage.size();
+            }
+
+            @Override
+            public int keyAt(int index) {
+                return mStorage.keyAt(index);
+            }
+
+            @Override
+            public E valueAt(int index) {
+                return mStorage.valueAt(index);
+            }
+
+            @Override
+            public void setValueAt(int index, E value) {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public int indexOfKey(int key) {
+                return mStorage.indexOfKey(key);
+            }
+
+            @Override
+            public int indexOfValue(E value) {
+                return mStorage.indexOfValue(value);
+            }
+
+            @Override
+            public void clear() {
+                throw new UnsupportedOperationException();
+            }
+
+            @Override
+            public void append(int key, E value) {
+                throw new UnsupportedOperationException();
+            }
+
+        };
+    }
+
     private static int binarySearch(int[] a, int start, int len, int key) {
         int high = start + len, low = start - 1, guess;
 
         while (high - low > 1) {
-            guess = (high + low) >>> 1;
+            guess = (high + low) / 2;
 
-            if (a[guess] < key) { low = guess; } else high = guess;
+            if (a[guess] < key)
+                low = guess;
+            else
+                high = guess;
         }
 
-        if (high == start + len) { return ~(start + len); } else if (a[high] == key) { return high; } else return ~high;
+        if (high == start + len)
+            return ~(start + len);
+        else if (a[high] == key)
+            return high;
+        else
+            return ~high;
     }
 
     private int[]    mKeys;

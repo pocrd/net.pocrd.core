@@ -10,7 +10,7 @@ import java.util.Collection;
  * 这个是有必要的否则生成很多没有意义的StringArrayResp
  */
 @Description("字符串数组返回值")
-public class StringArrayResp implements Serializable {
+public final class StringArrayResp implements Serializable {
     private static final long serialVersionUID = 1L;
     @Description("字符串数组返回值")
     public Collection<String> value;

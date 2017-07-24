@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Created by rendong on 14-4-25.
  */
 @Description("字符串返回值")
-public class StringResp implements Serializable {
+public final class StringResp implements Serializable {
     private static final long serialVersionUID = 1L;
     @Description("字符串返回值")
     public String value;

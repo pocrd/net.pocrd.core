@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Created by rendong on 14-4-25.
  */
 @Description("长整形返回值")
-public class LongResp implements Serializable {
+public final class LongResp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Description("长整形返回值")

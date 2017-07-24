@@ -1,12 +1,14 @@
 package net.pocrd.util;
 
 import net.pocrd.annotation.Description;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
+import net.pocrd.annotation.DynamicStructure;
+import net.pocrd.responseEntity.DynamicEntity;
 
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Date;
@@ -91,12 +93,12 @@ public class TypeCheckUtil {
      */
     public static class PublicFieldChecker implements TypeChecker {
         @Override
-        public boolean accept(Class<?> returnType, String desc) {
-            if (INPUT_ACCEPT_CLAZZ_SET.contains(returnType) || returnType.isEnum()) {
+        public boolean accept(Class<?> type, String desc) {
+            if (INPUT_ACCEPT_CLAZZ_SET.contains(type) || type.isEnum()) {
                 return true;
             }
             boolean hasPublicField = false;
-            Field[] fields = returnType.getDeclaredFields();
+            Field[] fields = type.getDeclaredFields();
             if (fields != null) {
                 for (Field field : fields) {
                     if (Modifier.isPublic(field.getModifiers())) {
@@ -106,23 +108,23 @@ public class TypeCheckUtil {
                 }
             }
             if (!hasPublicField) {
-                throw new RuntimeException("no public field is defined in " + returnType + " of " + desc);
+                throw new RuntimeException("no public field is defined in " + type + " of " + desc);
             }
             boolean isAbstractOrIsInterface = false;
-            int modified = returnType.getModifiers();
+            int modified = type.getModifiers();
             if (Modifier.isAbstract(modified) || Modifier.isInterface(modified)) {
-                if (Collection.class.isAssignableFrom(returnType)) {
+                if (Collection.class.isAssignableFrom(type)) {
                     isAbstractOrIsInterface = false;
                 } else {
                     isAbstractOrIsInterface = true;
                 }
             }
-            fields = returnType.getDeclaredFields();
+            fields = type.getDeclaredFields();
             if (fields != null) {
                 for (Field field : fields) {
                     int mod = field.getModifiers();
                     if (Modifier.isAbstract(mod) || Modifier.isInterface(mod)) {
-                        if (Collection.class.isAssignableFrom(returnType)) {
+                        if (Collection.class.isAssignableFrom(type)) {
                             isAbstractOrIsInterface = false;
                         } else {
                             isAbstractOrIsInterface = true;
@@ -131,7 +133,7 @@ public class TypeCheckUtil {
                 }
             }
             if (isAbstractOrIsInterface) {
-                throw new RuntimeException("do not allow abstract or interface defined in " + returnType + " of " + desc);
+                throw new RuntimeException("do not allow abstract or interface defined in " + type + " of " + desc);
             }
             return true;
         }
@@ -197,6 +199,10 @@ public class TypeCheckUtil {
                         }
                     }
                 }
+                // 如果是 DynamicEntity 则不进一步验证其成员
+                if (DynamicEntity.class == returnType) {
+                    return;
+                }
                 Field[] fields = returnType.getDeclaredFields();
                 if (fields != null) {
                     for (Field field : fields) {
@@ -206,18 +212,20 @@ public class TypeCheckUtil {
                             continue;
                         }
                         if (Collection.class.isAssignableFrom(field.getType())) {
-                            Type fieldActuallyGenericType;
-                            try {
-                                fieldActuallyGenericType = ((ParameterizedTypeImpl)field.getGenericType()).getActualTypeArguments()[0];
-                            } catch (Exception exception) {
-                                throw new RuntimeException("can not get generic type, " + returnType + " in " + serviceInterfaceName, exception);
+                            fieldActualClazz = getSupportedGenericClass(field.getGenericType(), serviceInterfaceName);
+                        }
+                        if (DynamicEntity.class == field.getType() || DynamicEntity.class == fieldActualClazz) {
+                            DynamicStructure ds = field.getAnnotation(DynamicStructure.class);
+                            if (ds == null || ds.value().length == 0) {
+                                throw new RuntimeException("undefined DynamicStructure info in " + fieldActualClazz == null
+                                        ? field.getType().getName() : fieldActualClazz.getName());
                             }
-                            try {
-                                fieldActualClazz = Class.forName(((Class<?>)fieldActuallyGenericType).getName(), true,
-                                        Thread.currentThread().getContextClassLoader());
-                            } catch (ClassNotFoundException e) {
-                                throw new RuntimeException("generic type unsupported, " + fieldActuallyGenericType + " in " + serviceInterfaceName,
-                                        e);
+                            for (Class c : ds.value()) {
+                                if (DynamicEntity.class == c) {
+                                    throw new RuntimeException("cannot use DynamicEntity as a DynamicStructure. "
+                                            + returnType.getName() + " " + field.getName());
+                                }
+                                recursiveCheckReturnType(serviceInterfaceName, c, null, checkers);
                             }
                         }
                         recursiveCheckReturnType(serviceInterfaceName, field.getType(), fieldActualClazz, checkers);
@@ -225,6 +233,40 @@ public class TypeCheckUtil {
                 }
             }
         }
+    }
+
+    public static Class getSupportedGenericClass(Type type, String logInfo) {
+        Class clazz = null;
+        boolean unsupportGenericType = false;
+        Type genericType;
+        try {
+            genericType = ((ParameterizedType)type).getActualTypeArguments()[0];
+        } catch (Throwable throwable) {
+            throw new RuntimeException("can not get generic type of list in " + logInfo,
+                    throwable);
+        }
+        try {
+            if (Class.class.isAssignableFrom(genericType.getClass())) {
+                clazz = Class.forName(((Class<?>)genericType).getName(), true,
+                        Thread.currentThread().getContextClassLoader());
+            } else if (ParameterizedType.class.isAssignableFrom(genericType.getClass())) {
+                if (DynamicEntity.class.getTypeName().equals(
+                        ((ParameterizedType)genericType).getRawType().getTypeName())) {
+                    clazz = DynamicEntity.class;
+                } else {
+                    unsupportGenericType = true;
+                }
+            } else {
+                unsupportGenericType = true;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("generic type unsupported, " + genericType + " " + logInfo,
+                    e);
+        }
+        if (unsupportGenericType) {
+            throw new RuntimeException("unsupported generic type:" + genericType + " " + logInfo);
+        }
+        return clazz;
     }
 
     /**
@@ -288,7 +330,7 @@ public class TypeCheckUtil {
                     if (Collection.class.isAssignableFrom(field.getType())) {
                         Type fieldActuallyGenericType = null;
                         try {
-                            fieldActuallyGenericType = ((ParameterizedTypeImpl)field.getGenericType()).getActualTypeArguments()[0];
+                            fieldActuallyGenericType = ((ParameterizedType)field.getGenericType()).getActualTypeArguments()[0];
                         } catch (Exception exception) {
                             throw new RuntimeException("can not get generic type, " + inputType + " in " + serviceInterfaceName, exception);
                         }

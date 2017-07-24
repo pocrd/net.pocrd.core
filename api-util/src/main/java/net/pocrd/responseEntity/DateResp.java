@@ -8,7 +8,7 @@ import java.util.Date;
 /**
  * Created by rendong on 2017/6/8.
  */
-public class DateResp implements Serializable {
+public final class DateResp implements Serializable {
     private static final long serialVersionUID = 1L;
     @Description("POSIX time的毫秒数")
     public long value;

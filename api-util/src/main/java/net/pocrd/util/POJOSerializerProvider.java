@@ -5,8 +5,8 @@ import net.pocrd.define.ConstField;
 import net.pocrd.define.Serializer;
 import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.CompileConfig;
+import net.pocrd.responseEntity.DynamicEntity;
 import org.objectweb.asm.*;
-import sun.reflect.generics.reflectiveObjects.ParameterizedTypeImpl;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -23,6 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class POJOSerializerProvider implements Opcodes {
     private final static ConcurrentHashMap<Class<?>, Serializer<?>> cache = new ConcurrentHashMap<Class<?>, Serializer<?>>();
+
+    static {
+        cache.put(DynamicEntity.class, Serializer.dynamicEntitySerializer);
+    }
 
     /**
      * 返回实体类的序列化类对象
@@ -207,18 +211,7 @@ public class POJOSerializerProvider implements Opcodes {
             boolean isCollection = false;
             boolean isArray = false;
             if (Collection.class.isAssignableFrom(t)) {
-                java.lang.reflect.Type genericType;
-                try {
-                    //TODO 如果要支持泛型的动态序列化，t应该动态获取obj.getClass();
-                    genericType = ((ParameterizedTypeImpl)fd.getGenericType()).getActualTypeArguments()[0];//必须明确的指定泛型为何类型
-                } catch (Throwable throwable) {
-                    throw new RuntimeException("can not get generic type of list in " + clazz.getName(), throwable);
-                }
-                try {
-                    t = Class.forName(((Class)genericType).getName(), true, Thread.currentThread().getContextClassLoader());
-                } catch (Exception e) {
-                    throw new RuntimeException("generic type unsupported:" + genericType + " in " + clazz.getName(), e);
-                }
+                t = TypeCheckUtil.getSupportedGenericClass(fd.getGenericType(), clazz.getName() + " " + fd.getName());
                 isCollection = true;
             } else if (t.isArray()) {
                 if (t == boolean[].class) {

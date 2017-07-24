@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Created by rendong on 14-5-2.
  */
 @Description("浮点形数组返回值")
-public class DoubleArrayResp implements Serializable {
+public final class DoubleArrayResp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Description("浮点形数组返回值")

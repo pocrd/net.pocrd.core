@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Created by rendong on 14-4-25.
  */
 @Description("数值型数组返回值，包含byte, char, short, int")
-public class NumberArrayResp implements Serializable {
+public final class NumberArrayResp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Description("数值型数组返回值，包含byte, char, short, int")

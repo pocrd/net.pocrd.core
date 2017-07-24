@@ -1,18 +1,18 @@
 package net.pocrd.entity;
 
 import net.pocrd.core.ApiManager;
+import net.pocrd.util.SparseArray;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 
 /**
  * Created by sunji on 2014/7/23.
  */
 public class ReturnCodeContainer {
-    private static HashMap<Integer, AbstractReturnCode> map = new HashMap<Integer, AbstractReturnCode>();
+    private static SparseArray<AbstractReturnCode> map = new SparseArray<AbstractReturnCode>();
 
     static {
         Class returnCodeClass = ApiReturnCode.class;
@@ -48,8 +48,8 @@ public class ReturnCodeContainer {
     public static AbstractReturnCode[] getOpenCodes() {
         int size = map.size();
         ArrayList<AbstractReturnCode> cis = new ArrayList<AbstractReturnCode>(size);
-        for (AbstractReturnCode c : map.values()) {
-            cis.add(c);
+        for (int i = 0; i < size; i++) {
+            cis.add(map.valueAt(i));
         }
         Collections.sort(cis, new Comparator<AbstractReturnCode>() {
 

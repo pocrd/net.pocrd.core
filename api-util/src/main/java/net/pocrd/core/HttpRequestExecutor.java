@@ -804,7 +804,8 @@ public class HttpRequestExecutor {
         }
         for (int count = 0; count < futures.length; count++) {
             ApiMethodCall call = apiContext.apiCallInfos.get(count);
-            MDC.put(CommonParameter.method, call.method.methodName);
+            ApiMethodInfo info = call.method;
+            MDC.put(CommonParameter.method, info.methodName);
             // 接口可能被 mock 或被短路
             if (futures[count] != null) {
                 executeApiCall(call, request, response, futures[count]);
@@ -812,12 +813,18 @@ public class HttpRequestExecutor {
             }
             int display = call.getReturnCode();
             if (display > 0) {
-                if (call.method.errors == null) {
+                if (info.errors == null) {
                     call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
                 } else {
                     // 异常编码过滤，保证接口只返回其声明过的异常编码给客户端
-                    if (Arrays.binarySearch(call.method.errors, display) < 0) {
-                        call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
+                    if (Arrays.binarySearch(info.errors, display) < 0) {
+                        // 查询当前code是否在内部映射表
+                        int index = info.innerCodeMap == null ? -1 : info.innerCodeMap.get(display, -1);
+                        if (index == -1) {
+                            call.replaceReturnCode(ApiReturnCode.UNKNOWN_ERROR);
+                        } else {
+                            call.replaceReturnCode(info.errorCodes[index]);
+                        }
                     }
                 }
             }

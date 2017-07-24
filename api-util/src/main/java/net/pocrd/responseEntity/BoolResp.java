@@ -8,7 +8,7 @@ import java.io.Serializable;
  * Created by rendong on 14-4-28.
  */
 @Description("布尔类型返回值")
-public class BoolResp implements Serializable {
+public final class BoolResp implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Description("布尔类型返回值")
