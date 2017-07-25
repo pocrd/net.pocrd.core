@@ -670,10 +670,13 @@ public class ApiDocumentationHelper {
                     if (ds == null || ds.value().length == 0) {
                         throw new RuntimeException("undefined DynamicStructure info in " + clazz.getName() + " field " + f.getName());
                     }
+                    fi.extInfo = new KeyValueList();
+                    fi.extInfo.keyValue = new ArrayList<>(ds.value().length);
                     StringBuilder sb = new StringBuilder(fi.desc);
                     sb.append(" 本字段为动态数据类型, 可能类型为以下种类:");
                     for (Class c : ds.value()) {
                         sb.append(c.getSimpleName()).append(" ");
+                        fi.extInfo.keyValue.add(new KeyValuePair(c.getSimpleName(), getEntityName(groupName, c)));
                     }
                     fi.desc = sb.toString();
                 }
