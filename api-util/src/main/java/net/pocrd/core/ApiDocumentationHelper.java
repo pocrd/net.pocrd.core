@@ -675,7 +675,7 @@ public class ApiDocumentationHelper {
                     StringBuilder sb = new StringBuilder(fi.desc);
                     sb.append(" 本字段为动态数据类型, 可能类型为以下种类:");
                     for (Class c : ds.value()) {
-                        sb.append(c.getSimpleName()).append(" ");
+                        sb.append(c.getSimpleName()).append(", ");
                         fi.extInfo.keyValue.add(new KeyValuePair(c.getSimpleName(), getEntityName(groupName, c)));
                     }
                     fi.desc = sb.toString();
