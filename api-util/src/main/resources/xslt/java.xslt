@@ -434,7 +434,7 @@ public class <xsl:value-of select="name" /> implements JsonSerializable {
      * 反序列化函数，用于从json字符串反序列化本类型实例
      */
     public static <xsl:value-of select="name" /> deserialize(String json) {
-        if (json != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !json.isEmpty()) {
+        if (json != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> json.length() != 0) {
             return deserialize(new JsonParser().parse(json).getAsJsonObject());
         }
         return null;
@@ -554,7 +554,7 @@ public class <xsl:value-of select="name" /> implements JsonSerializable {
                 </xsl:call-template>
             }
               </xsl:when>
-          </xsl:choose>  
+          </xsl:choose>
       </xsl:otherwise></xsl:choose>
   </xsl:template>
   <xsl:template name="JsonGetter">
@@ -588,7 +588,7 @@ public class <xsl:value-of select="name" /> implements JsonSerializable {
                             }</xsl:for-each>
                             result.<xsl:value-of select="name" />.add(de);
                         }
-                    }</xsl:when>          
+                    }</xsl:when>
           <xsl:otherwise>JsonObject jo = <xsl:value-of select="name" />Array.get(i).getAsJsonObject();
                     if (jo != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !jo.isJsonNull()) {
                         result.<xsl:value-of select="name" />.add(<xsl:value-of select="type" />.deserialize(jo));
