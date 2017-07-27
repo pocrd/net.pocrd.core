@@ -202,6 +202,7 @@ public class <xsl:call-template name="getClassName">
     <xsl:choose>
       <xsl:when test="$type = 'string'">String</xsl:when>
       <xsl:when test="$type = 'date'">Date</xsl:when>
+      <xsl:when test="$type = '&lt;T&gt;'">JsonSerializable</xsl:when>
       <xsl:otherwise><xsl:value-of select="$type"/></xsl:otherwise>
     </xsl:choose>
   </xsl:template>
@@ -418,8 +419,9 @@ import java.util.List;
 import java.util.Date;
 </xsl:if>
 import com.google.gson.*;
+import ${pkg}.util.JsonSerializable;
 
-public class <xsl:value-of select="name" /> {
+public class <xsl:value-of select="name" /> implements JsonSerializable {
 <xsl:for-each select="fieldList/field">
     <xsl:call-template name="ResponseField">
       <xsl:with-param name="type" select="type" />
@@ -540,6 +542,8 @@ public class <xsl:value-of select="name" /> {
             }
       </xsl:when>
       <xsl:otherwise>
+          <xsl:choose>
+              <xsl:when test="$type!='&lt;T&gt;'">
             /* <xsl:value-of select="desc" /> */
             element = json.get("<xsl:value-of select="name" />");
             if (element != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !element.isJsonNull()) {
@@ -549,6 +553,8 @@ public class <xsl:value-of select="name" /> {
                   <xsl:with-param name="isList" select="isList" />
                 </xsl:call-template>
             }
+              </xsl:when>
+          </xsl:choose>  
       </xsl:otherwise></xsl:choose>
   </xsl:template>
   <xsl:template name="JsonGetter">
@@ -571,7 +577,18 @@ public class <xsl:value-of select="name" /> {
                     } else {
                         result.<xsl:value-of select="name" />.add(i, null);
                     }</xsl:when>
-          <xsl:when test="$type = 'date'">result.<xsl:value-of select="name" />[i] = new Date(<xsl:value-of select="name" />Array.get(i).getAsLong());</xsl:when>          
+          <xsl:when test="$type = 'date'">result.<xsl:value-of select="name" />[i] = new Date(<xsl:value-of select="name" />Array.get(i).getAsLong());</xsl:when>
+          <xsl:when test="$type = 'Api_DynamicEntity'">JsonObject jo = <xsl:value-of select="name" />Array.get(i).getAsJsonObject();
+                    if (jo != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !jo.isJsonNull()) {
+                        Api_DynamicEntity de = <xsl:value-of select="type" />.deserialize(jo);
+                        JsonElement e = jo.getAsJsonObject().get("entity");
+                        if (e != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !e.isJsonNull()) {
+                            <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ("<xsl:value-of select="key"></xsl:value-of>".equals(de.typeName)) {
+                                de.entity = <xsl:value-of select="value"></xsl:value-of>.deserialize(e.getAsJsonObject());
+                            }</xsl:for-each>
+                            result.<xsl:value-of select="name" />.add(de);
+                        }
+                    }</xsl:when>          
           <xsl:otherwise>JsonObject jo = <xsl:value-of select="name" />Array.get(i).getAsJsonObject();
                     if (jo != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !jo.isJsonNull()) {
                         result.<xsl:value-of select="name" />.add(<xsl:value-of select="type" />.deserialize(jo));
@@ -590,7 +607,14 @@ public class <xsl:value-of select="name" /> {
           <xsl:when test="$type = 'long'">result.<xsl:value-of select="$name" /> = element.getAsLong();</xsl:when>
           <xsl:when test="$type = 'string'">result.<xsl:value-of select="$name" /> = element.getAsString();</xsl:when>
           <xsl:when test="$type = 'date'">result.<xsl:value-of select="$name" /> = new Date(element.getAsLong());</xsl:when>
-          <xsl:otherwise>result.<xsl:value-of select="$name" /> = <xsl:value-of select="type" />.deserialize(json.get("<xsl:value-of select="name" />").getAsJsonObject());</xsl:otherwise>
+          <xsl:when test="$type = 'Api_DynamicEntity'">result.<xsl:value-of select="$name" /> = <xsl:value-of select="type" />.deserialize(element.getAsJsonObject());
+                JsonElement e = element.getAsJsonObject().get("entity");
+                if (e != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !e.isJsonNull()) {
+                    <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ("<xsl:value-of select="key"></xsl:value-of>".equals(result.dynamicEntity.typeName)) {
+                        result.dynamicEntity.entity = <xsl:value-of select="value"></xsl:value-of>.deserialize(e.getAsJsonObject());
+                    }</xsl:for-each>
+                }</xsl:when>
+          <xsl:otherwise>result.<xsl:value-of select="$name" /> = <xsl:value-of select="type" />.deserialize(element.getAsJsonObject());</xsl:otherwise>
         </xsl:choose>
       </xsl:otherwise>
     </xsl:choose></xsl:template>
@@ -664,7 +688,7 @@ public class <xsl:value-of select="name" /> {
           </xsl:when>
           <xsl:when test="$type = 'long'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />);
           </xsl:when>
-          <xsl:when test="$type = 'string'">if(this.<xsl:value-of select="$objcName" /> != null) { json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />); }
+          <xsl:when test="$type = 'string'">if (this.<xsl:value-of select="$objcName" /> != null) { json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />); }
           </xsl:when>
           <xsl:when test="$type = 'date'">json.addProperty("<xsl:value-of select="name" />", this.<xsl:value-of select="$objcName" />.getTime());
           </xsl:when>

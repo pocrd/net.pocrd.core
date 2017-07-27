@@ -275,9 +275,11 @@ public class ApiSdkJavaGenerator extends ApiCodeGenerator {
             @ConsoleOption(name = "o", desc = "输出文件目录") String outputPath,
             @ConsoleOption(name = "jar", desc = "根据jar文件生成时给出jar文件地址") String jarFile,
             @ConsoleOption(name = "url", desc = "根据在线文档生成时给出文档url", sample = "http://www.pocrd.net/info.api?raw") String url,
+            @ConsoleOption(name = "xsl", desc = "指定代码生成模板", sample = "http://www.pocrd.net/info.api?raw") String xsltPath,
             @ConsoleArgument(name = "package", desc = "生成代码的java包名", sample = "net.pocrd.app") String packageName
     ) {
-        ApiCodeGenerator gen = new Builder().setPackagePrefix(packageName).setOutputPath(outputPath == null ? "." : outputPath).build();
+        ApiCodeGenerator gen = new Builder().setXsltPath(xsltPath).setPackagePrefix(packageName).setOutputPath(outputPath == null ? "." : outputPath)
+                .build();
         gen.setApiGroups(groups);
         gen.setSecurityTypes(securityTypes);
         gen.setRejectApis(rejectApis);

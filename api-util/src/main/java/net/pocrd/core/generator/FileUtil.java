@@ -3,9 +3,7 @@ package net.pocrd.core.generator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FilenameFilter;
+import java.io.*;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.jar.JarFile;
@@ -29,13 +27,12 @@ public class FileUtil {
             resultList.add(file);
         }
     }
+
     /**
      * 列出目录下所有类型为${fileType}的文件
      *
      * @param path
      * @param fileType
-     *
-     * @return
      */
     public static List<File> listFileInpath(String path, String fileType) {
         File file = new File(path);
@@ -91,6 +88,7 @@ public class FileUtil {
         }
         return list;
     }
+
     public static void deleteDir(String path) {
         File folder = new File(path);
         if (folder.exists()) {
@@ -120,6 +118,7 @@ public class FileUtil {
             folder.delete();
         }
     }
+
     public static void recreateDir(String path) {
         File folder = new File(path);
         if (!folder.exists()) {
@@ -138,6 +137,19 @@ public class FileUtil {
                     }
                 }
             }
+        }
+    }
+
+    public static byte[] readAll(String path) throws IOException {
+        File f = new File(path);
+        if (f.exists() && f.isFile()) {
+            try (FileInputStream fis = new FileInputStream(f)) {
+                byte[] bs = new byte[fis.available()];
+                fis.read(bs);
+                return bs;
+            }
+        } else {
+            return null;
         }
     }
 }

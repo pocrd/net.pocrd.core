@@ -6,7 +6,6 @@ import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
 import net.pocrd.document.Document;
 import net.pocrd.entity.ApiMethodInfo;
-import net.pocrd.entity.CommonConfig;
 import net.pocrd.util.POJOSerializerProvider;
 import net.pocrd.util.WebRequestUtil;
 import org.slf4j.Logger;
@@ -19,7 +18,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.jar.JarFile;
 
 /**
@@ -98,22 +98,28 @@ public abstract class ApiCodeGenerator {
     public void setApiGroups(String apiGroups) {
         accept_group_names = apiGroups;
     }
+
     public void setRejectApis(String rejectApis) {
         reject_api_names = rejectApis;
     }
 
-    public Source getXsltSource(String targetSite, Source defaultSource) {
+    public Source getXsltSource(String target, Source defaultSource) {
         Source xslSource = defaultSource;
         InputStream swapStream = null;
-        if (targetSite != null && !targetSite.isEmpty()) {
+        if (target != null && !target.isEmpty()) {
             try {
-                byte[] xslt = WebRequestUtil.getResponseBytes(targetSite, null);
+                byte[] xslt = null;
+                if (target.startsWith("http://") || target.startsWith("https://")) {
+                    xslt = WebRequestUtil.getResponseBytes(target, null);
+                } else {
+                    xslt = FileUtil.readAll(target);
+                }
                 swapStream = customizeXslt(new ByteArrayInputStream(xslt));
                 xslSource = new StreamSource(swapStream);
             } catch (Exception e) {
-                logger.warn("get xslt failed from site:{},will use default xslt to generate doc", CommonConfig.getInstance().getApiInfoXslSite());
-                System.out.println("get xslt failed from site:" +
-                        CommonConfig.getInstance().getApiInfoXslSite() + ", will use default xslt to generate doc");
+                logger.error("load target failed. use default instead. target:" + target + " default:" + defaultSource, e);
+                System.out.println("load target failed. use default instead. target:" + target + " default:" + defaultSource);
+                e.printStackTrace();
             }
         }
         return xslSource;
