@@ -404,7 +404,7 @@ package ${pkg}.api.request;
  */
 public class ApiCode {
     <xsl:for-each select="code"><xsl:if test="isDesign='true'">
-    /* <xsl:value-of select="desc"/> 服务端:<xsl:value-of select="service"/> */
+    /* <xsl:value-of select="desc"/> | 接口组名称:<xsl:value-of select="service"/> */
     public static final int <xsl:value-of select="name"/> = <xsl:value-of select="code"/>;</xsl:if>
     </xsl:for-each>
 }</xsl:template>

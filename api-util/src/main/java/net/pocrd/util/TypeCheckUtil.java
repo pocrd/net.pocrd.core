@@ -1,7 +1,10 @@
 package net.pocrd.util;
 
+import com.alibaba.fastjson.serializer.PropertyFilter;
+import com.alibaba.fastjson.serializer.SerializeConfig;
 import net.pocrd.annotation.Description;
 import net.pocrd.annotation.DynamicStructure;
+import net.pocrd.entity.CompileConfig;
 import net.pocrd.responseEntity.DynamicEntity;
 
 import java.io.Serializable;
@@ -10,6 +13,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashSet;
@@ -220,6 +224,10 @@ public class TypeCheckUtil {
                                 throw new RuntimeException("undefined DynamicStructure info in " + fieldActualClazz == null
                                         ? field.getType().getName() : fieldActualClazz.getName());
                             }
+                            if (CompileConfig.isDebug) {
+                                // 在debug状态下为所有声明DynamicEntity成员的类型添加序列化检测器, 检测运行时返回的动态类型是否都是已声明的
+                                SerializeConfig.getGlobalInstance().addFilter(returnType, TypeCheckUtil.DynamicEntityDeclearChecker);
+                            }
                             for (Class c : ds.value()) {
                                 if (DynamicEntity.class == c) {
                                     throw new RuntimeException("cannot use DynamicEntity as a DynamicStructure. "
@@ -346,5 +354,53 @@ public class TypeCheckUtil {
                 }
             }
         }
+    }
+
+    public static PropertyFilter DynamicEntityDeclearChecker = new PropertyFilter() {
+        @Override
+        public boolean apply(Object o, String s, Object o1) {
+            if (o1 != null) {
+                if (DynamicEntity.class == o1.getClass()) {
+                    Object obj = ((DynamicEntity)o1).entity;
+                    if (obj != null && !getDynamicStructure(o, s).contains(obj.getClass())) {
+                        throw new RuntimeException(obj.getClass().getName() + " not declear on " + o.getClass().getName() + "  " + s);
+                    }
+                } else if (Collection.class.isAssignableFrom(o1.getClass())) {
+                    Collection c = (Collection)o1;
+                    if (c.size() > 0) {
+                        HashSet<Class> ds = null;
+                        for (Object item : c) {
+                            if (item != null) {
+                                if (DynamicEntity.class == item.getClass()) {
+                                    if (ds == null) {
+                                        ds = getDynamicStructure(o, s);
+                                    }
+                                    Object obj = ((DynamicEntity)item).entity;
+                                    if (obj != null && !ds.contains(obj.getClass())) {
+                                        throw new RuntimeException(
+                                                obj.getClass().getName() + " not declear on " + o.getClass().getName() + "  " + s);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+    };
+
+    private static HashSet<Class> getDynamicStructure(Object obj, String name) {
+        Field f = null;
+        try {
+            f = obj.getClass().getField(name);
+        } catch (Exception e) {
+            throw new RuntimeException("error when get field. " + obj.getClass() + " " + name, e);
+        }
+        DynamicStructure ds = f.getAnnotation(DynamicStructure.class);
+        if (ds == null || ds.value().length == 0) {
+            throw new RuntimeException("DynamicStructure is missing on " + obj.getClass().getName() + " " + name);
+        }
+        return new HashSet<Class>(Arrays.asList(ds.value()));
     }
 }

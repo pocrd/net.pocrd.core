@@ -16,7 +16,7 @@
     <orderEntry type="library" name="Maven: org.ow2.asm:asm-all:4.2" level="project" />
     <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk14:1.50" level="project" />
     <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk14:1.50" level="project" />
-    <orderEntry type="library" name="Maven: com.alibaba:fastjson:1.1.39" level="project" />
+    <orderEntry type="library" name="Maven: com.alibaba:fastjson:1.2.35" level="project" />
     <orderEntry type="library" name="Maven: commons-lang:commons-lang:2.6" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-classic:1.1.1" level="project" />
     <orderEntry type="library" name="Maven: ch.qos.logback:logback-core:1.1.1" level="project" />
