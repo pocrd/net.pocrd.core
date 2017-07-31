@@ -515,7 +515,7 @@ public class <xsl:value-of select="name" /> implements JsonSerializable {
       <xsl:when test="$isList='true'">
             /* <xsl:value-of select="desc" /> */
             element = json.get("<xsl:value-of select="name" />");
-            if (element != null) {
+            if (element != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !element.isJsonNull()) {
                 JsonArray <xsl:value-of select="name" />Array = element.getAsJsonArray();
                 int len = <xsl:value-of select="$name" />Array.size();
                 <xsl:choose>

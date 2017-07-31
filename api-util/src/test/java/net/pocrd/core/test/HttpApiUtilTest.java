@@ -391,9 +391,9 @@ public class HttpApiUtilTest {
             manager.register(ApiManager.parseApi(HttpApiUtilTest.class, new HttpApiUtilTest()));
             {
                 RawString result = (RawString)manager.processRequest("test.test1", new String[] { "123", "456" });
-                System.out.println(result);
+                System.out.println(result.value);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                Serializer.rawStringSerializer.toJson(result, baos, true);
+                Serializer.getRawStringSerializer().toJson(result, baos, true);
                 String re = baos.toString("UTF-8");
                 assertEquals(String.valueOf(123 + 456), re);
             }
@@ -403,9 +403,9 @@ public class HttpApiUtilTest {
                                 (int)'c'), null, String.valueOf(
                                 (int)'c'), null, "32767", null, "32767", null, "12345678", null, "12345678", null, "12345678900", null, "12345678900",
                                 null, "3.14159", null, "3.14159", null, "3.14159265", null, "3.14159265", null, "end", null });
-                System.out.println(result);
+                System.out.println(result.value);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                Serializer.rawStringSerializer.toJson(result, baos, true);
+                Serializer.getRawStringSerializer().toJson(result, baos, true);
                 String re = baos.toString("UTF-8");
                 assertEquals(
                         "result true true true false -128 127 -128 -128 c c c z 32767 32767 32767 -32768 12345678 2147483647 12345678 -2147483648 12345678900 9223372036854775807 12345678900 -9223372036854775808 3.14159 3.4028235E38 3.14159 1.4E-45 3.14159265 1.7976931348623157E308 3.14159265 4.9E-324 end xxx ",
@@ -419,9 +419,9 @@ public class HttpApiUtilTest {
                                 (int)'x'), "32767", "-32768", "32767", "-32768", "12345678", "87654321", "12345678", "87654321", "12345678900",
                                 "999876543210", "12345678900", "999876543210", "3.14159", "1.234567", "3.14159", "1.234567", "3.14159265",
                                 "1.23456789", "3.14159265", "1.23456789", "end", "xxx" });
-                System.out.println(result);
+                System.out.println(result.value);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                Serializer.rawStringSerializer.toJson(result, baos, true);
+                Serializer.getRawStringSerializer().toJson(result, baos, true);
                 String re = baos.toString();
                 assertEquals(
                         "result true false true false -128 127 -128 127 c z c x 32767 -32768 32767 -32768 12345678 87654321 12345678 87654321 12345678900 999876543210 12345678900 999876543210 3.14159 1.234567 3.14159 1.234567 3.14159265 1.23456789 3.14159265 1.23456789 end xxx ",
@@ -433,6 +433,8 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":true}", re);
+
             }
             {
                 Object result = manager.processRequest("test.test4", new String[] { "false", "true", "false" });
@@ -440,6 +442,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[false,true,false]}", re);
             }
             {
                 Object result = manager.processRequest("test.test5", new String[] { "1" });
@@ -447,6 +450,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":1}", re);
             }
             {
                 Object result = manager.processRequest("test.test6", new String[] { "1", "2", "3" });
@@ -454,6 +458,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[1,2,3]}", re);
             }
             {
                 Object result = manager.processRequest("test.test7", new String[] { "1" });
@@ -461,6 +466,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":1}", re);
             }
             {
                 Object result = manager.processRequest("test.test8", new String[] { "1", "2", "3" });
@@ -468,6 +474,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[1,2,3]}", re);
             }
             {
                 Object result = manager.processRequest("test.test9", new String[] { "1" });
@@ -475,6 +482,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":1}", re);
             }
             {
                 Object result = manager.processRequest("test.test10", new String[] { "1", "2", "3" });
@@ -482,6 +490,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[1,2,3]}", re);
             }
             {
                 Object result = manager.processRequest("test.test11", new String[] { "11111" });
@@ -489,6 +498,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":11111}", re);
             }
             {
                 Object result = manager.processRequest("test.test12", new String[] { "111111", "123456", "5555555" });
@@ -496,6 +506,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[111111,123456,5555555]}", re);
             }
             {
                 Object result = manager.processRequest("test.test13", new String[] { "1" });
@@ -503,6 +514,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":1}", re);
             }
             {
                 Object result = manager.processRequest("test.test14", new String[] { "1", "2", "3" });
@@ -510,6 +522,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[1,2,3]}", re);
             }
             {
                 Object result = manager.processRequest("test.test15", new String[] { "1" });
@@ -517,6 +530,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":1.0}", re);
             }
             {
                 Object result = manager.processRequest("test.test16", new String[] { "1", "2", "3" });
@@ -524,6 +538,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[1.0,2.0,3.0]}", re);
             }
             {
                 Object result = manager.processRequest("test.test17", new String[] { "1" });
@@ -531,6 +546,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":1.0}", re);
             }
             {
                 Object result = manager.processRequest("test.test18", new String[] { "1", "2", "3" });
@@ -538,6 +554,7 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[1.0,2.0,3.0]}", re);
             }
             {
                 Object result = manager.processRequest("test.test19", new String[] { "1" });
@@ -545,18 +562,22 @@ public class HttpApiUtilTest {
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":\"1\"}", re);
             }
             {
                 Object result = manager.processRequest("test.test20", new String[] { "1", "2", "3" });
-                System.out.println(result);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[\"1\",\"2\",\"3\"]}", re);
                 baos = new ByteArrayOutputStream(1024);
                 ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toXml(result, baos, true);
                 re = baos.toString();
                 System.out.println(re);
+                assertEquals(
+                        "<StringArrayResp><value><item><![CDATA[1]]></item><item><![CDATA[2]]></item><item><![CDATA[3]]></item></value></StringArrayResp>",
+                        re);
             }
             {
                 ObjectArrayResp result = (ObjectArrayResp)manager.processRequest("test.test22", new String[] { "123", "456" });
@@ -567,40 +588,44 @@ public class HttpApiUtilTest {
                 Assert.assertEquals(((TestEntity)result.value[0]).str, "testest");
                 Assert.assertEquals(((TestEntity)result.value[0]).date.getTime(), 1234567890000L);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                Serializer.objectArrayRespSerializer.toJson(result, baos, true);
+                Serializer.getObjectArrayRespSerializer().toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[{\"date\":1234567890000,\"str\":\"testest\"}]}", re);
                 baos = new ByteArrayOutputStream(1024);
-                Serializer.objectArrayRespSerializer.toXml(result, baos, true);
+                Serializer.getObjectArrayRespSerializer().toXml(result, baos, true);
                 re = baos.toString();
                 System.out.println(re);
+                assertEquals("<ObjectArrayResp><value><item><str><![CDATA[testest]]></str><date></date></item></value></ObjectArrayResp>", re);
             }
             {
                 Object result = manager.processRequest("test.test23", new String[] { "123", "456", "456", "456" });
-                System.out.println(result);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
+                POJOSerializerProvider.getSerializer(result.getClass()).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[\"a\"]}", re);
                 baos = new ByteArrayOutputStream(1024);
-                ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toXml(result, baos, true);
+                POJOSerializerProvider.getSerializer(result.getClass()).toXml(result, baos, true);
                 re = baos.toString();
                 System.out.println(re);
+                assertEquals("<StringArrayResp><value><item><![CDATA[a]]></item></value></StringArrayResp>", re);
             }
             {
                 Map<String, String> map = new HashMap<String, String>();
                 map.put("a", "b");
                 map.put("c", "d");
                 Object result = manager.processRequest("test.test24", new String[] { "123", JSON.toJSONString(map), "456", "456" });
-                System.out.println(result);
                 ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
-                ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
+                POJOSerializerProvider.getSerializer(result.getClass()).toJson(result, baos, true);
                 String re = baos.toString();
                 System.out.println(re);
+                assertEquals("{\"value\":[\"ab\",\"cd\"]}", re);
                 baos = new ByteArrayOutputStream(1024);
-                ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toXml(result, baos, true);
+                POJOSerializerProvider.getSerializer(result.getClass()).toXml(result, baos, true);
                 re = baos.toString();
                 System.out.println(re);
+                assertEquals("<StringArrayResp><value><item><![CDATA[ab]]></item><item><![CDATA[cd]]></item></value></StringArrayResp>", re);
             }
         } catch (SecurityException e) {
             e.printStackTrace();
@@ -617,15 +642,18 @@ public class HttpApiUtilTest {
             darray[1] = "1234567892000";
             darray[2] = "1234567893000";
             Object result = manager.processRequest("test.test25", new String[] { "1234567890000", JSON.toJSONString(darray) });
-            System.out.println(result);
             ByteArrayOutputStream baos = new ByteArrayOutputStream(1024);
             ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toJson(result, baos, true);
             String re = baos.toString();
             System.out.println("json:" + re);
+            assertEquals("{\"value\":[1234567890000,1234567891000,1234567892000,1234567893000]}", re);
             baos = new ByteArrayOutputStream(1024);
             ((Serializer<Object>)POJOSerializerProvider.getSerializer(result.getClass())).toXml(result, baos, true);
             re = baos.toString();
             System.out.println("xml:" + re);
+            assertEquals(
+                    "<DateArrayResp><value><item>1234567890000</item><item>1234567891000</item><item>1234567892000</item><item>1234567893000</item></value></DateArrayResp>",
+                    re);
         }
     }
 }

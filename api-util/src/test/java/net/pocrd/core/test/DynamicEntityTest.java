@@ -7,10 +7,12 @@ import net.pocrd.annotation.DynamicStructure;
 import net.pocrd.responseEntity.DynamicEntity;
 import net.pocrd.responseEntity.KeyValueList;
 import net.pocrd.responseEntity.KeyValuePair;
+import net.pocrd.util.POJOSerializerProvider;
 import net.pocrd.util.TypeCheckUtil;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +64,7 @@ public class DynamicEntityTest {
         @Description("simpleTestEntity")
         public SimpleTestEntity       simpleTestEntity;
         @Description("dynamic entity")
-        @DynamicStructure({ SimpleTestEntity.class, BadResponse.class })
+        @DynamicStructure({ SimpleTestEntity.class, KeyValueList.class })
         public DynamicEntity          dynamicEntity;
         @Description("dynamic entity list")
         @DynamicStructure({ SimpleTestEntity.class, BadResponse.class })
@@ -70,19 +72,15 @@ public class DynamicEntityTest {
     }
 
     @Test
-    public void testDynamicEntity() {
+    public void testDynamicEntityUndeclear() {
         ComplexTestEntity e = new ComplexTestEntity();
         e.strValue = "...";
-        e.dynamicEntity = new DynamicEntity<SimpleTestEntity>();
-        //        KeyValueList ste = new KeyValueList();
-        //        ste.keyValue = new ArrayList<KeyValuePair>(3);
-        //        ste.keyValue.add(new KeyValuePair("a", "b"));
-        //        ste.keyValue.add(new KeyValuePair("c", "d"));
+        e.dynamicEntity = new DynamicEntity<KeyValueList>();
+        KeyValueList ste = new KeyValueList();
+        ste.keyValue = new ArrayList<KeyValuePair>(3);
+        ste.keyValue.add(new KeyValuePair("a", "b"));
+        ste.keyValue.add(new KeyValuePair("c", "d"));
 
-        e.dynamicEntity = new DynamicEntity<SimpleTestEntity>();
-        SimpleTestEntity ste = new SimpleTestEntity();
-        ste.intArray = new int[] { 1, 2, 3 };
-        ste.strValue = "aabbcc";
         e.dynamicEntity.entity = ste;
         List<DynamicEntity> des = new ArrayList<DynamicEntity>(3);
         {
@@ -108,7 +106,6 @@ public class DynamicEntityTest {
         }
         e.dynamicEntityList = des;
         SerializeConfig.getGlobalInstance().addFilter(ComplexTestEntity.class, TypeCheckUtil.DynamicEntityDeclearChecker);
-
         try {
             JSON.toJSONString(e);
             Assert.fail("should error!");
@@ -117,5 +114,37 @@ public class DynamicEntityTest {
             Assert.assertTrue(ex.getMessage()
                     .equals("net.pocrd.responseEntity.KeyValueList not declear on net.pocrd.core.test.DynamicEntityTest$ComplexTestEntity  dynamicEntityList"));
         }
+    }
+
+    @Test
+    public void testDynamicEntity() {
+        ComplexTestEntity e = new ComplexTestEntity();
+        e.strValue = "...";
+        e.dynamicEntity = new DynamicEntity<KeyValueList>();
+        KeyValueList ste = new KeyValueList();
+        ste.keyValue = new ArrayList<KeyValuePair>(3);
+        ste.keyValue.add(new KeyValuePair("a", "b"));
+        ste.keyValue.add(new KeyValuePair("c", "d"));
+        e.dynamicEntity.entity = ste;
+        List<DynamicEntity> des = new ArrayList<DynamicEntity>(3);
+        {
+            DynamicEntity de1 = new DynamicEntity();
+            SimpleTestEntity s = new SimpleTestEntity();
+            s.intArray = new int[] { 4, 1, 4 };
+            s.strValue = "kkkkkk";
+            de1.entity = s;
+            des.add(de1);
+
+            DynamicEntity de2 = new DynamicEntity();
+            BadResponse b = new BadResponse("nonono");
+            de2.entity = b;
+            des.add(de2);
+        }
+        e.dynamicEntityList = des;
+        SerializeConfig.getGlobalInstance().addFilter(ComplexTestEntity.class, TypeCheckUtil.DynamicEntityDeclearChecker);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        POJOSerializerProvider.getSerializer(e.getClass()).toJson(e, baos, true);
+        System.out.println(baos.toString());
     }
 }

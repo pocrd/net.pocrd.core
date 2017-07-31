@@ -25,17 +25,17 @@ public class POJOSerializerProvider implements Opcodes {
     private final static ConcurrentHashMap<Class<?>, Serializer<?>> cache = new ConcurrentHashMap<Class<?>, Serializer<?>>();
 
     static {
-        cache.put(DynamicEntity.class, Serializer.dynamicEntitySerializer);
+        cache.put(DynamicEntity.class, Serializer.getDynamicEntitySerializer());
     }
 
     /**
      * 返回实体类的序列化类对象
      */
-    public static <T> Serializer<T> getSerializer(Class<T> clazz) {
-        Serializer<T> s = (Serializer<T>)cache.get(clazz);
+    public static Serializer getSerializer(Class clazz) {
+        Serializer s = (Serializer)cache.get(clazz);
         if (s == null) {
             synchronized (cache) {
-                s = (Serializer<T>)cache.get(clazz);
+                s = cache.get(clazz);
                 if (s == null) {
                     s = build(clazz);
                     cache.put(clazz, s);
@@ -45,7 +45,7 @@ public class POJOSerializerProvider implements Opcodes {
         return s;
     }
 
-    private static <T> Serializer<T> build(Class<T> clazz) {
+    private static Serializer build(Class clazz) {
         HashMap<String, Integer> map = new HashMap<String, Integer>();
         LinkedList<String> list = new LinkedList<String>();
         String className = "net.pocrd.autogen.Serializer_" + clazz.getName().replace('.', '_');
@@ -179,7 +179,7 @@ public class POJOSerializerProvider implements Opcodes {
                 }
             }
 
-            return (Serializer<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
+            return (Serializer)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
                     cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(c_name, e);

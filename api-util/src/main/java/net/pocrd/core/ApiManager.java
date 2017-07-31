@@ -606,10 +606,10 @@ public final class ApiManager {
             apiInfo.serializer = POJOSerializerProvider.getSerializer(DoubleArrayResp.class);
             apiInfo.wrapper = ResponseWrapper.floatArrayWrapper;
         } else if (JSONString.class == apiInfo.returnType) {
-            apiInfo.serializer = Serializer.jsonStringSerializer;
+            apiInfo.serializer = Serializer.getJsonStringSerializer();
             apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (RawString.class == apiInfo.returnType) {
-            apiInfo.serializer = Serializer.rawStringSerializer;
+            apiInfo.serializer = Serializer.getRawStringSerializer();
             apiInfo.wrapper = ResponseWrapper.objectWrapper;
         } else if (Collection.class.isAssignableFrom(apiInfo.returnType)) {//增加对Collection自定义Object的支持+Collection<String>的支持
             Class<?> genericClazz = TypeCheckUtil.getSupportedGenericClass(mInfo.getGenericReturnType(), mInfo.getName() + " return type.");
@@ -617,7 +617,7 @@ public final class ApiManager {
                 apiInfo.serializer = POJOSerializerProvider.getSerializer(StringArrayResp.class);
                 apiInfo.wrapper = ResponseWrapper.stringCollectionWrapper;
             } else if (genericClazz.getAnnotation(Description.class) != null) {
-                apiInfo.serializer = Serializer.objectArrayRespSerializer;
+                apiInfo.serializer = Serializer.getObjectArrayRespSerializer();
                 apiInfo.wrapper = ResponseWrapper.objectCollectionWrapper;
             } else if (Date.class == genericClazz) {
                 apiInfo.serializer = POJOSerializerProvider.getSerializer(DateArrayResp.class);
