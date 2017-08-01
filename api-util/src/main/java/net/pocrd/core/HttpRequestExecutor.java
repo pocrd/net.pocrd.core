@@ -8,7 +8,7 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import com.alibaba.fastjson.JSON;
 import net.pocrd.define.*;
-import net.pocrd.document.CallState;
+import net.pocrd.responseEntity.CallState;
 import net.pocrd.responseEntity.Response;
 import net.pocrd.dubboext.NotificationManager;
 import net.pocrd.dubboext.TraceInfo;

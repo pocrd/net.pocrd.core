@@ -1,4 +1,4 @@
-package net.pocrd.document;
+package net.pocrd.responseEntity;
 
 import net.pocrd.annotation.Description;
 
