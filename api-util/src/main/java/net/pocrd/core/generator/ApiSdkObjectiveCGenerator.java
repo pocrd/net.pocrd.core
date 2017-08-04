@@ -46,7 +46,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
     public static class Builder {
         private String xslt        = null;
         private String output      = "~/tmp";
-        private String classPrefix = "POC";
+        private String classPrefix = "PoC";
 
         public Builder setXsltPath(String xslt) {
             this.xslt = xslt;
@@ -388,9 +388,10 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
             @ConsoleOption(name = "o", desc = "输出文件目录") String outputPath,
             @ConsoleOption(name = "jar", desc = "根据jar文件生成时给出jar文件地址") String jarFile,
             @ConsoleOption(name = "url", desc = "根据在线文档生成时给出文档url", sample = "http://www.pocrd.net/info.api?raw") String url,
+            @ConsoleOption(name = "xsl", desc = "指定代码生成模板", sample = "http://www.pocrd.net/info.api?raw") String xsltPath,
             @ConsoleArgument(name = "prefix", desc = "oc类名前缀", sample = "net.pocrd.js") String prefix
     ) {
-        ApiCodeGenerator gen = new Builder().setClassPrefix(prefix).setOutputPath(outputPath).build();
+        ApiCodeGenerator gen = new Builder().setClassPrefix(prefix).setOutputPath(outputPath).setXsltPath(xsltPath).build();
         gen.setApiGroups(groups);
         gen.setSecurityTypes(securityTypes);
         gen.setRejectApis(rejectApis);
