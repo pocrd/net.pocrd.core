@@ -142,7 +142,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
      * @param name     文件名称
      * @param resource 数据
      */
-    private static void output2File(String name, String resource) {
+    static void output2File(String name, String resource) {
         File source = new File(name);
         if (!source.exists()) {
             boolean isSuccess = false;
@@ -180,16 +180,39 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
     /**
      * 生成对应的h和m文件
      *
-     * @param name 文件名不含.h .m后缀
-     * @param code 源代码
+     * @param name   文件名不含.h .m后缀
+     * @param reader 源代码
      */
-    private void generateObjcClass(String name, String code) {
+    private void generateObjcClass(String name, BufferedReader reader) {
         String hfileName = name + ".h";
         String mfileName = name + ".m";
-        int s = code.indexOf(SPLITER);
-        if (s > 0) {
-            output2File(hfileName, code.substring(0, s).trim());
-            output2File(mfileName, code.substring(s + SPLITER_LENGTH).trim());
+        String line = null;
+        StringBuilder code = new StringBuilder();
+        try {
+            line = reader.readLine();
+            HashSet<String> importSet = new HashSet<>();
+            while (line != null) {
+                if (SPLITER.equals(line.trim())) {
+                    output2File(hfileName, code.toString());
+                    code.setLength(0);
+                    importSet.clear();
+                } else {
+                    if (line.startsWith("#import ")) {
+                        if (!importSet.contains(line)) {
+                            code.append(line).append(System.lineSeparator());
+                            importSet.add(line);
+                        }
+                    } else {
+                        code.append(line).append(System.lineSeparator());
+                    }
+                }
+                line = reader.readLine();
+                if (line == null) {
+                    output2File(mfileName, code.toString());
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("generateObjcClass failed. " + name, e);
         }
     }
 
@@ -215,14 +238,16 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
                 String className = classPrefix + e.getElementsByTagName("name").item(
                         0).getFirstChild().getNodeValue();
                 String fileName = outputPath + className;
-                StringWriter sw = new StringWriter();
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
                 try {
-                    trans.transform(new DOMSource(e), new StreamResult(sw));
+                    trans.transform(new DOMSource(e), new StreamResult(bw));
                 } catch (TransformerException e1) {
-                    logger.error("transformer failed!class name:" + className, e1);
-                    throw new RuntimeException("transformer failed!class name:" + className, e1);
+                    logger.error("transformer failed! class name:" + className, e1);
+                    throw new RuntimeException("transformer failed! class name:" + className, e1);
                 }
-                generateObjcClass(fileName, sw.toString());
+                BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
+                generateObjcClass(fileName, br);
                 respSet.add(className + ".h");
             }
             //请求结构体
@@ -235,14 +260,16 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
                     String className = classPrefix + e.getElementsByTagName("name").item(
                             0).getFirstChild().getNodeValue();
                     String fileName = outputPath + className;
-                    StringWriter sw = new StringWriter();
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
                     try {
-                        trans.transform(new DOMSource(e), new StreamResult(sw));
+                        trans.transform(new DOMSource(e), new StreamResult(bw));
                     } catch (TransformerException e1) {
                         logger.error("transformer failed!class name:" + className, e1);
                         throw new RuntimeException("transformer failed!class name:" + className, e1);
                     }
-                    generateObjcClass(fileName, sw.toString());
+                    BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
+                    generateObjcClass(fileName, br);
                     respSet.add(className + ".h");
                 }
             }
@@ -260,14 +287,16 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
             String className = classPrefix + e.getElementsByTagName("name").item(
                     0).getFirstChild().getNodeValue();
             String fileName = outputPath + className;
-            StringWriter sw = new StringWriter();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
             try {
-                trans.transform(new DOMSource(e), new StreamResult(sw));
+                trans.transform(new DOMSource(e), new StreamResult(bw));
             } catch (TransformerException e1) {
                 logger.error("transformer failed!class name:" + className, e1);
                 throw new RuntimeException("transformer failed!class name:" + className, e1);
             }
-            generateObjcClass(fileName, sw.toString());
+            BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
+            generateObjcClass(fileName, br);
             respSet.add(className + ".h");
         }
         //ApiResponseInclude.h文件生成
@@ -320,16 +349,18 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
             methodName = methodName.substring(0, 1).toUpperCase() + methodName.substring(1, index) + "_" + methodName.substring(index + 1,
                     index + 2).toUpperCase() + methodName.substring(
                     index + 2);
-            StringWriter sw = new StringWriter();
             String className = classPrefix + methodName;
             String fileName = outputPath + className;
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
             try {
-                trans.transform(new DOMSource(e), new StreamResult(sw));
+                trans.transform(new DOMSource(e), new StreamResult(bw));
             } catch (TransformerException e1) {
                 logger.error("transformer failed!class name:" + className, e1);
                 throw new RuntimeException("transformer failed!class name:" + className, e1);
             }
-            generateObjcClass(fileName, sw.toString());
+            BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
+            generateObjcClass(fileName, br);
             reqSet.add(className + ".h");
         }
         //生成ApiCode
@@ -342,14 +373,16 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         }
         String className = classPrefix + "ApiCode";
         String fileName = outputPath + className;
-        StringWriter sw = new StringWriter();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(baos));
         try {
-            trans.transform(new DOMSource(n), new StreamResult(sw));
+            trans.transform(new DOMSource(n), new StreamResult(bw));
         } catch (TransformerException e) {
             logger.error("transformer failed!class name:" + className, e);
             throw new RuntimeException("transformer failed!class name:" + className, e);
         }
-        generateObjcClass(fileName, sw.toString());
+        BufferedReader br = new BufferedReader(new InputStreamReader(new ByteArrayInputStream(baos.toByteArray())));
+        generateObjcClass(fileName, br);
         reqSet.add(className + ".h");
         //生成ApiRequestInclude.h
         fileName = outputPath + classPrefix + "ApiRequestInclude.h";
@@ -357,7 +390,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
         OutputStreamWriter fw = null;
         try {
             fw = new OutputStreamWriter(new FileOutputStream(source), "UTF-8");
-            sw = new StringWriter().
+            StringWriter sw = new StringWriter().
                     append("// Auto Generated.  DO NOT EDIT!\n" +
                             "#ifndef " + classPrefix + "ApiRequestInclude_h\n" +
                             "#define " + classPrefix + "ApiRequestInclude_h\n");
