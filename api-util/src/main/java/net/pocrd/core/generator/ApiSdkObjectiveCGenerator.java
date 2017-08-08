@@ -384,7 +384,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
     public static void execute(
             @ConsoleOption(name = "g", desc = "需要生成的api组名", sample = "groupA,groupB") String groups,
             @ConsoleOption(name = "s", desc = "需要生成的安全级别", sample = "None,UserLogin") String securityTypes,
-            @ConsoleOption(name = "ra", desc = "不生成的接口列表", sample = "user.getInfo,device.register") String rejectApis,
+            @ConsoleOption(name = "ra", desc = "不生成的接口列表, 半角逗号分隔", sample = "user.getInfo,device.register") String rejectApis,
             @ConsoleOption(name = "o", desc = "输出文件目录") String outputPath,
             @ConsoleOption(name = "jar", desc = "根据jar文件生成时给出jar文件地址") String jarFile,
             @ConsoleOption(name = "url", desc = "根据在线文档生成时给出文档url", sample = "http://www.pocrd.net/info.api?raw") String url,
