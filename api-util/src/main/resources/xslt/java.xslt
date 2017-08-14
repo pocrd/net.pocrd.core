@@ -47,6 +47,7 @@ public class <xsl:call-template name="getClassName">
         }
         </xsl:if>
     }
+    
     <xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="NotRequiredParameterSetter"/>
     </xsl:for-each>/**
      * 当前请求有可能的异常返回值
