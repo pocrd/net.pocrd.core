@@ -24,7 +24,7 @@ public class ServiceException extends Exception implements Serializable {
     }
 
     public ServiceException(AbstractReturnCode code, String msg) {
-        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg);
+        super("code:" + code.getCode() + " desc:" + code.getDesc() + " msg:" + msg);
         this.code = code.getCode();
         this.displayCode = code.getDisplay().getCode();
         this.description = code.getDisplay().getDesc();
@@ -36,7 +36,7 @@ public class ServiceException extends Exception implements Serializable {
     }
 
     public ServiceException(AbstractReturnCode code, String msg, Throwable t) {
-        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg, t);
+        super("code:" + code.getCode() + " desc:" + code.getDesc() + " msg:" + msg, t);
         this.code = code.getCode();
         this.displayCode = code.getDisplay().getCode();
         this.description = code.getDisplay().getDesc();
@@ -44,7 +44,7 @@ public class ServiceException extends Exception implements Serializable {
     }
 
     public ServiceException(String msg, ServiceRuntimeException sre) {
-        super("code:" + sre.getDescription() + ":" + sre.getCode() + "msg:" + msg, sre);
+        super("code:" + sre.getCode() + " desc:" + sre.getDescription() + " msg:" + msg, sre);
         this.code = sre.getCode();
         this.displayCode = sre.getDisplayCode();
         this.description = sre.getDescription();

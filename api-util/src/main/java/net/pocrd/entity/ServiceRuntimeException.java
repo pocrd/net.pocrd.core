@@ -24,7 +24,7 @@ public class ServiceRuntimeException extends RuntimeException implements Seriali
     }
 
     public ServiceRuntimeException(AbstractReturnCode code, String msg) {
-        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg);
+        super("code:" + code.getCode() + " desc:" + code.getDesc() + " msg:" + msg);
         this.code = code.getCode();
         this.displayCode = code.getDisplay().getCode();
         this.description = code.getDisplay().getDesc();
@@ -36,7 +36,7 @@ public class ServiceRuntimeException extends RuntimeException implements Seriali
     }
 
     public ServiceRuntimeException(AbstractReturnCode code, String msg, Throwable t) {
-        super("code:" + code.getDesc() + ":" + code.getCode() + "msg:" + msg, t);
+        super("code:" + code.getCode() + " desc:" + code.getDesc() + " msg:" + msg + msg, t);
         this.code = code.getCode();
         this.displayCode = code.getDisplay().getCode();
         this.description = code.getDisplay().getDesc();
@@ -44,7 +44,7 @@ public class ServiceRuntimeException extends RuntimeException implements Seriali
     }
 
     public ServiceRuntimeException(String msg, ServiceException se) {
-        super("code:" + se.getDescription() + ":" + se.getCode() + "msg:" + msg, se);
+        super("code:" + se.getCode() + " desc:" + se.getDescription() + " msg:" + msg, se);
         this.code = se.getCode();
         this.displayCode = se.getDisplayCode();
         this.description = se.getDescription();

@@ -56,6 +56,8 @@ public enum SecurityType {
      */
     UserAuth(0x0200),
 
+
+
     /**
      * 第三方集成认证, 验证第三方证书签名
      */

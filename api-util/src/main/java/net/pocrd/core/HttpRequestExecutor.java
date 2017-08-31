@@ -8,12 +8,12 @@ import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.dubbo.rpc.protocol.dubbo.FutureAdapter;
 import com.alibaba.fastjson.JSON;
 import net.pocrd.define.*;
-import net.pocrd.responseEntity.CallState;
-import net.pocrd.responseEntity.Response;
 import net.pocrd.dubboext.NotificationManager;
 import net.pocrd.dubboext.TraceInfo;
 import net.pocrd.entity.*;
+import net.pocrd.responseEntity.CallState;
 import net.pocrd.responseEntity.KeyValuePair;
+import net.pocrd.responseEntity.Response;
 import net.pocrd.util.*;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -310,6 +310,14 @@ public class HttpRequestExecutor {
                                 parameters[i] = ap.creator.create();
                             } else {
                                 switch (AutowireableParameter.valueOf(ap.name)) {
+                                    case appid:
+                                        parameters[i] = context.caller != null ? String.valueOf(context.caller.appid)
+                                                : method.securityLevel.authorize(0) == 0 ? context.appid : "-1";
+                                    case deviceid:
+                                        parameters[i] = context.caller != null ? String.valueOf(context.caller.deviceId)
+                                                : method.securityLevel.authorize(0) == 0 ? context.deviceIdStr : "-1";
+                                    case userid:
+                                        parameters[i] = context.caller != null ? String.valueOf(context.caller.uid) : "-1";
                                     case userAgent:
                                         parameters[i] = context.agent;
                                         break;
