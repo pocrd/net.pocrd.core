@@ -136,9 +136,6 @@ public interface Serializer<T> {
             @Override
             public void toJson(DynamicEntity instance, OutputStream out, boolean isRoot) {
                 try {
-                    if (instance != null && instance.entity != null) {
-                        instance.typeName = instance.entity.getClass().getSimpleName();
-                    }
                     out.write(JSON.toJSONBytes(instance));
                 } catch (IOException localIOException) {
                     throw new ReturnCodeException(ApiReturnCode.UNKNOWN_ERROR, localIOException);
