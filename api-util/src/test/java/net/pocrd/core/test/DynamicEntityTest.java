@@ -80,33 +80,28 @@ public class DynamicEntityTest {
     public void testDynamicEntityUndeclear() {
         ComplexTestEntity e = new ComplexTestEntity();
         e.strValue = "...";
-        e.dynamicEntity = new DynamicEntity<KeyValueList>();
         KeyValueList ste = new KeyValueList();
         ste.keyValue = new ArrayList<KeyValuePair>(3);
         ste.keyValue.add(new KeyValuePair("a", "b"));
         ste.keyValue.add(new KeyValuePair("c", "d"));
-
-        e.dynamicEntity.entity = ste;
+        e.dynamicEntity = new DynamicEntity<KeyValueList>(ste);
         List<DynamicEntity> des = new ArrayList<DynamicEntity>(3);
         {
-            DynamicEntity de1 = new DynamicEntity();
             SimpleTestEntity s = new SimpleTestEntity();
             s.intArray = new int[] { 4, 1, 4 };
             s.strValue = "kkkkkk";
-            de1.entity = s;
+            DynamicEntity de1 = new DynamicEntity(s);
             des.add(de1);
 
-            DynamicEntity de2 = new DynamicEntity();
             BadResponse b = new BadResponse("nonono");
-            de2.entity = b;
+            DynamicEntity de2 = new DynamicEntity(b);
             des.add(de2);
 
-            DynamicEntity de3 = new DynamicEntity();
             KeyValueList kvl = new KeyValueList();
             kvl.keyValue = new ArrayList<KeyValuePair>(2);
             kvl.keyValue.add(new KeyValuePair("x", "y"));
             kvl.keyValue.add(new KeyValuePair("n", "b"));
-            de3.entity = kvl;
+            DynamicEntity de3 = new DynamicEntity(kvl);
             des.add(de3);
         }
         e.dynamicEntityList = des;
@@ -125,24 +120,21 @@ public class DynamicEntityTest {
     public void testDynamicEntity() {
         ComplexTestEntity e = new ComplexTestEntity();
         e.strValue = "...";
-        e.dynamicEntity = new DynamicEntity<KeyValueList>();
         KeyValueList ste = new KeyValueList();
         ste.keyValue = new ArrayList<KeyValuePair>(3);
         ste.keyValue.add(new KeyValuePair("a", "b"));
         ste.keyValue.add(new KeyValuePair("c", "d"));
-        e.dynamicEntity.entity = ste;
+        e.dynamicEntity = new DynamicEntity<KeyValueList>(ste);
         List<DynamicEntity> des = new ArrayList<DynamicEntity>(3);
         {
-            DynamicEntity de1 = new DynamicEntity();
             SimpleTestEntity s = new SimpleTestEntity();
             s.intArray = new int[] { 4, 1, 4 };
             s.strValue = "kkkkkk";
-            de1.entity = s;
+            DynamicEntity de1 = new DynamicEntity(s);
             des.add(de1);
 
-            DynamicEntity de2 = new DynamicEntity();
             BadResponse b = new BadResponse("nonono");
-            de2.entity = b;
+            DynamicEntity de2 = new DynamicEntity(b);
             des.add(de2);
         }
         e.dynamicEntityList = des;
@@ -159,24 +151,22 @@ public class DynamicEntityTest {
         CList list = new CList();
         ComplexTestEntity e = new ComplexTestEntity();
         e.strValue = "...";
-        e.dynamicEntity = new DynamicEntity<KeyValueList>();
+
         KeyValueList ste = new KeyValueList();
         ste.keyValue = new ArrayList<KeyValuePair>(3);
         ste.keyValue.add(new KeyValuePair("a", "b"));
         ste.keyValue.add(new KeyValuePair("c", "d"));
-        e.dynamicEntity.entity = ste;
+        e.dynamicEntity = new DynamicEntity<KeyValueList>(ste);
         List<DynamicEntity> des = new ArrayList<DynamicEntity>(3);
         {
-            DynamicEntity de1 = new DynamicEntity();
             SimpleTestEntity s = new SimpleTestEntity();
             s.intArray = new int[] { 4, 1, 4 };
             s.strValue = "kkkkkk";
-            de1.entity = s;
+            DynamicEntity de1 = new DynamicEntity(s);
             des.add(de1);
 
-            DynamicEntity de2 = new DynamicEntity();
             BadResponse b = new BadResponse("nonono");
-            de2.entity = b;
+            DynamicEntity de2 = new DynamicEntity(b);
             des.add(de2);
         }
         e.dynamicEntityList = des;

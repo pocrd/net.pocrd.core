@@ -1,9 +1,7 @@
 package net.pocrd.define;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
-import com.alibaba.fastjson.serializer.ValueFilter;
 import net.pocrd.entity.ApiReturnCode;
 import net.pocrd.entity.ReturnCodeException;
 import net.pocrd.responseEntity.DynamicEntity;
@@ -89,19 +87,22 @@ public interface Serializer<T> {
                 bs[6] = "<![CDATA[".getBytes(ConstField.UTF8);
                 bs[7] = "]]>".getBytes(ConstField.UTF8);
 
-                SerializeConfig.getGlobalInstance().addFilter(DynamicEntity.class, new ValueFilter() {
-
-                    @Override
-                    public Object process(Object object, String name, Object value) {
-                        if ("typeName".equals(name)) {
-                            Object entity = ((DynamicEntity)object).entity;
-                            if (entity != null) {
-                                return entity.getClass().getSimpleName();
-                            }
-                        }
-                        return value;
-                    }
-                });
+                // 目前版本的fastjson有bug导致该value filter和fastjson的DisableCircularReferenceDetect配置同时开启时,该value filter会被忽略
+                // 具体原因是当A类包含一个B类成员变量时,即使B类已注册value filter但是当DisableCircularReferenceDetect打开时,A类序列化时会忽略所有
+                // 成员的value filter. 暂时通过设置DynamicEntity的成员为final来规避typeName和entity类型不匹配的问题。
+                //                SerializeConfig.getGlobalInstance().addFilter(DynamicEntity.class, new ValueFilter() {
+                //
+                //                    @Override
+                //                    public Object process(Object object, String name, Object value) {
+                //                        if ("typeName".equals(name)) {
+                //                            Object entity = ((DynamicEntity)object).entity;
+                //                            if (entity != null) {
+                //                                return entity.getClass().getSimpleName();
+                //                            }
+                //                        }
+                //                        return value;
+                //                    }
+                //                });
             }
 
             @Override
@@ -110,9 +111,9 @@ public interface Serializer<T> {
                     return;
                 }
                 try {
-                    if (instance.entity != null) {
-                        instance.typeName = instance.entity.getClass().getSimpleName();
-                    }
+                    //                    if (instance.entity != null) {
+                    //                        instance.typeName = instance.entity.getClass().getSimpleName();
+                    //                    }
                     if (isRoot) {
                         out.write(bs[0]);
                     }

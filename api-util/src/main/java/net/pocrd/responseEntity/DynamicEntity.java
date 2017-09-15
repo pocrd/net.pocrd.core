@@ -12,14 +12,20 @@ public final class DynamicEntity<T extends Serializable> implements Serializable
     private static final long serialVersionUID = 1L;
 
     @Description("动态类型对象")
-    public T entity;
+    public final T entity;
 
     /**
      * 不需要设置任何值, 框架会根据 entity 的具体类型来赋值
      */
     @Description("动态类型名")
-    public String typeName;
+    public final String typeName;
 
-    public DynamicEntity() {
+    public DynamicEntity(T value) {
+        entity = value;
+        if (value != null) {
+            typeName = value.getClass().getSimpleName();
+        } else {
+            typeName = null;
+        }
     }
 }
