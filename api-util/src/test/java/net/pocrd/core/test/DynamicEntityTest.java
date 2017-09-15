@@ -71,6 +71,11 @@ public class DynamicEntityTest {
         public List<DynamicEntity>    dynamicEntityList;
     }
 
+    public static class CList implements Serializable {
+        public String                  name;
+        public List<ComplexTestEntity> list;
+    }
+
     @Test
     public void testDynamicEntityUndeclear() {
         ComplexTestEntity e = new ComplexTestEntity();
@@ -141,10 +146,50 @@ public class DynamicEntityTest {
             des.add(de2);
         }
         e.dynamicEntityList = des;
+
         SerializeConfig.getGlobalInstance().addFilter(ComplexTestEntity.class, TypeCheckUtil.DynamicEntityDeclearChecker);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         POJOSerializerProvider.getSerializer(e.getClass()).toJson(e, baos, true);
         System.out.println(baos.toString());
+    }
+
+    @Test
+    public void testCList() {
+        CList list = new CList();
+        ComplexTestEntity e = new ComplexTestEntity();
+        e.strValue = "...";
+        e.dynamicEntity = new DynamicEntity<KeyValueList>();
+        KeyValueList ste = new KeyValueList();
+        ste.keyValue = new ArrayList<KeyValuePair>(3);
+        ste.keyValue.add(new KeyValuePair("a", "b"));
+        ste.keyValue.add(new KeyValuePair("c", "d"));
+        e.dynamicEntity.entity = ste;
+        List<DynamicEntity> des = new ArrayList<DynamicEntity>(3);
+        {
+            DynamicEntity de1 = new DynamicEntity();
+            SimpleTestEntity s = new SimpleTestEntity();
+            s.intArray = new int[] { 4, 1, 4 };
+            s.strValue = "kkkkkk";
+            de1.entity = s;
+            des.add(de1);
+
+            DynamicEntity de2 = new DynamicEntity();
+            BadResponse b = new BadResponse("nonono");
+            de2.entity = b;
+            des.add(de2);
+        }
+        e.dynamicEntityList = des;
+
+        list.list = new ArrayList<>();
+        list.list.add(e);
+        list.name = "hello";
+
+        SerializeConfig.getGlobalInstance().addFilter(ComplexTestEntity.class, TypeCheckUtil.DynamicEntityDeclearChecker);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        POJOSerializerProvider.getSerializer(list.getClass()).toJson(list, baos, true);
+        System.out.println(baos.toString());
+
     }
 }
