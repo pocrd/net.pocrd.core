@@ -18,4 +18,5 @@ public enum AutowireableParameter {
     host,
     token,
     stoken,
+    clientIP,
 }

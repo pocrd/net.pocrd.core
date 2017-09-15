@@ -366,6 +366,9 @@ public class HttpRequestExecutor {
                                     case stoken:
                                         parameters[i] = context.stoken;
                                         break;
+                                    case clientIP:
+                                        parameters[i] = context.clientIP;
+                                        break;
                                 }
                             }
                         } else {
