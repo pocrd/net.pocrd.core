@@ -232,6 +232,9 @@ public class TypeCheckUtil {
                                 if (DynamicEntity.class == c) {
                                     throw new RuntimeException("cannot use DynamicEntity as a DynamicStructure. "
                                             + returnType.getName() + " " + field.getName());
+                                } else if (c.getAnnotation(Description.class) == null) {
+                                    throw new RuntimeException("cannot use " + c.getName() + " as a DynamicStructure. "
+                                            + returnType.getName() + " " + field.getName() + ". Please create a customize POJO.");
                                 }
                                 recursiveCheckReturnType(serviceInterfaceName, c, null, checkers);
                             }
@@ -356,6 +359,9 @@ public class TypeCheckUtil {
         }
     }
 
+    /**
+     * 用于在运行期检查DynamicEntity是否返回了它所没有声明的实体类型。该检查只应该在Debug开关打开的情况下被执行。
+     */
     public static PropertyFilter DynamicEntityDeclearChecker = new PropertyFilter() {
         @Override
         public boolean apply(Object o, String s, Object o1) {

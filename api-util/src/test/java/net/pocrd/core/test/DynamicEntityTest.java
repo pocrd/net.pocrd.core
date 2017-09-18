@@ -182,4 +182,25 @@ public class DynamicEntityTest {
         System.out.println(baos.toString());
 
     }
+
+    @Description("包含string的dynamic entity")
+    public static class DynamicEntityWithString implements Serializable {
+        @Description("str")
+        @DynamicStructure(String.class)
+        public DynamicEntity<String> str;
+
+    }
+
+    @Test
+    public void testDynamicEntityWithString() {
+        DynamicEntityWithString e = new DynamicEntityWithString();
+        e.str = new DynamicEntity<>("x");
+        try {
+            TypeCheckUtil.recursiveCheckReturnType("test", e.getClass(), null, null);
+        } catch (Exception ex) {
+            System.out.println(ex.getMessage());
+            Assert.assertTrue(ex.getMessage()
+                    .equals("cannot use java.lang.String as a DynamicStructure. net.pocrd.core.test.DynamicEntityTest$DynamicEntityWithString str. Please create a customize POJO."));
+        }
+    }
 }
