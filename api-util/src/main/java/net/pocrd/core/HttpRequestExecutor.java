@@ -313,11 +313,14 @@ public class HttpRequestExecutor {
                                     case appid:
                                         parameters[i] = context.caller != null ? String.valueOf(context.caller.appid)
                                                 : method.securityLevel.authorize(0) == 0 ? context.appid : "-1";
+                                        break;
                                     case deviceid:
                                         parameters[i] = context.caller != null ? String.valueOf(context.caller.deviceId)
                                                 : method.securityLevel.authorize(0) == 0 ? context.deviceIdStr : "-1";
+                                        break;
                                     case userid:
                                         parameters[i] = context.caller != null ? String.valueOf(context.caller.uid) : "-1";
+                                        break;
                                     case userAgent:
                                         parameters[i] = context.agent;
                                         break;
