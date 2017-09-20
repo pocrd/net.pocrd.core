@@ -29,27 +29,38 @@ public class <xsl:call-template name="getClassName">
              </xsl:call-template> extends BaseRequest<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text><xsl:call-template name="getReturnValueType"><xsl:with-param name="name" select="returnType"/></xsl:call-template><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> {
     <xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RegexPatternField"/></xsl:for-each>
       <xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
-      private RsaHelper rsaHelper = null;</xsl:if>
+      private RsaHelper rsaHelper = null;
+      </xsl:if>
     /**
      * 当前请求的构造函数，以下参数为该请求的必填参数<xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RequiredParameterComment"><xsl:with-param name="methodName" select="$methodName"/></xsl:call-template></xsl:for-each>
      */
     public <xsl:call-template name="getClassName">
                <xsl:with-param name="name" select="methodName" />
              </xsl:call-template>(<xsl:call-template name="RequiredParameter" />) {
-        super("<xsl:value-of select="methodName"></xsl:value-of>", SecurityType.<xsl:value-of select="securityLevel"></xsl:value-of>);
-        <xsl:if test="count(parameterInfoList/parameterInfo[isRequired = 'true'])&gt;0">
+        super("<xsl:value-of select="methodName"></xsl:value-of>", SecurityType.<xsl:value-of select="securityLevel"></xsl:value-of>);<xsl:if test="count(parameterInfoList/parameterInfo[isRequired = 'true'])&gt;0">
+
         try {<xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
             if (rsaHelper == null) {
                 rsaHelper = new RsaHelper(ApiContext.getContentRsaPubKey());
             }</xsl:if><xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RequiredParameterSetter"><xsl:with-param name="methodName" select="$methodName"/></xsl:call-template></xsl:for-each>
         } catch(Exception e) {
             throw new LocalException("SERIALIZE_ERROR", LocalException.SERIALIZE_ERROR, e);
-        }
-        </xsl:if>
+        }</xsl:if>
     }
-    
+    <xsl:if test="count(parameterInfoList/parameterInfo[isRequired = 'true'])&gt;0">
+    /**
+     * 私有的默认构造函数，请勿使用
+     */
+    private <xsl:call-template name="getClassName">
+               <xsl:with-param name="name" select="methodName" />
+             </xsl:call-template>() {
+        super("<xsl:value-of select="methodName"></xsl:value-of>", SecurityType.<xsl:value-of select="securityLevel"></xsl:value-of>);
+    }
+    </xsl:if>
+
     <xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="NotRequiredParameterSetter"/>
-    </xsl:for-each>/**
+    </xsl:for-each>
+    /**
      * 当前请求有可能的异常返回值
      */
     public int handleError() {
@@ -70,8 +81,7 @@ public class <xsl:call-template name="getClassName">
         } catch (Exception e) {
             logger.error("<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template> deserialize failed.", e);
         }
-        return null;
-        </xsl:otherwise>
+        return null;</xsl:otherwise>
         </xsl:choose>
     }
     <xsl:if test="'string'=returnType">

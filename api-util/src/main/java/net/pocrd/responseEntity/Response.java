@@ -2,13 +2,14 @@ package net.pocrd.responseEntity;
 
 import net.pocrd.annotation.Description;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by rendong on 14-5-2.
  */
 @Description("接口返回值状态节点")
-public class Response {
+public class Response implements Serializable {
     @Description("当前服务端时间")
     public long systime;
 

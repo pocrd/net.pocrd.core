@@ -2,13 +2,14 @@ package net.pocrd.document;
 
 import net.pocrd.annotation.Description;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
  * Created by rendong on 14-5-2.
  */
 @Description("接口信息")
-public class MethodInfo {
+public class MethodInfo implements Serializable {
     @Description("返回值类型")
     public String              returnType;
     @Description("接口名")
