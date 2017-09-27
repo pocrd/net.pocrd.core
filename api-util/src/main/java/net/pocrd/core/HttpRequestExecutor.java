@@ -1050,7 +1050,6 @@ public class HttpRequestExecutor {
                 }
             } else {
                 Response apiResponse = new Response();
-                apiResponse.systime = System.currentTimeMillis();
                 apiResponse.code = code.getDisplay().getCode();
                 apiResponse.stateList = new ArrayList<CallState>(calls.length);
                 if (apiContext.cid != null) {
@@ -1069,6 +1068,7 @@ public class HttpRequestExecutor {
                     state.length = call.resultLen;
                     apiResponse.stateList.add(state);
                 }
+                apiResponse.systime = System.currentTimeMillis();
                 apiResponse.notificationList = apiContext.getNotifications();
 
                 OutputStream output = response.getOutputStream();
