@@ -3,6 +3,7 @@ package net.pocrd.executable;
 import net.pocrd.annotation.ConsoleArgument;
 import net.pocrd.annotation.ConsoleJoinPoint;
 import net.pocrd.annotation.ConsoleOption;
+import net.pocrd.define.SecurityType;
 import net.pocrd.util.ClassUtil;
 
 import java.lang.annotation.Annotation;

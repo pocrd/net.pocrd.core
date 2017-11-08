@@ -10,7 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 为dubbo provider统一提供异常捕获处理。由于该Filter会侵入异常处理流程，因此不强制使用。需服务开发者自行在META-INF中配置
+ * 为dubbo provider统一提供异常捕获处理。
  *
  * @author rendong
  */
