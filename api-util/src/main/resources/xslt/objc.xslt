@@ -212,7 +212,7 @@
         <xsl:when test="$type = 'long'">long long</xsl:when>
         <xsl:when test="$type = 'string'">NSString *</xsl:when>
         <xsl:when test="$type = 'date'">long long</xsl:when>
-        <xsl:when test="$type = '&lt;T&gt;'">id</xsl:when>
+        <xsl:when test="$type = '&lt;T&gt;'">${prefix}BaseEntity *</xsl:when>
         <xsl:otherwise>${prefix}<xsl:value-of select="$type"/> *</xsl:otherwise>
       </xsl:choose>
     </xsl:if>
