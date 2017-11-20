@@ -10,12 +10,12 @@ public enum SecurityType {
     /**
      * 无认证, 用户无关的接口. eg. 无任何安全风险的接口
      */
-    None(0x00),
+    None(0x0000),
 
     /**
      * 带有该标识的token只在ssl信道中传递, 用于处理跨domain的csrftoken同步. 该安全级别不能用于访问任何接口
      */
-    SeceretUserToken(0x01),
+    SeceretUserToken(0x0001),
 
     /**
      * 第三方平台OAuth认证, token中携带平台名和平台id
@@ -23,7 +23,7 @@ public enum SecurityType {
      * 1. 包含三方平台信息的设备token
      * 2. 设备签名
      */
-    OAuthVerified(0x02),
+    OAuthVerified(0x0002),
 
     /**
      * 设备认证, 验证设备签名. eg. 有一定安全风险但与用户无关的接口(发送下行短信密码)
@@ -56,22 +56,38 @@ public enum SecurityType {
      */
     UserAuth(0x0200),
 
-
+    /**
+     * 内部用户认证，
+     * 验证要素
+     * 1. 设备签名
+     * 2. 用户token
+     * 3. 内网ip
+     */
+    InternalUser(0x0400),
 
     /**
      * 第三方集成认证, 验证第三方证书签名
      */
-    Integrated(0x10000000),
+    Integrated(0x00100000),
 
     /**
      * 内网环境验证
      */
-    Internal(0x20000000),
+    Internal(0x00200000),
+
+    /**
+     * 子系统用户认证. eg. 供应商系统用户
+     * 验证要素
+     * 1. 设备签名
+     * 2. 用户token
+     * 3. 用户角色
+     */
+    SubSystem(0x00400000),
 
     /**
      * 对于只需要生成文档不产生代理的接口,设置本安全级别(本安全级别无业务含义)
      */
-    Document(0x40000000);
+    Document(0x80000000);
 
     private int code;
 

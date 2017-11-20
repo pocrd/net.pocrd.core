@@ -197,7 +197,7 @@ public class ApiSdkObjectiveCGenerator extends ApiCodeGenerator {
                     code.setLength(0);
                     importSet.clear();
                 } else {
-                    if (line.startsWith("#import ")) {
+                    if (line.startsWith("#import ") || line.startsWith("@class ")) {
                         if (!importSet.contains(line)) {
                             code.append(line).append(System.lineSeparator());
                             importSet.add(line);

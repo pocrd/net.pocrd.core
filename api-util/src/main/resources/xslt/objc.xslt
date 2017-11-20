@@ -437,8 +437,9 @@ typedef enum {
 <xsl:for-each select="fieldList/field"><xsl:if test="substring(type, 1, 4) = 'Api_'">
 @class ${prefix}<xsl:value-of select="type" />;</xsl:if></xsl:for-each>
 
-@interface ${prefix}<xsl:value-of select="name" /> : NSObject
-<xsl:for-each select="fieldList/field">
+#import "${prefix}BaseEntity.h"
+
+@interface ${prefix}<xsl:value-of select="name" /> : ${prefix}BaseEntity<xsl:for-each select="fieldList/field">
     <xsl:call-template name="ResponseField">
       <xsl:with-param name="type" select="type" />
       <xsl:with-param name="name" select="name" />
@@ -485,7 +486,6 @@ typedef enum {
  */
 + (${prefix}<xsl:value-of select="name" /> *) deserializeWithJsonData:(NSData *) jsonData
 {
-
     NSError *error = nil;
     NSDictionary *jsonDict = [NSJSONSerialization JSONObjectWithData:jsonData
                                                              options:NSJSONReadingMutableLeaves
@@ -538,6 +538,7 @@ typedef enum {
     </xsl:for-each>
     return dict;
 }
+
 @end
   </xsl:template>
   <xsl:template name="DeserializeField">
