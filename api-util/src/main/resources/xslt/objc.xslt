@@ -294,7 +294,7 @@
 @property(nonatomic, assign) long long <xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:when test="$type = '&lt;T&gt;'">
-@property(nonatomic, strong) id <xsl:value-of select="$objcName"/>;
+@property(nonatomic, strong) ${prefix}BaseEntity *<xsl:value-of select="$objcName"/>;
 </xsl:when>
         <xsl:otherwise>
 /* <xsl:value-of select="$desc" /> */
@@ -633,8 +633,8 @@ typedef enum {
               </xsl:when>
               <xsl:when test="$type = 'Api_DynamicEntity'">    NSDictionary *de = [json objectForKey:@"<xsl:value-of select="name" />"];
         result.<xsl:value-of select="$objcName" /> = [${prefix}<xsl:value-of select="type" /> deserialize:de];
-        if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) { 
-            result.<xsl:value-of select="$objcName" /> = nil; 
+        if ([result.<xsl:value-of select="$objcName" /> isKindOfClass:[NSNull class]]) {
+            result.<xsl:value-of select="$objcName" /> = nil;
         } else {
             <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ([@"<xsl:value-of select="key"></xsl:value-of>" isEqualToString:result.<xsl:value-of select="$objcName" />.typeName]) {
                 result.<xsl:value-of select="$objcName" />.entity = [${prefix}<xsl:value-of select="value" /> deserialize:[de objectForKey:@"entity"]];
