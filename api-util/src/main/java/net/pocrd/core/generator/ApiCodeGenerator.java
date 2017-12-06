@@ -33,11 +33,13 @@ public abstract class ApiCodeGenerator {
     private              String accept_security_types = null; // default all
     private              String accept_group_names    = null; // default all
     private              String reject_api_names      = null; // default all
+    private              String api_names             = null; // default all
 
     protected String getApiEvaluate() {
         String apiEvaluate = null;
         StringBuilder acceptSecurityTypes = new StringBuilder();
         StringBuilder acceptGroupNames = new StringBuilder();
+        StringBuilder rejectApiNames = new StringBuilder();
         StringBuilder acceptApiNames = new StringBuilder();
 
         if (accept_security_types != null && accept_security_types.length() > 0) {
@@ -51,25 +53,33 @@ public abstract class ApiCodeGenerator {
             acceptGroupNames.append("')");
         }
         if (reject_api_names != null && reject_api_names.length() > 0) {
-            acceptApiNames.append("(methodName!='");
-            acceptApiNames.append(reject_api_names.replace(",", "' and methodName!='"));
+            rejectApiNames.append("(methodName!='");
+            rejectApiNames.append(reject_api_names.replace(",", "' and methodName!='"));
+            rejectApiNames.append("')");
+        }
+        if (api_names != null && api_names.length() > 0) {
+            acceptApiNames.append("(methodName='");
+            acceptApiNames.append(api_names.replace(",", "' or methodName='"));
             acceptApiNames.append("')");
         }
 
-        String query = "";
+        StringBuilder query = new StringBuilder();
         if (accept_security_types != null) {
-            query += acceptSecurityTypes.toString();
+            query.append(acceptSecurityTypes.toString());
         }
         if (accept_group_names != null) {
-            query += (query.length() > 0 ? " and " : "") + acceptGroupNames.toString();
+            query.append((query.length() > 0 ? " and " : "")).append(acceptGroupNames.toString());
         }
         if (reject_api_names != null) {
-            query += (query.length() > 0 ? " and " : "") + acceptApiNames.toString();
+            query.append((query.length() > 0 ? " and " : "")).append(rejectApiNames.toString());
+        }
+        if (api_names != null) {
+            query.append((query.length() > 0 ? " and " : "")).append(acceptApiNames.toString());
         }
         if (query.length() == 0) {
             apiEvaluate = "//Document/apiList/api";
         } else {
-            apiEvaluate = "//Document/apiList/api[" + query + "]";
+            apiEvaluate = "//Document/apiList/api[" + query.toString() + "]";
         }
         System.out.println("[API EVALUATE] " + apiEvaluate);
         return apiEvaluate;
@@ -101,6 +111,10 @@ public abstract class ApiCodeGenerator {
 
     public void setRejectApis(String rejectApis) {
         reject_api_names = rejectApis;
+    }
+
+    public void setAcceptApis(String acceptApis) {
+        api_names = acceptApis;
     }
 
     public Source getXsltSource(String target, Source defaultSource) {

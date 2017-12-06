@@ -3,13 +3,13 @@ package net.pocrd.dubboext;
 import com.alibaba.dubbo.rpc.RpcContext;
 import com.alibaba.fastjson.JSON;
 import net.pocrd.define.ConstField;
+import net.pocrd.define.ServiceInjectable;
 import net.pocrd.responseEntity.CreditNotification;
 import net.pocrd.responseEntity.MessageNotification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Created by rendong on 14-5-15.
@@ -18,45 +18,6 @@ public class DubboExtProperty {
     private static       Logger logger               = LoggerFactory.getLogger(DubboExtProperty.class);
     private static final String JSONOBJECT_SEPARATOR = ",";
     public static final  String LOG_SPLITTER         = new String(new char[] { ' ', 2 });
-
-    /**
-     * 合并 ERROR_CODE_EXT, CREDIT, SERVICE_LOG 类型的notification
-     *
-     * @param rpcNotification
-     */
-    public static void mergeKnownNotifications(Map<String, String> rpcNotification) {
-        for (Entry<String, String> entry : rpcNotification.entrySet()) {
-            RpcContext context = RpcContext.getContext();
-            Map<String, String> origin = context.getContext().getNotifications();
-            if (ConstField.ERROR_CODE_EXT.equals(entry.getKey())) {
-                //不使用provider的errorcode替换自身的
-                String currentErrorCode = origin.get(entry.getKey());
-                if (currentErrorCode != null && !currentErrorCode.isEmpty()) {
-                    logger.info(
-                            "provider return an error code, but current service has set an error code. current error code:{},return error code:{}",
-                            currentErrorCode, entry.getValue());
-                } else {
-                    origin.put(entry.getKey(), entry.getValue());
-                }
-            } else if (ConstField.CREDIT.equals(entry.getKey()) || ConstField.MSG.equals(entry.getKey())) {
-                //累加通知
-                String tmp = origin.get(entry.getKey());
-                if (tmp == null) {
-                    origin.put(entry.getKey(), entry.getValue());
-                } else {
-                    origin.put(entry.getKey(), tmp + JSONOBJECT_SEPARATOR + entry.getValue());
-                }
-            } else if (ConstField.SERVICE_LOG.equals(entry.getKey())) {
-                String tmp = origin.get(entry.getKey());
-                if (tmp == null) {
-                    origin.put(entry.getKey(), entry.getValue());
-                } else {
-                    origin.put(entry.getKey(), tmp + LOG_SPLITTER + entry.getValue());
-                }
-            }
-        }
-
-    }
 
     /**
      * 覆盖写入token信息 以及 stoken信息 和 stoken的cookie过期时间
@@ -87,7 +48,7 @@ public class DubboExtProperty {
     }
 
     /**
-     * 覆盖
+     * 覆盖写入重定向URL
      *
      * @param url
      */
@@ -98,7 +59,7 @@ public class DubboExtProperty {
     }
 
     /**
-     * 累加
+     * 累加写入积分获取信息
      *
      * @param creditInfo
      */
@@ -106,11 +67,11 @@ public class DubboExtProperty {
         RpcContext context = RpcContext.getContext();
         if (creditInfo != null) {
             String tmp = context.getNotification(ConstField.CREDIT);
-            if (tmp == null) {
-                context.setNotification(ConstField.CREDIT, JSON.toJSONString(creditInfo));
+            String info = tmp == null ? JSON.toJSONString(creditInfo) : tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(creditInfo);
+            if (info.length() < 1024) {
+                context.setNotification(ConstField.CREDIT, info);
             } else {
-                context.setNotification(ConstField.CREDIT,
-                        tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(creditInfo));
+                logger.error("Notification CREDIT is too long. " + info);
             }
         }
     }
@@ -124,16 +85,13 @@ public class DubboExtProperty {
         RpcContext context = RpcContext.getContext();
         if (msgInfo != null) {
             String tmp = context.getNotification(ConstField.MSG);
-            if (tmp == null) {
-                context.setNotification(ConstField.MSG, JSON.toJSONString(msgInfo));
+            String info = tmp == null ? JSON.toJSONString(msgInfo) : tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(msgInfo);
+            if (info.length() < 1024) {
+                context.setNotification(ConstField.MSG, info);
             } else {
-                context.setNotification(ConstField.MSG, tmp + JSONOBJECT_SEPARATOR + JSON.toJSONString(msgInfo));
+                logger.error("Notification MSG is too long. " + info);
             }
         }
-    }
-
-    public static String getMessageInfo() {
-        return RpcContext.getContext().getNotification(ConstField.MSG);
     }
 
     /**
@@ -142,18 +100,36 @@ public class DubboExtProperty {
      * @param log
      */
     public static void appendServiceLog(String log) {
-        if (log != null && log.length() > 0) {
-            RpcContext context = RpcContext.getContext();
+        RpcContext context = RpcContext.getContext();
+        if (log != null) {
             String tmp = context.getNotification(ConstField.SERVICE_LOG);
-            if (tmp != null && tmp.length() > 0) {
-                log = tmp + LOG_SPLITTER + log;
-            }
-            if (log.length() > 500) {
-                logger.warn("service log is too long." + log);
-                context.setNotification(ConstField.SERVICE_LOG, log.substring(0, 500));
+            String info = tmp == null ? log : tmp + LOG_SPLITTER + log;
+            if (info.length() < 1024) {
+                context.setNotification(ConstField.SERVICE_LOG, info);
             } else {
-                context.setNotification(ConstField.SERVICE_LOG, log);
+                context.setNotification(ConstField.SERVICE_LOG, info.substring(0, 1024));
+                logger.error("Notification SERVICE_LOG is too long. " + log);
             }
+        }
+    }
+
+    /**
+     * 对外暴露额外的可注入参数
+     */
+    public static void exportServiceData(ServiceInjectable.InjectionData data) {
+        RpcContext context = RpcContext.getContext();
+        if (data != null) {
+            String name = ConstField.SERVICE_PARAM_EXPORT_PREFIX + data.getName();
+            Map<String, String> notifications = context.getNotifications();
+            if (notifications != null) {
+                if (notifications.containsKey(name)) {
+                    ServiceInjectable.InjectionData origin = JSON.parseObject(notifications.get(name), data.getClass());
+                    origin.batchMerge(data);
+                    context.setNotification(name, JSON.toJSONString(origin));
+                    return;
+                }
+            }
+            context.setNotification(name, JSON.toJSONString(data));
         }
     }
 }

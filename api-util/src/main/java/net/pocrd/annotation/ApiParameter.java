@@ -1,6 +1,7 @@
 package net.pocrd.annotation;
 
 import net.pocrd.define.EnumNull;
+import net.pocrd.define.ServiceInjectable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -17,8 +18,6 @@ public @interface ApiParameter {
 
     /**
      * 是否为rsa加密参数，使用非对称加密
-     *
-     * @return
      */
     boolean rsaEncrypted() default false;
 
@@ -48,7 +47,14 @@ public @interface ApiParameter {
     boolean ignoreForSecurity() default false;
 
     /**
-     * 枚举类型定义, 用于
+     * 不为 null 或空字符串时表明该参数接受服务端注入
+     * 注入的参数名即为serviceInject的值
+     * 注入的参数值格式为半角逗号
+     */
+    Class<? extends ServiceInjectable> serviceInject() default ServiceInjectable.class;
+
+    /**
+     * 枚举类型定义, 用于描述当前字符串的取值范围而又不引入接口二进制兼容问题
      */
     Class<? extends Enum> enumDef() default EnumNull.class;
 

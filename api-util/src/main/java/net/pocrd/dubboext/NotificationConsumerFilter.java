@@ -8,6 +8,7 @@ import java.util.Map;
 
 /**
  * dubbo进行同步调用时由该filter获取notification并存储到NotificationCallback的ThreadLocal成员中.
+ * 如果当前服务需要把下游系统返回的notification继续返回给上游系统, 需要手工进行合并
  *
  * @author guankaiqiang
  */

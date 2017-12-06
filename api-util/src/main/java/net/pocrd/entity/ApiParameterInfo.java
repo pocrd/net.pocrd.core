@@ -84,4 +84,9 @@ public class ApiParameterInfo {
      * 详细见 DesignedParameter 的描述
      */
     public ParamCreator creator;
+
+    /**
+     *
+     */
+    public String importName;
 }

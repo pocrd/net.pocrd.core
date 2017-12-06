@@ -966,14 +966,6 @@ public class HttpRequestExecutor {
                             }
                             response.addCookie(userInfo_cookie);
                         }
-                    } else if (ConstField.ERROR_CODE_EXT.equals(entry.getKey())) {
-                        try {
-                            int c = Integer.parseInt(value);
-                            call.setReturnCode(c, c, "");
-                        } catch (Exception e) {
-                            logger.error("service return an illegal code " + value, e);
-                            call.setReturnCode(ApiReturnCode.INTERNAL_SERVER_ERROR);
-                        }
                     } else if (ConstField.SERVICE_LOG.equals(entry.getKey())) {
                         call.serviceLog = value;
                     } else if (ConstField.REDIRECT_TO.equals(entry.getKey())) {
