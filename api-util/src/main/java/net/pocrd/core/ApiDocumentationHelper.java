@@ -54,6 +54,9 @@ public class ApiDocumentationHelper {
                 methodInfo.detail = info.detail;
                 methodInfo.groupName = info.groupName;
                 methodInfo.methodName = info.methodName;
+                if (info.exportParams != null) {
+                    methodInfo.exportParams = new ArrayList<>(info.exportParams);
+                }
                 methodInfo.securityLevel = info.securityLevel.name();
                 if (info.roleSet != null && info.roleSet.size() > 0) {
                     StringBuilder sb = new StringBuilder();
@@ -309,6 +312,9 @@ public class ApiDocumentationHelper {
                 if (p.sequence != null && p.sequence.length() > 0) {
                     b.sequence = p.sequence;
                     sequenceSet.add(b.sequence);
+                }
+                if (p.injectable != null) {
+                    b.serviceInjection = p.injectable.getName();
                 }
                 b.isRsaEncrypt = p.isRsaEncrypted;
                 b.isRequired = p.isRequired;

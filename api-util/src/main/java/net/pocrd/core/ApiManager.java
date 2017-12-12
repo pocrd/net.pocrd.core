@@ -159,6 +159,13 @@ public final class ApiManager {
                     if (et != null) {
                         apiInfo.encryptionOnly = et.encryptionOnly();
                     }
+                    ParamExport pe = mInfo.getAnnotation(ParamExport.class);
+                    if (pe != null && pe.value() != null && pe.value().length > 0) {
+                        apiInfo.exportParams = new HashSet<>(pe.value().length);
+                        for (String n : pe.value()) {
+                            apiInfo.exportParams.add(n);
+                        }
+                    }
                     apiInfo.groupName = groupName;
                     apiInfo.description = api.desc();
                     apiInfo.detail = api.detail();
@@ -183,10 +190,14 @@ public final class ApiManager {
                             apiInfo.errors = new int[size];
                             for (int i = 0; i < size; i++) {
                                 AbstractReturnCode c = ReturnCodeContainer.findCode(es[i]);
+                                if (c.getDisplay() != null) {
+                                    throw new RuntimeException(
+                                            "cannot use a shadow code as a designed code " + i + " in " + clazz.getName() + " " + api.name());
+                                }
                                 apiInfo.errorCodes[i] = c;
                                 apiInfo.errors[i] = c.getCode();
                             }
-                            // 避免重复定义error code
+                            // 避免重复定义error code 以及避免暴露隐藏code
                             HashSet<Integer> set = new HashSet<Integer>();
                             for (int i : es) {
                                 if (set.contains(i)) {
@@ -324,6 +335,9 @@ public final class ApiManager {
                                 pInfo.isRsaEncrypted = p.rsaEncrypted();
                                 pInfo.ignoreForSecurity = p.ignoreForSecurity();
                                 pInfo.name = p.name();
+                                Class injectable = p.serviceInject();
+                                pInfo.injectable = (injectable == null || injectable == ServiceInjectable.class) ?
+                                        null : p.serviceInject().newInstance();
                                 if (p.enumDef() != null && p.enumDef() != EnumNull.class) {
                                     if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
                                             || pInfo.actuallyGenericType == String.class) {

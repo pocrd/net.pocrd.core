@@ -27,10 +27,10 @@ public abstract class AbstractReturnCode implements Serializable {
     /**
      * 初始化一个不对外暴露的ReturnCode(仅用于服务端数据分析)
      */
-    public AbstractReturnCode(int code, AbstractReturnCode shadow) {
+    public AbstractReturnCode(int code, AbstractReturnCode displayAs) {
         this.desc = null;
         this.code = code;
-        this.display = shadow;
+        this.display = displayAs;
     }
 
     public String getDesc() {

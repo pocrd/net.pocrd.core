@@ -23,6 +23,8 @@ public class ParameterInfo implements Serializable {
     public String  name;
     @Description("参数描述")
     public String  description;
+    @Description("该参数可以使用的隐式参数名")
+    public String  serviceInjection;
     @Description("是否是集合或数组类型")
     public boolean isList;
     @Description("是否需要rsa加密")

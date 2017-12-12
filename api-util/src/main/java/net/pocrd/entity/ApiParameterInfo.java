@@ -1,6 +1,7 @@
 package net.pocrd.entity;
 
 import net.pocrd.define.ParamCreator;
+import net.pocrd.define.ServiceInjectable;
 
 public class ApiParameterInfo {
     /**
@@ -86,7 +87,7 @@ public class ApiParameterInfo {
     public ParamCreator creator;
 
     /**
-     *
+     * 本参数可以使用其他接口隐式返回的数据
      */
-    public String importName;
+    public ServiceInjectable injectable;
 }

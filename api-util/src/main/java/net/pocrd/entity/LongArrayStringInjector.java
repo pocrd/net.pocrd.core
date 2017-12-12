@@ -8,10 +8,9 @@ import net.pocrd.define.ServiceInjectable;
  */
 public abstract class LongArrayStringInjector implements ServiceInjectable {
     @Override
-    public Object getData(String jsonFromNotification) {
+    public InjectionData parseData(String jsonFromNotification) {
         if (jsonFromNotification != null) {
-            Data data = JSON.parseObject(jsonFromNotification, Data.class);
-            return data.getData();
+            return JSON.parseObject(jsonFromNotification, Data.class);
         }
         return null;
     }

@@ -108,6 +108,11 @@ public class ApiMethodInfo {
     public AbstractReturnCode[] errorCodes;
 
     /**
+     * 该方法会返回的隐式参数列表
+     */
+    public Set<String> exportParams;
+
+    /**
      * 该方法声明的内部业务异常映射
      */
     public SparseIntArray innerCodeMap;

@@ -2,6 +2,7 @@ package net.pocrd.define;
 
 /**
  * 处理接口间将A接口的返回结果作为B接口某个入参的执行器
+ * 请保证实现类有public的无参构造函数
  */
 public interface ServiceInjectable {
     /**
@@ -10,11 +11,9 @@ public interface ServiceInjectable {
     String getName();
 
     /**
-     * 返回当前数据,
-     * 如果数据类型是String会被直接使用
-     * 其他类型会被转化为Json格式字符串来使用
+     * 返回当前数据
      */
-    Object getData(String jsonFromNotification);
+    InjectionData parseData(String jsonFromNotification);
 
     interface InjectionData {
         /**

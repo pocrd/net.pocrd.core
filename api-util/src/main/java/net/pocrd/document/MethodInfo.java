@@ -32,6 +32,8 @@ public class MethodInfo implements Serializable {
     public List<TypeStruct>    reqStructList;
     @Description("接口返回业务异常列表")
     public List<CodeInfo>      errorCodeList;
+    @Description("该方法会返回的隐式参数列表")
+    public List<String>        exportParams;
     @Description("接口组负责人")
     public String              groupOwner;
     @Description("接口负责人")
