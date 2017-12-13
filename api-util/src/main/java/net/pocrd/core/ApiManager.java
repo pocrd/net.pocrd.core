@@ -190,9 +190,10 @@ public final class ApiManager {
                             apiInfo.errors = new int[size];
                             for (int i = 0; i < size; i++) {
                                 AbstractReturnCode c = ReturnCodeContainer.findCode(es[i]);
-                                if (c.getDisplay() != null) {
+                                if (c.getDisplay() != c) {
                                     throw new RuntimeException(
-                                            "cannot use a shadow code as a designed code " + i + " in " + clazz.getName() + " " + api.name());
+                                            "cannot use a shadow code as a designed code " + c.getCode() + " in " + clazz.getName() + " " + api
+                                                    .name());
                                 }
                                 apiInfo.errorCodes[i] = c;
                                 apiInfo.errors[i] = c.getCode();

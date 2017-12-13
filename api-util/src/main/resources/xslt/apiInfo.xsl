@@ -280,7 +280,8 @@
                     border: solid 1px #D4E2F1;
                     }
 
-                    #doc_apis span.state_title, #internal_apis span.state_title, #integrated_apis span.state_title, #none_apis span.state_title, #registereddevice_apis span.state_title, #userlogin_apis span.state_title, #other_apis span.state_title {
+                    #doc_apis span.state_title, #internal_apis span.state_title, #integrated_apis span.state_title, #none_apis span.state_title,
+                    #registereddevice_apis span.state_title, #userlogin_apis span.state_title, #other_apis span.state_title {
                     font-weight: bold;
                     }
 
@@ -301,9 +302,20 @@
                     }
                     }
                     }
-                    var regExp = new RegExp('\\n\\s{0,4}'+lo+':([^\\n]+)', 'i');
+
+                    var regExp = new RegExp('\\n\\s{0,4}'+lo+':([^$]+)', 'i');
                     if(regExp.test(source)){
-                    $(this).text(regExp.exec(source)[1]);
+                    var content = regExp.exec(source)[1].split('\n');
+                    var buffer = "";
+                    for(var i=0; content.length>i; i++){
+                    var line = content[i].trim();
+                    if(line.length>6&amp;&amp;line.charAt(2)=='-'&amp;&amp;line.charAt(5)==':'){
+                    break;
+                    }
+                    buffer += line;
+                    }
+
+                    $(this).text(buffer);
                     }
                     });
                     $("a.hide").each(function(index) {
@@ -410,7 +422,7 @@
                         } else {
                             $("div [id='other_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
                             $("div [id='other_apis'] div.api:last").append($(this).html());
-                        } 
+                        }
                     });
                     if($("div [id='other_apis'] div").length > 0) {
                         $("div [id='other_apis']").show();
@@ -501,7 +513,7 @@
                             if(html != newHtml){
                                 flag = 1;
                             }
-                            
+
                          });
                         $("td[name='code']").each(function(){
                             var html = $(this).html();
@@ -766,6 +778,15 @@
                                                 <xsl:value-of select="state"/>
                                             </span>
                                         </div>
+                                        <xsl:if test="count(exportParams/item)&gt;0">
+                                            <div id="api_export">
+                                                <strong>隐式导出:</strong>
+                                                <xsl:for-each select="exportParams/item">
+                                                    <xsl:if test="position()>1">;</xsl:if>
+                                                    <xsl:value-of select="."/>
+                                                </xsl:for-each>
+                                            </div>
+                                        </xsl:if>
                                         <div>
                                             <strong>接口负责人:</strong>
                                             <xsl:value-of select="methodOwner"/>
@@ -827,6 +848,9 @@
                                                                         <xsl:value-of select="verifyMsg"/>:
                                                                     </xsl:if>
                                                                     <xsl:value-of select="verifyRegex"/>
+                                                                </xsl:if>
+                                                                <xsl:if test="serviceInjection != ''">
+                                                                    该参数可由服务端其他接口隐式注入, 注入参数名为<xsl:value-of select="serviceInjection"/>
                                                                 </xsl:if>
                                                             </td>
                                                         </tr>
