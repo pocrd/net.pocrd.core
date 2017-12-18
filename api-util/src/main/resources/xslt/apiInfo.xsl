@@ -782,7 +782,7 @@
                                             <div id="api_export">
                                                 <strong>隐式导出:</strong>
                                                 <xsl:for-each select="exportParams/item">
-                                                    <xsl:if test="position()>1">;</xsl:if>
+                                                    <xsl:if test="position()>1">;<![CDATA[  ]]></xsl:if>
                                                     <xsl:value-of select="."/>
                                                 </xsl:for-each>
                                             </div>
