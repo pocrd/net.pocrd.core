@@ -11,9 +11,9 @@ public interface ServiceInjectable {
     String getName();
 
     /**
-     * 返回当前数据
+     * 将数据封装为 InjectionData
      */
-    InjectionData parseData(String jsonFromNotification);
+    InjectionData parseData(String stringData);
 
     interface InjectionData {
         /**

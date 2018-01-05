@@ -25,9 +25,19 @@ public class ApiContext {
     public final Pattern callbackRegex = Pattern.compile("^[A-Za-z]\\w{5,64}$");
 
     /**
-     * 调用资源描述
+     * 接口调用列表
      */
-    public ArrayList<ApiMethodCall> apiCallInfos = null;
+    public List<ApiMethodCall> apiCalls = null;
+
+    /**
+     * 二级调用资源描述
+     */
+    public List<ApiMethodCall> lv2ApiCalls = null;
+
+    /**
+     * 三级调用资源描述
+     */
+    public List<ApiMethodCall> lv3ApiCalls = null;
 
     /**
      * 是否为ssl链接
@@ -264,7 +274,9 @@ public class ApiContext {
      */
     public final void clear() {
         this.agent = null;
-        this.apiCallInfos = null;
+        this.apiCalls = null;
+        this.lv2ApiCalls = null;
+        this.lv3ApiCalls = null;
         this.appid = null;
         this.caller = null;
         this.cid = null;

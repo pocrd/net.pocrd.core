@@ -1,6 +1,5 @@
 package net.pocrd.entity;
 
-import com.alibaba.fastjson.JSON;
 import net.pocrd.define.ServiceInjectable;
 
 /**
@@ -8,11 +7,8 @@ import net.pocrd.define.ServiceInjectable;
  */
 public abstract class LongArrayStringInjector implements ServiceInjectable {
     @Override
-    public InjectionData parseData(String jsonFromNotification) {
-        if (jsonFromNotification != null) {
-            return JSON.parseObject(jsonFromNotification, Data.class);
-        }
-        return null;
+    public InjectionData parseData(String stringData) {
+        return new Data(getName(), stringData);
     }
 
     public static class Data implements InjectionData {
@@ -21,6 +17,13 @@ public abstract class LongArrayStringInjector implements ServiceInjectable {
 
         public Data(String name) {
             this.name = name;
+        }
+
+        public Data(String name, String data) {
+            this.name = name;
+            if (data != null) {
+                this.sb = new StringBuilder(data);
+            }
         }
 
         @Override

@@ -1,5 +1,11 @@
 package net.pocrd.entity;
 
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 封装一次接口调用信息的实体
+ */
 public class ApiMethodCall {
     private static ApiMethodCall UnknownMethodCall;
 
@@ -10,7 +16,8 @@ public class ApiMethodCall {
         UnknownMethodCall.returnCode = ApiReturnCode.UNKNOWN_METHOD.getCode();
     }
 
-    private ApiMethodCall() {}
+    private ApiMethodCall() {
+    }
 
     public ApiMethodCall(ApiMethodInfo method) {
         returnCode = ApiReturnCode.NO_ASSIGN.getCode();
@@ -22,6 +29,16 @@ public class ApiMethodCall {
      * 接口信息
      */
     public ApiMethodInfo method;
+
+    /**
+     * 依赖其隐式返回值的调用列表
+     */
+    public List<ApiMethodCall> dependencies;
+
+    /**
+     * 本次调用返回的隐式返回值
+     */
+    public Map<String, String> exportParams;
 
     /**
      * 客户端上传的业务id

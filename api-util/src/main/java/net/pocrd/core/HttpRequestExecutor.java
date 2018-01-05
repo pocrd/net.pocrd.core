@@ -136,12 +136,29 @@ public class HttpRequestExecutor {
                 access.logRequest("with error", String.valueOf(parseResult.getCode()));
             } else { // 参数解析成功
                 try {
-                    executeAllApiCall(apiContext, request, response);
+                    List<ApiMethodCall> lv1ApiCalls = null;
+                    if (apiContext.lv2ApiCalls == null) {
+                        lv1ApiCalls = apiContext.apiCalls;
+                    } else {
+                        lv1ApiCalls = new ArrayList<>(apiContext.apiCalls.size());
+                        for (ApiMethodCall call : apiContext.apiCalls) {
+                            if (call.dependencies == null) {
+                                lv1ApiCalls.add(call);
+                            }
+                        }
+                    }
+                    executeAllApiCall(lv1ApiCalls, request, response);
+                    if (apiContext.lv2ApiCalls != null) {
+                        executeAllApiCall(apiContext.lv2ApiCalls, request, response);
+                    }
+                    if (apiContext.lv3ApiCalls != null) {
+                        executeAllApiCall(apiContext.lv3ApiCalls, request, response);
+                    }
                 } finally {
                     apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
                     access.logRequest();
                 }
-                for (ApiMethodCall call : apiContext.apiCallInfos) {
+                for (ApiMethodCall call : apiContext.apiCalls) {
                     MDC.put(CommonParameter.method, call.method.methodName);
                     serializeCallResult(apiContext, call);
                     // access log
@@ -220,7 +237,7 @@ public class HttpRequestExecutor {
                     }
                 } else {
                     Exception e = output(apiContext, ApiReturnCode.SUCCESS,
-                            apiContext.apiCallInfos.toArray(new ApiMethodCall[apiContext.apiCallInfos.size()]), response);
+                            apiContext.apiCalls.toArray(new ApiMethodCall[apiContext.apiCalls.size()]), response);
                     if (e != null) {
                         logger.error("output failed.", e);
                     }
@@ -266,17 +283,18 @@ public class HttpRequestExecutor {
         }
     }
 
-    private AbstractReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request) {
-        context.isSSL = CommonConfig.getInstance().getInternalPort() == request.getLocalPort();
-        String nameString = request.getParameter(CommonParameter.method);
+    private AbstractReturnCode parseMethodDependency(ApiContext context, String nameString) {
         if (nameString != null && nameString.length() > 0) {
-            // 解析多个由','拼接的api名
+            // 解析多个由','拼接的api名. api名由3个部分组成 函数名@实例名:依赖函数名1@实例名/依赖函数名2@实例名  除了函数名以外的信息都可以缺省.
             String[] names = nameString.split(",");
-            context.apiCallInfos = new ArrayList<ApiMethodCall>(names.length);
+            List<ApiMethodCall> apiCallList = context.apiCalls = new ArrayList<>(names.length);
+            Map<String, ApiMethodCall> apiCallMap = new HashMap<>(names.length);
             // 检测当前安全级别是否允许调用请求中的所有api
             for (int m = 0; m < names.length; m++) {
-                String mname = names[m];
-                ApiMethodInfo method = apiManager.getApiMethodInfo(mname);
+                String fullName = names[m];
+                String instanceName = fullName.contains(":") ? fullName.substring(0, fullName.indexOf(":")) : fullName;
+                String name = instanceName.contains("@") ? instanceName.substring(0, instanceName.indexOf("@")) : instanceName;
+                ApiMethodInfo method = apiManager.getApiMethodInfo(name);
                 if (method != null) {
                     // 接口返回RawString，不允许多接口同时调用
                     if (method.returnType == RawString.class) {
@@ -295,156 +313,220 @@ public class HttpRequestExecutor {
                         return ApiReturnCode.UNKNOW_ENCRYPTION_DENIED;
                     }
                     ApiMethodCall call = new ApiMethodCall(method);
-                    if (names.length == 1) {
-                        call.businessId = request.getParameter(CommonParameter.businessId);
-                    } else {
-                        call.businessId = request.getParameter(m + "_" + CommonParameter.businessId);
-                    }
-                    // 解析业务参数使其对应各自业务api
-                    String[] parameters = new String[method.parameterInfos.length];
-                    context.requiredSecurity = method.securityLevel.authorize(context.requiredSecurity);
-                    for (int i = 0; i < parameters.length; i++) {
-                        ApiParameterInfo ap = method.parameterInfos[i];
-                        if (ap.isAutowired) {
-                            if (ap.creator != null) {
-                                parameters[i] = ap.creator.create();
-                            } else {
-                                switch (AutowireableParameter.valueOf(ap.name)) {
-                                    case appid:
-                                        parameters[i] = context.caller != null ? String.valueOf(context.caller.appid)
-                                                : method.securityLevel.authorize(0) == 0 ? context.appid : "-1";
-                                        break;
-                                    case deviceid:
-                                        parameters[i] = context.caller != null ? String.valueOf(context.caller.deviceId)
-                                                : method.securityLevel.authorize(0) == 0 ? context.deviceIdStr : "-1";
-                                        break;
-                                    case userid:
-                                        parameters[i] = context.caller != null ? String.valueOf(context.caller.uid) : "-1";
-                                        break;
-                                    case userAgent:
-                                        parameters[i] = context.agent;
-                                        break;
-                                    case cookies:
-                                        Map<String, String> map = new HashMap<String, String>(ap.names.length);
-                                        for (String n : ap.names) {
-                                            String v = context.getCookie(n);
-                                            if (v != null) {
-                                                map.put(n, v);
-                                            }
-                                        }
-                                        parameters[i] = JSON.toJSONString(map);
-                                        break;
-                                    case businessid:
-                                        parameters[i] = call.businessId;
-                                        break;
-                                    case postBody:
-                                        if (SecurityType.Integrated.check(method.securityLevel)) {
-                                            String contentType = request.getHeader("Content-Type");
-                                            if (contentType == null || contentType.length() == 0 || contentType
-                                                    .startsWith("application/x-www-form-urlencoded")) {
-                                                parameters[i] = context.recoverRequestBody();
-                                            } else {
-                                                parameters[i] = readPostBody(request);
-                                            }
-                                        }
-                                        break;
-                                    case channel:
-                                        parameters[i] = request.getParameter(CommonParameter.channel);
-                                        break;
-                                    case thirdPartyId:
-                                        parameters[i] = context.thirdPartyId;
-                                        break;
-                                    case versionCode:
-                                        parameters[i] = context.versionCode;
-                                        break;
-                                    case referer:
-                                        parameters[i] = context.referer;
-                                        break;
-                                    case host:
-                                        parameters[i] = context.host;
-                                        break;
-                                    case token:
-                                        parameters[i] = context.token;
-                                        break;
-                                    case stoken:
-                                        parameters[i] = context.stoken;
-                                        break;
-                                    case clientIP:
-                                        parameters[i] = context.clientIP;
-                                        break;
-                                }
-                            }
-                        } else {
-                            if (names.length == 1) {
-                                parameters[i] = request.getParameter(ap.name);
-                            } else {
-                                String name = m + "_" + ap.name;
-                                parameters[i] = request.getParameter(name);
-                            }
-                            // 如果参数被标记为加密传输的，那么当其为必填或不为空的时候需要被解密后传送到业务端
-                            if (ap.isRsaEncrypted && (ap.isRequired || parameters[i] != null)) {
-                                try {
-                                    parameters[i] = new String(rsaDecryptHelper.decrypt(Base64Util.decode(parameters[i])),
-                                            ConstField.UTF8);
-                                } catch (Exception e) {
-                                    return ApiReturnCode.PARAMETER_DECRYPT_ERROR;
-                                }
-                            }
-                        }
-                        if (CompileConfig.isDebug) {
-                            if (parameters[i] != null) {
-                                call.message.append(ap.name).append('=').append(parameters[i]).append('&');
-                            }
-                        } else {
-                            if (ap.ignoreForSecurity) {
-                                context.ignoreParameterForSecurity(ap.name);
-                            } else if (parameters[i] != null) {
-                                call.message.append(ap.name).append('=').append(parameters[i]).append('&');
-                            }
-                        }
-                    }
-                    call.parameters = parameters;
-                    // 验证通过的api及其调用参数构造为一个ApiMethodCall实例
-                    context.apiCallInfos.add(call);
+                    apiCallList.add(call);
+                    apiCallMap.put(instanceName, call);
                 } else {
                     return ApiReturnCode.UNKNOWN_METHOD;
                 }
             }
 
-            // 调试环境下为带有特殊标识的访问者赋予测试者身份
-            if (CompileConfig.isDebug) {
-                if ((context.agent != null && context.agent.contains(DEBUG_AGENT))) {
-                    if (context.caller == null) {
-                        context.caller = CallerInfo.TESTER;
+            for (int m = 0; m < names.length; m++) {
+                String fullName = names[m];
+                ApiMethodCall call = apiCallList.get(m);
+                String[] dependentMethods = fullName.contains(":") ? fullName.substring(fullName.indexOf(":") + 1).split("/") : null;
+                if (dependentMethods != null) {
+                    if (context.lv2ApiCalls == null) {
+                        context.lv2ApiCalls = new LinkedList<>();
                     }
-                    return ApiReturnCode.SUCCESS;
+                    context.lv2ApiCalls.add(call);
+                    call.dependencies = new ArrayList<>(1);
+                    for (String methodName : dependentMethods) {
+                        ApiMethodCall c = apiCallMap.get(methodName);
+                        if (c == null) {
+                            return ApiReturnCode.UNKNOWN_DEPENDENT_METHOD;
+                        }
+                        call.dependencies.add(c);
+                    }
                 }
             }
 
-            //Integrate None Internal级别接口不具备用户身份
-            if (SecurityType.requireToken(context.requiredSecurity)) {
-                // 默认验证 RegisteredDevice
-                context.requiredSecurity = SecurityType.RegisteredDevice.authorize(context.requiredSecurity);
-                if (context.caller == null) {
-                    return ApiReturnCode.TOKEN_ERROR;
+            if (context.lv2ApiCalls != null) {
+                for (ApiMethodCall call : context.lv2ApiCalls) {
+                    for (ApiMethodCall c : call.dependencies) {
+                        if (c.dependencies != null) {
+                            if (context.lv3ApiCalls == null) {
+                                context.lv3ApiCalls = new LinkedList<>();
+                            }
+                            // 检测请求中的调用依赖层次是否超过三层
+                            if (CompileConfig.isDebug) {
+                                for (ApiMethodCall cc : c.dependencies) {
+                                    if (cc.dependencies != null) {
+                                        return ApiReturnCode.TOO_MANY_DEPENDENT_LEVEL;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            if (SecurityType.Integrated.check(context.requiredSecurity)) {
-                if (context.apiCallInfos.size() != 1) {
-                    return ApiReturnCode.ACCESS_DENIED;
+            if (context.lv3ApiCalls != null) {
+                for (ApiMethodCall call : context.lv3ApiCalls) {
+                    context.lv2ApiCalls.remove(call);
                 }
-                // 签名验证，用于防止中间人攻击
-                if (!checkIntegratedSignature(context, request)) {
-                    return ApiReturnCode.SIGNATURE_ERROR;
-                }
-            } else if (!checkSignature(context.caller, context.requiredSecurity, request)) {
-                return ApiReturnCode.SIGNATURE_ERROR;
             }
 
-            return checkAuthorization(context, context.requiredSecurity, request);
+            return ApiReturnCode.SUCCESS;
         }
         return ApiReturnCode.REQUEST_PARSE_ERROR;
+    }
+
+    private AbstractReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request) {
+        context.isSSL = CommonConfig.getInstance().getInternalPort() == request.getLocalPort();
+        String nameString = request.getParameter(CommonParameter.method);
+        AbstractReturnCode code = parseMethodDependency(context, nameString);
+        if (code != ApiReturnCode.SUCCESS) {
+            return code;
+        }
+        List<ApiMethodCall> apiCallList = context.apiCalls;
+        int length = apiCallList.size();
+
+        for (int m = 0; m < length; m++) {
+            ApiMethodCall call = apiCallList.get(m);
+            ApiMethodInfo method = call.method;
+            if (length == 1) {
+                call.businessId = request.getParameter(CommonParameter.businessId);
+            } else {
+                call.businessId = request.getParameter(m + "_" + CommonParameter.businessId);
+            }
+            // 解析业务参数使其对应各自业务api
+            String[] parameters = new String[method.parameterInfos.length];
+            context.requiredSecurity = method.securityLevel.authorize(context.requiredSecurity);
+            for (int i = 0; i < parameters.length; i++) {
+                ApiParameterInfo ap = method.parameterInfos[i];
+                if (ap.isAutowired) {
+                    if (ap.creator != null) {
+                        parameters[i] = ap.creator.create();
+                    } else {
+                        switch (AutowireableParameter.valueOf(ap.name)) {
+                            case appid:
+                                parameters[i] = context.caller != null ? String.valueOf(context.caller.appid)
+                                        : method.securityLevel.authorize(0) == 0 ? context.appid : "-1";
+                                break;
+                            case deviceid:
+                                parameters[i] = context.caller != null ? String.valueOf(context.caller.deviceId)
+                                        : method.securityLevel.authorize(0) == 0 ? context.deviceIdStr : "-1";
+                                break;
+                            case userid:
+                                parameters[i] = context.caller != null ? String.valueOf(context.caller.uid) : "-1";
+                                break;
+                            case userAgent:
+                                parameters[i] = context.agent;
+                                break;
+                            case cookies:
+                                Map<String, String> map = new HashMap<String, String>(ap.names.length);
+                                for (String n : ap.names) {
+                                    String v = context.getCookie(n);
+                                    if (v != null) {
+                                        map.put(n, v);
+                                    }
+                                }
+                                parameters[i] = JSON.toJSONString(map);
+                                break;
+                            case businessid:
+                                parameters[i] = call.businessId;
+                                break;
+                            case postBody:
+                                if (SecurityType.Integrated.check(method.securityLevel)) {
+                                    String contentType = request.getHeader("Content-Type");
+                                    if (contentType == null || contentType.length() == 0 || contentType
+                                            .startsWith("application/x-www-form-urlencoded")) {
+                                        parameters[i] = context.recoverRequestBody();
+                                    } else {
+                                        parameters[i] = readPostBody(request);
+                                    }
+                                }
+                                break;
+                            case channel:
+                                parameters[i] = request.getParameter(CommonParameter.channel);
+                                break;
+                            case thirdPartyId:
+                                parameters[i] = context.thirdPartyId;
+                                break;
+                            case versionCode:
+                                parameters[i] = context.versionCode;
+                                break;
+                            case referer:
+                                parameters[i] = context.referer;
+                                break;
+                            case host:
+                                parameters[i] = context.host;
+                                break;
+                            case token:
+                                parameters[i] = context.token;
+                                break;
+                            case stoken:
+                                parameters[i] = context.stoken;
+                                break;
+                            case clientIP:
+                                parameters[i] = context.clientIP;
+                                break;
+                        }
+                    }
+                } else {
+                    if (length == 1) {
+                        parameters[i] = request.getParameter(ap.name);
+                    } else {
+                        String parameterName = m + "_" + ap.name;
+                        parameters[i] = request.getParameter(parameterName);
+                    }
+                    // 如果参数被标记为加密传输的，那么当其为必填或不为空的时候需要被解密后传送到业务端
+                    if (ap.isRsaEncrypted && (ap.isRequired || parameters[i] != null)) {
+                        try {
+                            parameters[i] = new String(rsaDecryptHelper.decrypt(Base64Util.decode(parameters[i])),
+                                    ConstField.UTF8);
+                        } catch (Exception e) {
+                            return ApiReturnCode.PARAMETER_DECRYPT_ERROR;
+                        }
+                    }
+                }
+                if (CompileConfig.isDebug) {
+                    if (parameters[i] != null) {
+                        call.message.append(ap.name).append('=').append(parameters[i]).append('&');
+                    }
+                } else {
+                    if (ap.ignoreForSecurity) {
+                        context.ignoreParameterForSecurity(ap.name);
+                    } else if (parameters[i] != null) {
+                        call.message.append(ap.name).append('=').append(parameters[i]).append('&');
+                    }
+                }
+            }
+            call.parameters = parameters;
+        }
+
+        // 调试环境下为带有特殊标识的访问者赋予测试者身份
+        if (CompileConfig.isDebug) {
+            if ((context.agent != null && context.agent.contains(DEBUG_AGENT))) {
+                if (context.caller == null) {
+                    context.caller = CallerInfo.TESTER;
+                }
+                return ApiReturnCode.SUCCESS;
+            }
+        }
+
+        //Integrate None Internal级别接口不具备用户身份
+        if (SecurityType.requireToken(context.requiredSecurity)) {
+            // 默认验证 RegisteredDevice
+            context.requiredSecurity = SecurityType.RegisteredDevice.authorize(context.requiredSecurity);
+            if (context.caller == null) {
+                return ApiReturnCode.TOKEN_ERROR;
+            }
+        }
+
+        if (SecurityType.Integrated.check(context.requiredSecurity)) {
+            if (context.apiCalls.size() != 1) {
+                return ApiReturnCode.ACCESS_DENIED;
+            }
+            // 签名验证，用于防止中间人攻击
+            if (!checkIntegratedSignature(context, request)) {
+                return ApiReturnCode.SIGNATURE_ERROR;
+            }
+        } else if (!checkSignature(context.caller, context.requiredSecurity, request)) {
+            return ApiReturnCode.SIGNATURE_ERROR;
+        }
+
+        return checkAuthorization(context, context.requiredSecurity, request);
     }
 
     private Object processCall(String name, String[] params) {
@@ -796,33 +878,77 @@ public class HttpRequestExecutor {
         }
     }
 
-    private void executeAllApiCall(ApiContext apiContext, HttpServletRequest request, HttpServletResponse response) {
+    private void executeAllApiCall(List<ApiMethodCall> calls, HttpServletRequest request, HttpServletResponse response) {
         CommonConfig config = CommonConfig.getInstance();
-        Future<?>[] futures = new Future[apiContext.apiCallInfos.size()];
+        Future<?>[] futures = new Future[calls.size()];
+        RpcContext rpcContext = RpcContext.getContext();
         for (int count = 0; count < futures.length; count++) {
-            ApiMethodCall call = apiContext.apiCallInfos.get(count);
+            ApiMethodCall call = calls.get(count);
             apiContext.currentCall = call;
             MDC.put(CommonParameter.method, call.method.methodName);
             call.startTime = (count == 0) ? apiContext.startTime : System.currentTimeMillis();
+            // 填装服务端隐式传递的参数
+            if (call.dependencies != null) {
+                for (int i = 0; i < call.parameters.length; i++) {
+                    ApiParameterInfo p = call.method.parameterInfos[i];
+                    if (p.injectable != null) {
+                        String key = p.injectable.getName();
+                        String httpParam = call.parameters[i];
+                        ServiceInjectable.InjectionData injectionData = null;
+                        if (httpParam != null && httpParam.length() > 0) {
+                            try {
+                                injectionData = p.injectable.parseData(httpParam);
+                            } catch (Exception e) {
+                                throw new RuntimeException("service injection failed. 参数解析失败: " + httpParam, e);
+                            }
+                        }
+                        for (ApiMethodCall dependency : call.dependencies) {
+                            if (dependency.exportParams != null && dependency.exportParams.containsKey(key)) {
+                                String notificationData = null;
+                                try {
+                                    notificationData = dependency.exportParams.get(key);
+                                    ServiceInjectable.InjectionData data = p.injectable.parseData(notificationData);
 
+                                    if (injectionData == null) {
+                                        injectionData = data;
+                                    } else {
+                                        injectionData.batchMerge(data);
+                                    }
+                                } catch (Exception e) {
+                                    throw new RuntimeException("service injection failed. notification 解析失败: " + notificationData
+                                            + " from method:" + dependency.method.methodName, e);
+                                }
+                            }
+                        }
+                        if (injectionData != null) {
+                            Object data = injectionData.getData();
+                            if (data != null && data instanceof String) {
+                                call.parameters[i] = (String)data;
+                            } else {
+                                call.parameters[i] = JSON.toJSONString(data);
+                            }
+                        }
+                    }
+                }
+            }
             // dubbo 在调用结束后不会清除 Future 为了避免拿到之前接口对应的 Future 在这里统一清除
-            RpcContext.getContext().setFuture(null);
-            executeApiCall(call, request, response, null);
+            rpcContext.setFuture(null);
+            executeApiCall(rpcContext, call, request, response, null);
             // 接口可能被 mock 或被短路
             if (config.getDubboAsync()) {
                 // 如果配置为异步执行时，该接口恰好短路结果或mock返回为空, 此处获得的future为null
-                futures[count] = RpcContext.getContext().getFuture();
+                futures[count] = rpcContext.getFuture();
             } else {
                 call.costTime = (int)(System.currentTimeMillis() - call.startTime);
             }
         }
         for (int count = 0; count < futures.length; count++) {
-            ApiMethodCall call = apiContext.apiCallInfos.get(count);
+            ApiMethodCall call = calls.get(count);
             ApiMethodInfo info = call.method;
             MDC.put(CommonParameter.method, info.methodName);
             // 接口可能被 mock 或被短路
             if (futures[count] != null) {
-                executeApiCall(call, request, response, futures[count]);
+                executeApiCall(rpcContext, call, request, response, futures[count]);
                 call.costTime = (int)(System.currentTimeMillis() - call.startTime);
             }
             int display = call.getReturnCode();
@@ -848,9 +974,9 @@ public class HttpRequestExecutor {
     /**
      * 执行具体的api接口调用, 本接口可能被执行两次，不要在其中加入任何状态相关的操作
      */
-    private void executeApiCall(ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
+
+    private void executeApiCall(RpcContext context, ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
         try {
-            RpcContext context = RpcContext.getContext();
             // 当接口声明了静态 mock 返回值或被标记为短路时
             if (call.method.staticMockValue != null) {
                 call.result = call.method.staticMockValue;
@@ -970,6 +1096,11 @@ public class HttpRequestExecutor {
                         call.serviceLog = value;
                     } else if (ConstField.REDIRECT_TO.equals(entry.getKey())) {
                         response.sendRedirect(entry.getValue());
+                    } else if (entry.getKey().startsWith(ConstField.SERVICE_PARAM_EXPORT_PREFIX)) {
+                        if (call.exportParams == null) {
+                            call.exportParams = new HashMap<>();
+                        }
+                        call.exportParams.put(entry.getKey().substring(ConstField.SERVICE_PARAM_EXPORT_PREFIX.length()), entry.getValue());
                     } else {
                         apiContext.addNotification(new KeyValuePair(entry.getKey(), JSONARRAY_PREFIX + value + JSONARRAY_SURFIX));
                     }

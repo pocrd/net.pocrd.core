@@ -398,9 +398,9 @@
  * 本类定义了接口有可能的返回值集合, 其中0为成功, 负数值为所有接口都有可能返回的通用code, 正数值是接口相关的code(请参见接口文档).
  */
 typedef enum {
-    <xsl:for-each select="code">
-    /* <xsl:value-of select="desc"/> */
-    ${prefix}ApiCode_<xsl:value-of select="name"/> = <xsl:value-of select="code"/>,
+    <xsl:for-each select="code"><xsl:if test="isDesign='true'">
+    /* <xsl:value-of select="desc"/> | 接口组名称:<xsl:value-of select="service"/> */
+    ${prefix}ApiCode_<xsl:value-of select="name"/> = <xsl:value-of select="code"/>,</xsl:if>
     </xsl:for-each>
 }${prefix}ApiCode;
 
