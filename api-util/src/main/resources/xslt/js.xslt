@@ -31,7 +31,7 @@ function($, can, _, Comm, SecurityType) {
                         <xsl:with-param name="isLast" select="$isLast" /></xsl:call-template></xsl:for-each>
                 </xsl:if>
             },
-            OPTIONAL: {<xsl:if test="count(parameterInfoList/parameterInfo[isRequired = 'false'])&gt;0">
+            OPTIONAL: {<xsl:if test="count(parameterInfoList/parameterInfo[isRequired = 'false' and injectOnly = 'false'])&gt;0">
                     <xsl:for-each select="parameterInfoList/parameterInfo"><xsl:variable name="isLast" select="position()=last()"/><xsl:call-template name="UnRequiredParameterList">
                         <xsl:with-param name="isLast" select="$isLast" /></xsl:call-template></xsl:for-each>
                 </xsl:if>
@@ -60,7 +60,7 @@ function($, can, _, Comm, SecurityType) {
 </xsl:template>
 <xsl:template name="UnRequiredParameterList">
     <xsl:param name="isLast"/>
-    <xsl:if test="isRequired = 'false'">
+    <xsl:if test="isRequired = 'false' and injectOnly = 'false'">
                 '<xsl:value-of select="name"/>': <xsl:call-template name="ParseType">
         <xsl:with-param name="type">
             <xsl:call-template name="getLastName">

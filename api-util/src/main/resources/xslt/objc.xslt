@@ -11,7 +11,7 @@
 
 #import "${prefix}ApiCode.h"
 #import "${prefix}BaseRequest.h"
-<xsl:choose><xsl:when test="not('string'=returnType)">#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"</xsl:when></xsl:choose><xsl:for-each select="parameterInfoList/parameterInfo[substring(type, 1, 4) = 'Api_']">
+<xsl:choose><xsl:when test="not('string'=returnType)">#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"</xsl:when></xsl:choose><xsl:for-each select="parameterInfoList/parameterInfo[substring(type, 1, 4) = 'Api_'] and injectOnly = 'false'">
 #import "${prefix}<xsl:value-of select="type" />.h"</xsl:for-each>
 
 /*
@@ -324,7 +324,7 @@
         }</xsl:if></xsl:if>
   </xsl:template>
   <xsl:template name="NotRequiredParameterSetter_H">
-    <xsl:if test="isRequired = 'false'">
+    <xsl:if test="isRequired = 'false' and injectOnly = 'false'">
       <xsl:variable name="name" select="name"/>
       <xsl:variable name="first" select="substring(name, 1, 1)"/>
       <xsl:variable name="firstUpper" select="translate($first,'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>
@@ -343,7 +343,7 @@
     </xsl:if>
   </xsl:template>
   <xsl:template name="NotRequiredParameterSetter_M">
-    <xsl:if test="isRequired = 'false'">
+    <xsl:if test="isRequired = 'false' and injectOnly = 'false'">
       <xsl:variable name="name" select="name"/>
       <xsl:variable name="first" select="substring(name, 1, 1)"/>
       <xsl:variable name="firstUpper" select="translate($first,'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>

@@ -25,7 +25,7 @@ namespace ${pkg}.API.Request
     public class <xsl:call-template name="getClassName">
                    <xsl:with-param name="name" select="methodName" />
                  </xsl:call-template> : BaseRequest<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text><xsl:call-template name="getReturnValueType"><xsl:with-param name="name" select="returnType"/></xsl:call-template><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> 
-    {<xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RegexPatternField"/></xsl:for-each>
+    {<xsl:for-each select="parameterInfoList/parameterInfo[injectOnly = 'false']"><xsl:call-template name="RegexPatternField"/></xsl:for-each>
      <xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
         private RsaHelper rsaHelper = null;</xsl:if>
         
@@ -318,7 +318,7 @@ namespace ${pkg}.API.Request
                 }</xsl:if>
   </xsl:template>
   <xsl:template name="NotRequiredParameterSetter">
-    <xsl:if test="isRequired = 'false'">
+    <xsl:if test="isRequired = 'false' and injectOnly = 'false'">
       <xsl:variable name="name" select="name"/>
       <xsl:variable name="first" select="substring(name, 1, 1)"/>
       <xsl:variable name="firstUpper" select="translate($first,'abcdefghijklmnopqrstuvwxyz','ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>

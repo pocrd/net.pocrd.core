@@ -19,6 +19,8 @@ public class ParameterInfo implements Serializable {
     public String  verifyMsg;
     @Description("是否必选参数")
     public boolean isRequired;
+    @Description("只能通过服务端注入来传入该参数")
+    public boolean injectOnly;
     @Description("参数名")
     public String  name;
     @Description("参数描述")

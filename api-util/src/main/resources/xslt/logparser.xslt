@@ -22,7 +22,7 @@
     public static class Parser$<xsl:call-template name="getClassName"><xsl:with-param name="name" select="$name"/></xsl:call-template> implements AccessToActionDetailUDTF.ApiMethodParser {
         public AccessToActionDetailUDTF.Result parse(String params) {
             AccessToActionDetailUDTF.Result result = new AccessToActionDetailUDTF.Result();
-            <xsl:for-each select="./parameterInfoList/parameterInfo"><xsl:call-template name="setParameter">
+            <xsl:for-each select="./parameterInfoList/parameterInfo[injectOnly = 'false']"><xsl:call-template name="setParameter">
             <xsl:with-param name="sequence" select="sequence"/>
             <xsl:with-param name="parameterName" select="name"/></xsl:call-template></xsl:for-each>
             return result;

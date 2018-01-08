@@ -461,6 +461,9 @@ public class HttpRequestExecutor {
                             case clientIP:
                                 parameters[i] = context.clientIP;
                                 break;
+                            case serviceInjection:
+                                // Do nothing
+                                break;
                         }
                     }
                 } else {
@@ -895,7 +898,7 @@ public class HttpRequestExecutor {
                         String key = p.injectable.getName();
                         String httpParam = call.parameters[i];
                         ServiceInjectable.InjectionData injectionData = null;
-                        if (httpParam != null && httpParam.length() > 0) {
+                        if (!p.isAutowired && httpParam != null && httpParam.length() > 0) {
                             try {
                                 injectionData = p.injectable.parseData(httpParam);
                             } catch (Exception e) {
@@ -1107,7 +1110,7 @@ public class HttpRequestExecutor {
                 }
             }
             call.setReturnCode(ApiReturnCode.SUCCESS);
-        } catch (ReturnCodeException rce) {//APIGW内部异常传递,RuntimeException
+        } catch (ReturnCodeException rce) {
             call.setReturnCode(rce.getCode());
             if (rce.getCode() == ApiReturnCode.PARAMETER_ERROR || rce.getCode() == ApiReturnCode.ROLE_DENIED) {
                 logger.error("servlet catch an api error. " + rce.getMessage());

@@ -299,7 +299,7 @@ public class ApiDocumentationHelper {
         List<ParameterInfo> list = new ArrayList<ParameterInfo>(paramters.length);
         HashSet<String> sequenceSet = new HashSet<String>();
         for (ApiParameterInfo p : paramters) {
-            if (!p.isAutowired) {
+            if (!p.isAutowired || p.injectable != null) {
                 ParameterInfo b = new ParameterInfo();
                 if (p.defaultValue != null) {
                     b.defaultValue = p.defaultValue;
@@ -314,6 +314,9 @@ public class ApiDocumentationHelper {
                     sequenceSet.add(b.sequence);
                 }
                 if (p.injectable != null) {
+                    if (p.isAutowired) {
+                        b.injectOnly = true;
+                    }
                     b.serviceInjection = p.injectable.getName();
                 }
                 b.isRsaEncrypt = p.isRsaEncrypted;

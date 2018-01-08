@@ -1,6 +1,7 @@
 package net.pocrd.annotation;
 
 import net.pocrd.define.AutowireableParameter;
+import net.pocrd.define.ServiceInjectable;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -14,4 +15,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApiAutowired {
     AutowireableParameter value();
+
+    /**
+     * 不为默认值时表明该参数接受服务端注入
+     * 注入的参数名即为serviceInject的值
+     * 注入的参数值格式为半角逗号
+     */
+    Class<? extends ServiceInjectable> serviceInject() default ServiceInjectable.class;
 }

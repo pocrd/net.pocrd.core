@@ -336,8 +336,7 @@ public final class ApiManager {
                                 pInfo.isRsaEncrypted = p.rsaEncrypted();
                                 pInfo.ignoreForSecurity = p.ignoreForSecurity();
                                 pInfo.name = p.name();
-                                Class injectable = p.serviceInject();
-                                pInfo.injectable = (injectable == null || injectable == ServiceInjectable.class) ?
+                                pInfo.injectable = (p.serviceInject() == null || p.serviceInject() == ServiceInjectable.class) ?
                                         null : p.serviceInject().newInstance();
                                 if (p.enumDef() != null && p.enumDef() != EnumNull.class) {
                                     if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
@@ -407,6 +406,11 @@ public final class ApiManager {
                             } else if (n.annotationType() == ApiAutowired.class) {
                                 ApiAutowired p = (ApiAutowired)n;
                                 pInfo.name = p.value().name();
+                                pInfo.isRequired = false;
+                                if (p.value() == AutowireableParameter.serviceInjection) {
+                                    pInfo.injectable = (p.serviceInject() == null || p.serviceInject() == ServiceInjectable.class) ?
+                                            null : p.serviceInject().newInstance();
+                                }
                                 if (AutowireableParameter.postBody.name().equals(pInfo.name) && parameterTypes.length != 1) {
                                     throw new RuntimeException(
                                             "one parameter only for postBody " + api.name() + "  " + clazz.getName());

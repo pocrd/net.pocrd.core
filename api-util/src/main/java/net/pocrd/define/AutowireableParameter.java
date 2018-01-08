@@ -19,4 +19,5 @@ public enum AutowireableParameter {
     token,
     stoken,
     clientIP,
+    serviceInjection,
 }
