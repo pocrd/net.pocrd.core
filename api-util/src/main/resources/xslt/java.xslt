@@ -29,7 +29,7 @@ public class <xsl:call-template name="getClassName">
              </xsl:call-template> extends BaseRequest<xsl:text disable-output-escaping="yes"><![CDATA[<]]></xsl:text><xsl:call-template name="getReturnValueType"><xsl:with-param name="name" select="returnType"/></xsl:call-template><xsl:text disable-output-escaping="yes"><![CDATA[>]]></xsl:text> {
     <xsl:for-each select="parameterInfoList/parameterInfo[injectOnly = 'false']"><xsl:call-template name="RegexPatternField"/></xsl:for-each>
       <xsl:if test="count(parameterInfoList/parameterInfo[isRequired='true' and isRsaEncrypt='true'])&gt;0">
-      private RsaHelper rsaHelper = null;
+    private RsaHelper rsaHelper = null;
       </xsl:if>
     /**
      * 当前请求的构造函数，以下参数为该请求的必填参数<xsl:for-each select="parameterInfoList/parameterInfo"><xsl:call-template name="RequiredParameterComment"><xsl:with-param name="methodName" select="$methodName"/></xsl:call-template></xsl:for-each>
@@ -93,6 +93,66 @@ public class <xsl:call-template name="getClassName">
         response.result = rawString;
     }
     </xsl:if>
+    <xsl:if test="count(exportParams/item)&gt;0 or count(parameterInfoList/parameterInfo[string-length(serviceInjection)&gt;0])&gt;0">
+    /******************************************** 以下功能处理接口依赖 既A接口的输出作为B接口的输入 ********************************************/
+    <xsl:if test="count(exportParams/item)&gt;0">
+    private static final String[] exportParams = new String[] { <xsl:for-each select="exportParams/item">"<xsl:value-of select="."/>"<xsl:if test="position()!=last()"><xsl:value-of select="', '"/></xsl:if></xsl:for-each> };
+
+    protected String[] getExportParams() {
+        return exportParams;
+    }
+    </xsl:if><xsl:if test="count(parameterInfoList/parameterInfo[string-length(serviceInjection)&gt;0])&gt;0">
+    private static final String[] importParams = new String[] { <xsl:for-each select="parameterInfoList/parameterInfo[string-length(serviceInjection)&gt;0]">"<xsl:value-of select="serviceInjection"/>"<xsl:if test="position()!=last()"><xsl:value-of select="', '"/></xsl:if></xsl:for-each> };
+
+    protected String[] getImportParams() {
+        return importParams;
+    }
+
+    private BaseRequest[] dependencies = null;
+
+    protected BaseRequest[] getDependencies() {
+        return dependencies;
+    }
+
+    public static DependencyBuilder createDependencyBuilder() {
+        return new DependencyBuilder();
+    }
+
+    public static class DependencyBuilder extends AbstractDependencyBuilder {
+
+        private DependencyBuilder() {
+
+        }
+
+        public DependencyBuilder depends(BaseRequest dependency) {
+            addDependency(<xsl:call-template name="getClassName">
+               <xsl:with-param name="name" select="methodName" />
+             </xsl:call-template>.importParams, dependency);
+            return this;
+        }
+
+        public <xsl:call-template name="getClassName">
+               <xsl:with-param name="name" select="methodName" />
+             </xsl:call-template> build(<xsl:call-template name="RequiredParameter" />) {
+            <xsl:call-template name="getClassName">
+               <xsl:with-param name="name" select="methodName" />
+             </xsl:call-template> request = new <xsl:call-template name="getClassName">
+               <xsl:with-param name="name" select="methodName" />
+             </xsl:call-template>(<xsl:for-each select="parameterInfoList/parameterInfo[isRequired='true']">
+                                    <xsl:call-template name="renameKeyword">
+                                      <xsl:with-param name="name" select="name"/>
+                                    </xsl:call-template>
+                                    <xsl:if test="position()!=last()">
+                                      <xsl:value-of select="', '"/>
+                                    </xsl:if>
+                                  </xsl:for-each>);
+            request.dependencies = new BaseRequest[dependencies.size()];
+            dependencies.toArray(request.dependencies);
+            checkDependency(new String[] { <xsl:for-each select="parameterInfoList/parameterInfo[isRequired='true' and string-length(serviceInjection)&gt;0]">"<xsl:value-of select="serviceInjection"/>"<xsl:if test="position()!=last()"><xsl:value-of select="', '"/></xsl:if></xsl:for-each> }, request);
+            return request;
+        }
+    }
+    </xsl:if></xsl:if>
 }
   </xsl:template>
     <xsl:template name ="getClassName">

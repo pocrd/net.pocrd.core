@@ -332,12 +332,12 @@ public final class ApiManager {
                                 if (p.sequence() != null && p.sequence().trim().length() > 0) {
                                     pInfo.sequence = p.sequence();
                                 }
-                                pInfo.isRequired = p.required();
                                 pInfo.isRsaEncrypted = p.rsaEncrypted();
                                 pInfo.ignoreForSecurity = p.ignoreForSecurity();
                                 pInfo.name = p.name();
                                 pInfo.injectable = (p.serviceInject() == null || p.serviceInject() == ServiceInjectable.class) ?
                                         null : p.serviceInject().newInstance();
+                                pInfo.isRequired = pInfo.injectable == null ? p.required() : false;
                                 if (p.enumDef() != null && p.enumDef() != EnumNull.class) {
                                     if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
                                             || pInfo.actuallyGenericType == String.class) {

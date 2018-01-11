@@ -313,14 +313,17 @@ public class ApiDocumentationHelper {
                     b.sequence = p.sequence;
                     sequenceSet.add(b.sequence);
                 }
+                b.isRequired = p.isRequired;
                 if (p.injectable != null) {
                     if (p.isAutowired) {
                         b.injectOnly = true;
+                        // 如果一个参数是自动注入的,那么必然是非必填的。实际上,除了serverInjection的自动注入参数(例如uid,did)
+                        // 其他自动注入参数都不暴露给客户端
+                        b.isRequired = false;
                     }
                     b.serviceInjection = p.injectable.getName();
                 }
                 b.isRsaEncrypt = p.isRsaEncrypted;
-                b.isRequired = p.isRequired;
                 b.name = p.name;
                 b.description = p.description;
                 b.isList = Collection.class.isAssignableFrom(p.type) || p.type.isArray();
