@@ -12,13 +12,11 @@ import java.lang.annotation.Target;
  * 注意:被描述的字段有可能返回其他值, 请为不被识别的值准备默认行为(例如忽略)
  * Created by rendong on 14/11/3.
  */
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Target({ ElementType.FIELD })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface EnumDef {
     /**
      * 枚举类型定义
-     *
-     * @return
      */
     Class<? extends Enum> value();
 }

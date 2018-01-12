@@ -408,8 +408,7 @@ public class <xsl:call-template name="getClassName">
         </xsl:if>
         <xsl:value-of select="' '"/>
         <xsl:call-template name="renameKeyword"><xsl:with-param name="name" select="name"/></xsl:call-template>) {
-        try {
-        <xsl:choose><xsl:when test="isList = 'true'">
+        try {<xsl:choose><xsl:when test="isList = 'true'">
             JsonArray <xsl:value-of select="name" />Array = new JsonArray();<xsl:call-template name="RequiredParameterSerialize">
             <xsl:with-param name="type" select="type" />
             <xsl:with-param name="name" select="name" />

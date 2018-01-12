@@ -344,14 +344,6 @@ public final class ApiManager {
                                         pInfo.verifyEnumType = p.enumDef();
                                     }
                                 }
-                                for (Annotation an : a) {
-                                    if (an.annotationType() == EnumDef.class) {
-                                        if (pInfo.type == String.class || pInfo.type.getComponentType() == String.class
-                                                || pInfo.actuallyGenericType == String.class) {
-                                            pInfo.verifyEnumType = ((EnumDef)an).value();
-                                        }
-                                    }
-                                }
                                 if (CompileConfig.isDebug) {
                                     // 检查sequence属性合法性
                                     if (pInfo.sequence != null && pInfo.sequence.length() > 0) {
