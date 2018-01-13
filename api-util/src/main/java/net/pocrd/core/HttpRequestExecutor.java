@@ -158,14 +158,6 @@ public class HttpRequestExecutor {
                     apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
                     access.logRequest();
                 }
-                for (ApiMethodCall call : apiContext.apiCalls) {
-                    MDC.put(CommonParameter.method, call.method.methodName);
-                    serializeCallResult(apiContext, call);
-                    // access log
-                    access.logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                            call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
-                }
-                MDC.remove(CommonParameter.method);
             }
         } catch (Throwable t) {
             logger.error("api execute error.", t);
@@ -320,6 +312,7 @@ public class HttpRequestExecutor {
                 }
             }
 
+            // 遍历请求中的所有接口, 生成依赖关系, 并将有依赖项的请求加入 lv2ApiCalls
             for (int m = 0; m < names.length; m++) {
                 String fullName = names[m];
                 ApiMethodCall call = apiCallList.get(m);
@@ -340,13 +333,19 @@ public class HttpRequestExecutor {
                 }
             }
 
+            // 遍历 lv2ApiCalls, 将其中有两层依赖关系的请求加入到 lv3ApiCalls
             if (context.lv2ApiCalls != null) {
                 for (ApiMethodCall call : context.lv2ApiCalls) {
+                    ApiMethodCall lastLv3Call = null;
                     for (ApiMethodCall c : call.dependencies) {
                         if (c.dependencies != null) {
                             if (context.lv3ApiCalls == null) {
                                 context.lv3ApiCalls = new LinkedList<>();
                             }
+                            if (lastLv3Call != call) {
+                                context.lv3ApiCalls.add(call);
+                            }
+                            lastLv3Call = call;
                             // 检测请求中的调用依赖层次是否超过三层
                             if (CompileConfig.isDebug) {
                                 for (ApiMethodCall cc : c.dependencies) {
@@ -360,6 +359,7 @@ public class HttpRequestExecutor {
                 }
             }
 
+            // 将 lv3ApiCalls 中的所有项从 lv2ApiCalls 中移除
             if (context.lv3ApiCalls != null) {
                 for (ApiMethodCall call : context.lv3ApiCalls) {
                     context.lv2ApiCalls.remove(call);
@@ -881,7 +881,7 @@ public class HttpRequestExecutor {
         }
     }
 
-    private void executeAllApiCall(List<ApiMethodCall> calls, HttpServletRequest request, HttpServletResponse response) {
+    private void executeAllApiCall(List<ApiMethodCall> calls, HttpServletRequest request, HttpServletResponse response) throws IOException {
         CommonConfig config = CommonConfig.getInstance();
         Future<?>[] futures = new Future[calls.size()];
         RpcContext rpcContext = RpcContext.getContext();
@@ -972,6 +972,15 @@ public class HttpRequestExecutor {
                 }
             }
         }
+
+        for (ApiMethodCall call : calls) {
+            MDC.put(CommonParameter.method, call.method.methodName);
+            serializeCallResult(apiContext, call);
+            // access log
+            AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
+                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+        }
+        MDC.remove(CommonParameter.method);
     }
 
     /**

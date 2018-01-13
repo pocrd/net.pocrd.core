@@ -15,10 +15,6 @@ public abstract class LongArrayStringInjector implements ServiceInjectable {
         private StringBuilder sb;
         private String        name;
 
-        public Data(String name) {
-            this.name = name;
-        }
-
         public Data(String name, String data) {
             this.name = name;
             if (data != null) {
