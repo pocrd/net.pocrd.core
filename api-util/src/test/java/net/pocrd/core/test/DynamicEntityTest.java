@@ -196,7 +196,7 @@ public class DynamicEntityTest {
         DynamicEntityWithString e = new DynamicEntityWithString();
         e.str = new DynamicEntity<>("x");
         try {
-            TypeCheckUtil.recursiveCheckReturnType("test", e.getClass(), null, null);
+            TypeCheckUtil.recursiveCheckReturnType("test", e.getClass(), null);
         } catch (Exception ex) {
             System.out.println(ex.getMessage());
             Assert.assertTrue(ex.getMessage()

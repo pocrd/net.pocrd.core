@@ -3,7 +3,6 @@ package net.pocrd.executable;
 import net.pocrd.annotation.ConsoleArgument;
 import net.pocrd.annotation.ConsoleJoinPoint;
 import net.pocrd.annotation.ConsoleOption;
-import net.pocrd.define.SecurityType;
 import net.pocrd.util.ClassUtil;
 
 import java.lang.annotation.Annotation;
@@ -156,7 +155,7 @@ public class Main {
             Command c = commands.get(cmd);
             if (!options.containsKey("?") && !options.containsKey("h") && !options.containsKey("help") && arguments.size() == c.args.size()) {
                 try {
-                    String[] objs = new String[c.methodArgs.size()];
+                    Object[] objs = new String[c.methodArgs.size()];
                     for (int i = 0; i < c.methodArgs.size(); i++) {
                         String key = c.methodArgs.get(i);
                         objs[i] = c.options.containsKey(key) ? options.get(key) : arguments.remove(0);
