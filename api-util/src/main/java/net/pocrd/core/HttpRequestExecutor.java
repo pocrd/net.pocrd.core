@@ -154,6 +154,9 @@ public class HttpRequestExecutor {
                     if (apiContext.lv3ApiCalls != null) {
                         executeAllApiCall(apiContext.lv3ApiCalls, request, response);
                     }
+                    for (ApiMethodCall call : apiContext.apiCalls) {
+                        serializeCallResult(apiContext, call);
+                    }
                 } finally {
                     apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
                     access.logRequest();
@@ -975,7 +978,6 @@ public class HttpRequestExecutor {
 
         for (ApiMethodCall call : calls) {
             MDC.put(CommonParameter.method, call.method.methodName);
-            serializeCallResult(apiContext, call);
             // access log
             AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
                     call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
