@@ -903,22 +903,25 @@ public class HttpRequestExecutor {
                         ServiceInjectable.InjectionData injectionData = null;
                         if (!p.isAutowired && httpParam != null && httpParam.length() > 0) {
                             try {
-                                injectionData = p.injectable.parseData(httpParam);
+                                injectionData = p.injectable.parseDataFromHttpParam(httpParam);
                             } catch (Exception e) {
                                 throw new RuntimeException("service injection failed. 参数解析失败: " + httpParam, e);
                             }
                         }
+                        // 合并该调用所有依赖项中的 key 键对应的值
                         for (ApiMethodCall dependency : call.dependencies) {
                             if (dependency.exportParams != null && dependency.exportParams.containsKey(key)) {
                                 String notificationData = null;
                                 try {
                                     notificationData = dependency.exportParams.get(key);
-                                    ServiceInjectable.InjectionData data = p.injectable.parseData(notificationData);
+                                    if (notificationData != null) {
+                                        ServiceInjectable.InjectionData data = JSON.parseObject(notificationData, p.injectable.getDataType());
 
-                                    if (injectionData == null) {
-                                        injectionData = data;
-                                    } else {
-                                        injectionData.batchMerge(data);
+                                        if (injectionData == null) {
+                                            injectionData = data;
+                                        } else {
+                                            injectionData.batchMerge(data);
+                                        }
                                     }
                                 } catch (Exception e) {
                                     throw new RuntimeException("service injection failed. notification 解析失败: " + notificationData
@@ -927,11 +930,13 @@ public class HttpRequestExecutor {
                             }
                         }
                         if (injectionData != null) {
-                            Object data = injectionData.getData();
-                            if (data != null && data instanceof String) {
-                                call.parameters[i] = (String)data;
-                            } else {
-                                call.parameters[i] = JSON.toJSONString(data);
+                            Object data = injectionData.getValue();
+                            if (data != null) {
+                                if (data instanceof String) {
+                                    call.parameters[i] = (String)data;
+                                } else {
+                                    call.parameters[i] = JSON.toJSONString(data);
+                                }
                             }
                         }
                     }
