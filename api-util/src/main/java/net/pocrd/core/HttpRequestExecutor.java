@@ -110,6 +110,7 @@ public class HttpRequestExecutor {
         AbstractReturnCode parseResult = null;
         long current = System.currentTimeMillis();
         try {
+            MDC.clear();
             apiContext.clear();
             apiContext.startTime = current;
             parseCommonParameter(apiContext, request, response);
@@ -760,7 +761,6 @@ public class HttpRequestExecutor {
                     logger.error("unsupported callback name : " + jsonpCallback);
                 }
             }
-            MDC.clear();
             MDC.put(CommonParameter.callId, context.cid);
             MDC.put("_cip", context.clientIP);
             if (context.deviceIdStr != null) {
@@ -1006,6 +1006,9 @@ public class HttpRequestExecutor {
                     // 异步调用会导致dubbo filter处理返回值的部分失效(因为异步返回并触发filter的时候并没有返回任何值),
                     // 因此在这里进行补偿操作。
                     fa.getFuture().setCallback(new NotificationManager(callback));
+                    if (fa.getFuture().isDone()) {
+                        NotificationManager.saveNotifications(fa.getFuture().get());
+                    }
                 }
                 // 根据客户端在Header中设定的目标dubbo服务的版本号或者url，绕过注册中心调用对应的dubbo服务，仅在DEBUG模式下允许使用
                 if (CompileConfig.isDebug) {

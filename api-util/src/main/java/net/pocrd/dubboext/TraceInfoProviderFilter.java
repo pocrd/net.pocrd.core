@@ -5,7 +5,11 @@ import com.alibaba.dubbo.common.extension.Activate;
 import com.alibaba.dubbo.rpc.*;
 import net.pocrd.define.AttachmentKey;
 import net.pocrd.define.CommonParameter;
+import net.pocrd.entity.CompileConfig;
+import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+
+import java.util.Map;
 
 /**
  * 暂存访问者信息并在当前日志中打印调用编号
@@ -14,6 +18,8 @@ import org.slf4j.MDC;
  */
 @Activate(group = Constants.PROVIDER)
 public class TraceInfoProviderFilter implements Filter {
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(TraceInfoProviderFilter.class);
+
     private static boolean hasSlf4jMDC;
     private static boolean hasLog4jMDC;
 
@@ -62,6 +68,18 @@ public class TraceInfoProviderFilter implements Filter {
         put(CommonParameter.callId, traceid);
         TraceInfo.setTraceInfo(new TraceInfo(traceid, sysinfo, userinfo));
         Result res = invoker.invoke(invocation);
+        if (CompileConfig.isDebug) {
+            if (res.getNotifications() != null && res.getNotifications().size() > 0) {
+                StringBuilder sb = new StringBuilder("set sync notifications ----> ");
+                for (Map.Entry<String, String> entry : res.getNotifications().entrySet()) {
+                    sb.append(entry.getKey()).append(":").append(entry.getValue()).append("; ");
+                }
+                logger.info(sb.toString());
+            } else {
+                logger.info("set sync notificaion: empty");
+            }
+        }
+
         TraceInfo.clear();
         remove(CommonParameter.callId);
         return res;
