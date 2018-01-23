@@ -957,6 +957,7 @@ public class HttpRequestExecutor {
                                 } else {
                                     call.parameters[i] = JSON.toJSONString(data);
                                 }
+                                call.message.append(injectionData.getName()).append('=').append(call.parameters[i].replace('\n', ' ')).append('&');
                             }
                         }
                     }
