@@ -163,23 +163,20 @@ public class HttpRequestExecutor {
                     for (ApiMethodCall call : lv1ApiCalls) {
                         MDC.put(CommonParameter.method, call.method.methodName);
                         // access log
-                        AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                                call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+                        access.logAccess(call);
                     }
                     if (apiContext.lv2ApiCalls != null) {
                         for (ApiMethodCall call : apiContext.lv2ApiCalls) {
                             MDC.put(CommonParameter.method, call.method.methodName);
                             // access log
-                            AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+                            access.logAccess(call);
                         }
                     }
                     if (apiContext.lv3ApiCalls != null) {
                         for (ApiMethodCall call : apiContext.lv3ApiCalls) {
                             MDC.put(CommonParameter.method, call.method.methodName);
                             // access log
-                            AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+                            access.logAccess(call);
                         }
                     }
                     MDC.remove(CommonParameter.method);
@@ -512,13 +509,13 @@ public class HttpRequestExecutor {
                 }
                 if (CompileConfig.isDebug) {
                     if (parameters[i] != null) {
-                        call.message.append(ap.name).append('=').append(parameters[i]).append('&');
+                        call.message.append(ap.name).append('=').append(parameters[i].replace('\n', ' ')).append('&');
                     }
                 } else {
                     if (ap.ignoreForSecurity) {
                         context.ignoreParameterForSecurity(ap.name);
                     } else if (parameters[i] != null) {
-                        call.message.append(ap.name).append('=').append(parameters[i]).append('&');
+                        call.message.append(ap.name).append('=').append(parameters[i].replace('\n', ' ')).append('&');
                     }
                 }
             }
