@@ -136,8 +136,8 @@ public class HttpRequestExecutor {
             } else if (parseResult != ApiReturnCode.SUCCESS) {
                 access.logRequest("with error", String.valueOf(parseResult.getCode()));
             } else { // 参数解析成功
+                List<ApiMethodCall> lv1ApiCalls = null;
                 try {
-                    List<ApiMethodCall> lv1ApiCalls = null;
                     if (apiContext.lv2ApiCalls == null) {
                         lv1ApiCalls = apiContext.apiCalls;
                     } else {
@@ -160,6 +160,29 @@ public class HttpRequestExecutor {
                     }
                 } finally {
                     apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
+                    for (ApiMethodCall call : lv1ApiCalls) {
+                        MDC.put(CommonParameter.method, call.method.methodName);
+                        // access log
+                        AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
+                                call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+                    }
+                    if (apiContext.lv2ApiCalls != null) {
+                        for (ApiMethodCall call : apiContext.lv2ApiCalls) {
+                            MDC.put(CommonParameter.method, call.method.methodName);
+                            // access log
+                            AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
+                                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+                        }
+                    }
+                    if (apiContext.lv3ApiCalls != null) {
+                        for (ApiMethodCall call : apiContext.lv3ApiCalls) {
+                            MDC.put(CommonParameter.method, call.method.methodName);
+                            // access log
+                            AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
+                                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
+                        }
+                    }
+                    MDC.remove(CommonParameter.method);
                     access.logRequest();
                 }
             }
@@ -980,14 +1003,6 @@ public class HttpRequestExecutor {
                 }
             }
         }
-
-        for (ApiMethodCall call : calls) {
-            MDC.put(CommonParameter.method, call.method.methodName);
-            // access log
-            AccessLogger.getInstance().logAccess(call.costTime, call.method.methodName, call.getReturnCode(), call.getOriginCode(),
-                    call.resultLen, call.message.toString(), call.serviceLog == null ? "" : call.serviceLog);
-        }
-        MDC.remove(CommonParameter.method);
     }
 
     /**
