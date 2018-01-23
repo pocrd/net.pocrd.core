@@ -912,7 +912,7 @@ public class HttpRequestExecutor {
             ApiMethodCall call = calls.get(count);
             apiContext.currentCall = call;
             MDC.put(CommonParameter.method, call.method.methodName);
-            call.startTime = (count == 0) ? apiContext.startTime : System.currentTimeMillis();
+            call.startTime = System.currentTimeMillis();
             // 填装服务端隐式传递的参数
             if (call.dependencies != null) {
                 for (int i = 0; i < call.parameters.length; i++) {
