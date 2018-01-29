@@ -159,11 +159,18 @@ public final class ApiManager {
                     if (et != null) {
                         apiInfo.encryptionOnly = et.encryptionOnly();
                     }
-                    ParamExport pe = mInfo.getAnnotation(ParamExport.class);
+                    ParamsExport pe = mInfo.getAnnotation(ParamsExport.class);
                     if (pe != null && pe.value() != null && pe.value().length > 0) {
-                        apiInfo.exportParams = new HashSet<>(pe.value().length);
-                        for (String n : pe.value()) {
-                            apiInfo.exportParams.add(n);
+                        apiInfo.exportParams = new HashMap<>(pe.value().length);
+                        for (ParamExport n : pe.value()) {
+                            apiInfo.exportParams.put(n.name(), n.dataType());
+                        }
+                    }
+                    ParamExport pei = mInfo.getAnnotation(ParamExport.class);
+                    if (pei != null) {
+                        if (apiInfo.exportParams == null) {
+                            apiInfo.exportParams = new HashMap<>();
+                            apiInfo.exportParams.put(pei.name(), pei.dataType());
                         }
                     }
                     apiInfo.groupName = groupName;

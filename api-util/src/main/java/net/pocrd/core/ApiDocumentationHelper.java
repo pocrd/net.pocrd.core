@@ -5,6 +5,7 @@ import net.pocrd.annotation.DynamicStructure;
 import net.pocrd.annotation.EnumDef;
 import net.pocrd.define.CommonParameter;
 import net.pocrd.define.ConstField;
+import net.pocrd.define.ServiceInjectable;
 import net.pocrd.document.*;
 import net.pocrd.entity.AbstractReturnCode;
 import net.pocrd.entity.ApiMethodInfo;
@@ -55,7 +56,10 @@ public class ApiDocumentationHelper {
                 methodInfo.groupName = info.groupName;
                 methodInfo.methodName = info.methodName;
                 if (info.exportParams != null) {
-                    methodInfo.exportParams = new ArrayList<>(info.exportParams);
+                    methodInfo.exportParams = new ArrayList<>();
+                    for (Map.Entry<String, Class<? extends ServiceInjectable.InjectionData>> entry : info.exportParams.entrySet()) {
+                        methodInfo.exportParams.add(entry.getKey() + "-" + entry.getValue().getName());
+                    }
                 }
                 methodInfo.securityLevel = info.securityLevel.name();
                 if (info.roleSet != null && info.roleSet.size() > 0) {
@@ -321,7 +325,7 @@ public class ApiDocumentationHelper {
                         // 其他自动注入参数都不暴露给客户端
                         b.isRequired = false;
                     }
-                    b.serviceInjection = p.injectable.getName();
+                    b.serviceInjection = p.injectable.getName() + "-" + p.injectable.getDataType().getName();
                 }
                 b.isRsaEncrypt = p.isRsaEncrypted;
                 b.name = p.name;

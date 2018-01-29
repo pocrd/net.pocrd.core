@@ -1,12 +1,10 @@
 package net.pocrd.entity;
 
-import net.pocrd.define.ApiOpenState;
-import net.pocrd.define.ResponseWrapper;
-import net.pocrd.define.SecurityType;
-import net.pocrd.define.Serializer;
+import net.pocrd.define.*;
 import net.pocrd.util.SparseIntArray;
 
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -110,7 +108,7 @@ public class ApiMethodInfo {
     /**
      * 该方法会返回的隐式参数列表
      */
-    public Set<String> exportParams;
+    public Map<String, Class<? extends ServiceInjectable.InjectionData>> exportParams;
 
     /**
      * 该方法声明的内部业务异常映射
