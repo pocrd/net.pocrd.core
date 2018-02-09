@@ -303,7 +303,7 @@
                     }
                     }
 
-                    var regExp = new RegExp('\\n\\s{0,4}'+lo+':([^$]+)', 'i');
+                    var regExp = new RegExp('\\n\\s{0,4}'+lo+':(.+)', 'i');
                     if(regExp.test(source)){
                     var content = regExp.exec(source)[1].split('\n');
                     var buffer = "";
