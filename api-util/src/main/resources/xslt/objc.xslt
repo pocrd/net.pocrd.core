@@ -11,7 +11,7 @@
 
 #import "${prefix}ApiCode.h"
 #import "${prefix}BaseRequest.h"
-<xsl:choose><xsl:when test="not('string'=returnType)">#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"</xsl:when></xsl:choose><xsl:for-each select="parameterInfoList/parameterInfo[substring(type, 1, 4) = 'Api_'] and injectOnly = 'false'">
+<xsl:choose><xsl:when test="not('string'=returnType)">#import "${prefix}<xsl:call-template name="getLastName"><xsl:with-param name="name" select="returnType"/></xsl:call-template>.h"</xsl:when></xsl:choose><xsl:for-each select="parameterInfoList/parameterInfo[substring(type, 1, 4) = 'Api_' and injectOnly = 'false']">
 #import "${prefix}<xsl:value-of select="type" />.h"</xsl:for-each>
 
 /*
