@@ -33,14 +33,14 @@ public class EvaluaterProviderTest {
         CallerInfo caller1 = new CallerInfo();
         b.setCaller1(caller1);
         caller1.expire = Long.MIN_VALUE;
-        caller1.role = "1";
+        caller1.subSystemRole = "1";
         caller1.key = "aaa".getBytes(ConstField.UTF8);
         caller1.securityLevel = 333;
         caller1.deviceId = Long.MAX_VALUE;
         caller1.uid = Long.MAX_VALUE;
         b.caller2 = new CallerInfo();
         b.caller2.expire = Long.MIN_VALUE;
-        b.caller2.role = "2";
+        b.caller2.subSystemRole = "2";
         b.caller2.key = "bbb".getBytes(ConstField.UTF8);
         b.caller2.securityLevel = 444;
         b.caller2.deviceId = Long.MIN_VALUE;
@@ -48,7 +48,7 @@ public class EvaluaterProviderTest {
         CallerInfo caller3 = new CallerInfo();
         b.setCaller3(caller3);
         caller3.expire = Long.MIN_VALUE;
-        caller3.role = "x";
+        caller3.subSystemRole = "x";
         caller3.key = "ccc".getBytes(ConstField.UTF8);
         caller3.securityLevel = 555;
         caller3.deviceId = Long.MAX_VALUE;
@@ -59,21 +59,21 @@ public class EvaluaterProviderTest {
         assertEquals(a.expire, b.expire);
 
         assertEquals(a.caller1.expire, b.getCaller1().expire);
-        org.junit.Assert.assertEquals(a.caller1.role, b.getCaller1().role);
+        org.junit.Assert.assertEquals(a.caller1.subSystemRole, b.getCaller1().subSystemRole);
         org.junit.Assert.assertArrayEquals(caller1.key, b.getCaller1().key);
         assertEquals(a.caller1.securityLevel, b.getCaller1().securityLevel);
         assertEquals(a.caller1.deviceId, b.getCaller1().deviceId);
         assertEquals(a.caller1.uid, b.getCaller1().uid);
 
         assertEquals(a.getCaller2().expire, b.caller2.expire);
-        org.junit.Assert.assertEquals(a.getCaller2().role, b.caller2.role);
+        org.junit.Assert.assertEquals(a.getCaller2().subSystemRole, b.caller2.subSystemRole);
         assertArrayEquals(a.getCaller2().key, b.caller2.key);
         assertEquals(a.getCaller2().securityLevel, b.caller2.securityLevel);
         assertEquals(a.getCaller2().deviceId, b.caller2.deviceId);
         assertEquals(a.getCaller2().uid, b.caller2.uid);
 
         assertEquals(a.getCaller3().expire, b.getCaller3().expire);
-        org.junit.Assert.assertEquals(a.getCaller3().role, b.getCaller3().role);
+        org.junit.Assert.assertEquals(a.getCaller3().subSystemRole, b.getCaller3().subSystemRole);
         assertEquals(a.getCaller3().key, b.getCaller3().key);
         assertEquals(a.getCaller3().securityLevel, b.getCaller3().securityLevel);
         assertEquals(a.getCaller3().deviceId, b.getCaller3().deviceId);
