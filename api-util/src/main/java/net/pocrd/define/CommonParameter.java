@@ -19,6 +19,9 @@ public final class CommonParameter {
     @Description("user token 代表访问者身份,完成用户登入流程后获取")
     public static final String token = "_tk";
 
+    @Description("extention token 用于子系统根据需求定制自己的扩展票据信息")
+    public static final String extentionToken = "_etk";
+
     @Description("user secret token 只存放于web/h5站点的secret cookie中，用于在不同domain间传递csrfToken")
     public static final String stoken = "_stk";
 

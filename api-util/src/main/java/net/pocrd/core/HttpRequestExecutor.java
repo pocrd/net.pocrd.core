@@ -294,7 +294,8 @@ public class HttpRequestExecutor {
             TraceInfo.setTraceInfo(
                     new TraceInfo(context.cid,
                             context.appid + "|" + context.deviceIdStr + "|" + context.versionCode + "|" + context.clientIP,
-                            context.caller == null ? null : context.caller.uid + "|" + context.caller.oauthid + "|" + context.caller.role)
+                            context.caller == null ? null : context.caller.uid + "|" + context.caller.subSystem + "|" + context.caller.subSystemRole
+                                    + "|" + context.caller.subSystemMainId)
             );
         }
     }
@@ -617,11 +618,13 @@ public class HttpRequestExecutor {
                 }
             }
         }
+
+        // TODO: get role/permission map from zk
         if (api.roleSet != null) {
             CallerInfo caller = apiContext.caller;
             boolean hasRole = false;
-            if (caller != null && caller.role != null) {
-                hasRole = api.roleSet.contains(caller.role);
+            if (caller != null && caller.subSystemRole != null) {
+                hasRole = api.roleSet.contains(caller.subSystemRole);
             }
             if (!hasRole) {
                 throw new ReturnCodeException(ApiReturnCode.ROLE_DENIED, "missing role for api:" + api.methodName);

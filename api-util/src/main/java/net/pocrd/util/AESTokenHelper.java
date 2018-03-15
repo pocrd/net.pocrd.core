@@ -15,8 +15,9 @@ import java.io.*;
  */
 @NotThreadSafe
 public class AESTokenHelper {
-    private static final Logger logger                   = LoggerFactory.getLogger(AESTokenHelper.class);
-    private static final short  DEVICE_TOKEN_VERSION_1_0 = 10;
+    private static final Logger logger          = LoggerFactory.getLogger(AESTokenHelper.class);
+    // 该字段用于token结构升级时进行兼容解析
+    private static final short  TOKEN_VERSION_1 = 1;
     private AesHelper aes;
 
     public AESTokenHelper(String pwd) {
@@ -33,10 +34,11 @@ public class AESTokenHelper {
     private CallerInfo parse(byte[] token) {
         DataInputStream dis = null;
         CallerInfo caller = null;
+
         try {
             dis = new DataInputStream(new ByteArrayInputStream(aes.decrypt(token)));
             short tokenVersion = dis.readShort(); // token version for backward compliance
-            if (tokenVersion != DEVICE_TOKEN_VERSION_1_0) {
+            if (tokenVersion != TOKEN_VERSION_1) {
                 logger.error("token version mismatch!");
                 return null;
             }
@@ -46,33 +48,45 @@ public class AESTokenHelper {
             caller.appid = dis.readInt();
             caller.deviceId = dis.readLong();
             caller.uid = dis.readLong();
-            short len = dis.readShort();
-            if (len > 0) {
-                caller.key = new byte[len];
-                if (len != dis.read(caller.key)) {
-                    return null;
+
+            {
+                // key
+                short len = dis.readShort();
+                if (len > 0) {
+                    caller.key = new byte[len];
+                    if (len != dis.read(caller.key)) {
+                        return null;
+                    }
                 }
             }
-            if (dis.available() > 0) {
-                len = dis.readByte();
+
+            {
+                // subSystem
+                byte len = dis.readByte();
                 if (len > 0) {
                     byte[] bs = new byte[len];
                     if (len != dis.read(bs)) {
                         return null;
                     }
-                    caller.oauthid = new String(bs, ConstField.UTF8);
+                    caller.subSystem = new String(bs, ConstField.UTF8);
                 }
             }
-            if (dis.available() > 0) {
-                len = dis.readByte();
+
+            {
+                // subSystemRole
+                byte len = dis.readByte();
                 if (len > 0) {
                     byte[] bs = new byte[len];
                     if (len != dis.read(bs)) {
                         return null;
                     }
-                    caller.role = new String(bs, ConstField.UTF8);
+                    caller.subSystemRole = new String(bs, ConstField.UTF8);
                 }
             }
+
+            // subSystemMainId
+            caller.subSystemMainId = dis.readLong();
+
             if (dis.available() > 0) {
                 return null;
             }
@@ -98,27 +112,37 @@ public class AESTokenHelper {
         DataOutputStream dos = new DataOutputStream(baos);
         byte[] token = null;
         try {
-            dos.writeShort(DEVICE_TOKEN_VERSION_1_0);
+            dos.writeShort(TOKEN_VERSION_1);
             dos.writeLong(caller.expire);
             dos.writeInt(caller.securityLevel);
             dos.writeInt(caller.appid);
             dos.writeLong(caller.deviceId);
             dos.writeLong(caller.uid);
+
+            // key
             short len = caller.key == null ? 0 : (short)caller.key.length;
             dos.writeShort(len);
             if (caller.key != null) {
                 dos.write(caller.key);
             }
-            byte[] oauthid = caller.oauthid == null ? null : caller.oauthid.getBytes(ConstField.UTF8);
-            if (oauthid != null) {
-                dos.writeByte(oauthid.length);
-                dos.write(oauthid);
+
+            // subSystem
+            byte[] subSystem = caller.subSystem == null ? null : caller.subSystem.getBytes(ConstField.UTF8);
+            dos.writeByte(subSystem == null ? 0 : subSystem.length);
+            if (subSystem != null) {
+                dos.write(subSystem);
             }
-            byte[] roles = caller.role == null ? null : caller.role.getBytes(ConstField.UTF8);
-            if (roles != null) {
-                dos.writeByte(roles.length);
-                dos.write(roles);
+
+            // subSystemRole
+            byte[] subSystemRole = caller.subSystemRole == null ? null : caller.subSystemRole.getBytes(ConstField.UTF8);
+            dos.writeByte(subSystemRole == null ? 0 : subSystemRole.length);
+            if (subSystemRole != null) {
+                dos.write(subSystemRole);
             }
+
+            // subSystemMainId
+            dos.writeLong(caller.subSystemMainId);
+
             byte[] bs = baos.toByteArray();
             token = aes.encrypt(bs);
         } catch (IOException e) {
