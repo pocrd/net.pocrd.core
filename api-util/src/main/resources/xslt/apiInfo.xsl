@@ -287,6 +287,7 @@
 
                 </style>
                 <script type="text/javascript">
+                    <![CDATA[
                     //js 获取api的groupNames
                     $(document).ready(function(){
                     var groups = new Array();
@@ -309,7 +310,7 @@
                     var buffer = "";
                     for(var i=0; content.length>i; i++){
                     var line = content[i].trim();
-                    if(line.length>6&amp;&amp;line.charAt(2)=='-'&amp;&amp;line.charAt(5)==':'){
+                    if(line.length>6&&line.charAt(2)=='-'&&line.charAt(5)==':'){
                     break;
                     }
                     buffer += line;
@@ -361,9 +362,7 @@
                     function left_nav_group_apis(groups) {
                     $("div#groups ul").empty();
                     $.each(groups, function(n, value) {
-                    <![CDATA[
-                            $("div#groups ul").append("<li>"+value+"</li>");
-                            ]]>
+                    $("div#groups ul").append("<li>"+value+"</li>");
                     $("div#groups ul li:last").click(function() {
                     show_curr_group_apis($(this).text());
                     li_visited_class(this);
@@ -381,7 +380,6 @@
                     */
                     function show_curr_group_apis(group_name) {
                     $("div.api").hide();
-                    <![CDATA[
                     $("div [id='other_apis']").empty();
                     $("div [id='internal_apis']").empty();
                     $("div [id='integrated_apis']").empty();
@@ -445,7 +443,6 @@
                     if($("div [id='doc_apis'] div").length > 0) {
                         $("div [id='doc_apis']").show();
                     }
-                    ]]>
                     $("div [groupname='"+group_name+"'] div.div_detail_toggle").removeClass("detail_visited");
                     $("div [groupname='"+group_name+"'] div.detail").hide();
                     $("div [groupname='"+group_name+"'] div.detail").removeClass("detail_visited");
@@ -504,8 +501,6 @@
                     sCurText = searchText;
                     }
                     }
-
-                    <![CDATA[
                          $("span.api_name").each(function(){
                             var html = $(this).html();
                             var newHtml = html.replace(regExp, '<span class="highlight">'+searchText+'</span>');//将找到的关键字替换，加上highlight属性；
@@ -539,8 +534,6 @@
                                 flag = 2;
                             }
                          });
-                         ]]>
-
 
                     if (flag == 1 || flag == 2) {
                     if(flag == 1) {
@@ -675,10 +668,8 @@
                     function showDetailOnWindow(_this) {
                     var method_name = $(_this).parents("div.api").find("span.api_name").html();
                     var content = $(_this).next("div#desc_detail").html();
-                    <![CDATA[
-                        content = content.replace(/&gt;/g, ">");
-                        content = content.replace(/&lt;/g, "<");
-                        ]]>
+                    content = content.replace(/&gt;/g, ">");
+                    content = content.replace(/&lt;/g, "<");
                     var newWindow =
                     open('','_blank') ;
                     newWindow.document.open();
@@ -686,8 +677,7 @@
                     newWindow.document.write(content);
                     newWindow.document.close();
                     }
-
-
+               ]]>
                 </script>
             </head>
             <body>
@@ -811,6 +801,7 @@
                                                             <td style="text-align:center">
                                                                 <xsl:choose>
                                                                     <xsl:when test="isRequired='true'">必选</xsl:when>
+                                                                    <xsl:when test="injectOnly='true'">注入</xsl:when>
                                                                     <xsl:otherwise>可选</xsl:otherwise>
                                                                 </xsl:choose>
                                                             </td>
@@ -838,8 +829,8 @@
                                                             <td style="text-align:center">
                                                                 <xsl:value-of select="sequence"/>
                                                             </td>
-                                                            <td style="text-align:left" class="i18n">
-                                                                <xsl:value-of select="description"/>
+                                                            <td style="text-align:left">
+                                                                <p class="i18n"><xsl:value-of select="description"/></p>
                                                                 <xsl:if test="verifyRegex != ''">
                                                                     <font color="red">
                                                                         正则校验规则:
@@ -850,7 +841,7 @@
                                                                     <xsl:value-of select="verifyRegex"/>
                                                                 </xsl:if>
                                                                 <xsl:if test="serviceInjection != ''">
-                                                                    该参数可由服务端其他接口隐式注入, 注入参数名为<xsl:value-of select="serviceInjection"/>
+                                                                    该参数<xsl:if test="injectOnly='true'">仅</xsl:if><xsl:if test="injectOnly='false'">可</xsl:if>由服务端其他接口隐式注入, 注入参数名为<xsl:value-of select="serviceInjection"/>
                                                                 </xsl:if>
                                                             </td>
                                                         </tr>

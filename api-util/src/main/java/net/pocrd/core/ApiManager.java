@@ -432,24 +432,24 @@ public final class ApiManager {
                                 pInfo.isAutowired = true;
                                 break;
                             }
-                            if (pInfo.injectable != null) {
-                                Class dataType = pInfo.injectable.getDataType();
-                                boolean pass = false;
-                                try {
-                                    Type[] ts = dataType.getGenericInterfaces();
-                                    if (ts.length > 0) {
-                                        pass = ((ParameterizedType)ts[0]).getActualTypeArguments()[0] == pInfo.type;
-                                    }
-                                } catch (Exception e) {
-                                    logger.error("check injectable failed. " + pInfo.name + "  " + api.name() + "  " + clazz.getName(), e);
-                                }
-                                if (!pass) {
-                                    throw new RuntimeException("api参数 " + pInfo.name + " 类型与注入类型不匹配 " + api.name() + "  " + clazz.getName());
-                                }
-                            }
                             j++;
                             if (j == a.length) {
                                 throw new RuntimeException("api参数 " + pInfo.name + " 未被标记 " + api.name() + "  " + clazz.getName());
+                            }
+                        }
+                        if (pInfo.injectable != null) {
+                            Class dataType = pInfo.injectable.getDataType();
+                            boolean pass = false;
+                            try {
+                                Type[] ts = dataType.getGenericInterfaces();
+                                if (ts.length > 0) {
+                                    pass = ((ParameterizedType)ts[0]).getActualTypeArguments()[0] == pInfo.type;
+                                }
+                            } catch (Exception e) {
+                                logger.error("check injectable failed. " + pInfo.name + "  " + api.name() + "  " + clazz.getName(), e);
+                            }
+                            if (!pass) {
+                                throw new RuntimeException("api参数 " + pInfo.name + " 类型与注入类型不匹配 " + api.name() + "  " + clazz.getName());
                             }
                         }
                         pInfos[i] = pInfo;
