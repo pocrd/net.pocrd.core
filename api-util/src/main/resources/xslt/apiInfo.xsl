@@ -289,395 +289,401 @@
                 <script type="text/javascript">
                     <![CDATA[
                     //js 获取api的groupNames
-                    $(document).ready(function(){
-                    var groups = new Array();
-                    var last_group = "";
-                    $(".i18n").each(function(index) {
-                    var source = '\nzh-cn:'+$(this).text();
-                    var lo = 'zh-cn';
-                    if(location.search){
-                    var index = location.search.indexOf('lo=');
-                    if(index>0){
-                    if(location.search.length>=index+8){
-                    lo = location.search.substr(index+3, 5);
-                    }
-                    }
-                    }
+                    $(document).ready(function() {
+                      var groups = new Array();
+                      var last_group = "";
+                      $(".i18n").each(function(index) {
+                        var source = '\nzh-cn:' + $(this).text();
+                        var lo = 'zh-cn';
+                        if (location.search) {
+                          var index = location.search.indexOf('lo=');
+                          if (index > 0) {
+                            if (location.search.length >= index + 8) {
+                              lo = location.search.substr(index + 3, 5);
+                            }
+                          }
+                        }
 
-                    var regExp = new RegExp('\\n\\s{0,4}'+lo+':(.+)', 'i');
-                    if(regExp.test(source)){
-                    var content = regExp.exec(source)[1].split('\n');
-                    var buffer = "";
-                    for(var i=0; content.length>i; i++){
-                    var line = content[i].trim();
-                    if(line.length>6&&line.charAt(2)=='-'&&line.charAt(5)==':'){
-                    break;
-                    }
-                    buffer += line;
-                    }
+                        var regExp = new RegExp('\\n\\s{0,4}' + lo + ':(.+)', 'i');
+                        if (regExp.test(source)) {
+                          var content = regExp.exec(source)[1].split('\n');
+                          var buffer = "";
+                          for (var i = 0; content.length > i; i++) {
+                            var line = content[i].trim();
+                            if (line.length > 6 && line.charAt(2) == '-' && line.charAt(5) == ':') {
+                              break;
+                            }
+                            buffer += line;
+                          }
 
-                    $(this).text(buffer);
-                    }
-                    });
-                    $("a.hide").each(function(index) {
-                    var current_group = $(this).text();
-                    if(last_group != current_group) {
-                    groups.push(current_group);
-                    last_group = current_group;
-                    }
-                    });
-                    left_nav_group_apis(groups);
+                          $(this).text(buffer);
+                        }
+                      });
+                      $("a.hide").each(function(index) {
+                        var current_group = $(this).text();
+                        if (last_group != current_group) {
+                          groups.push(current_group);
+                          last_group = current_group;
+                        }
+                      });
+                      left_nav_group_apis(groups);
 
-                    //table 斑马线效果：
-                    $("table.tbl_border_collapse tr:nth-child(2n+3)").addClass("tbl_even_backgroud");
-                    $("table.tbl_border_collapse tr:nth-child(2n)").addClass("tbl_odd_backgroud");
-                    $("table.tbl_border_collapse tr:nth-child(1)").addClass("tbl_title_tr");
-                    $("table.tbl_no_border_collapse tr:nth-child(2n)").addClass("tbl_even_backgroud");
-                    $("table.tbl_no_border_collapse tr:nth-child(2n+1)").addClass("tbl_odd_backgroud");
+                      //table 斑马线效果：
+                      $("table.tbl_border_collapse tr:nth-child(2n+3)").addClass("tbl_even_backgroud");
+                      $("table.tbl_border_collapse tr:nth-child(2n)").addClass("tbl_odd_backgroud");
+                      $("table.tbl_border_collapse tr:nth-child(1)").addClass("tbl_title_tr");
+                      $("table.tbl_no_border_collapse tr:nth-child(2n)").addClass("tbl_even_backgroud");
+                      $("table.tbl_no_border_collapse tr:nth-child(2n+1)").addClass("tbl_odd_backgroud");
 
-                    $("#search_box").fixDiv({ top: 0 });
+                      $("#search_box").fixDiv({
+                        top: 0
+                      });
 
-                    i=0; //全局变量
-                    sCurText=$('#searchstr').val();//获取你输入的关键字
-                    $('#search_btn').click(function(){
-                    highlight();
-                    });//点击search时，执行highlight函数；
-                    $('#searchstr').keyup(function (e) {
-                    highlight();
-                    });
+                      i = 0; //全局变量
+                      sCurText = $('#searchstr').val(); //获取你输入的关键字
+                      $('#search_btn').click(function() {
+                        highlight();
+                      }); //点击search时，执行highlight函数；
+                      $('#searchstr').keyup(function(e) {
+                        highlight();
+                      });
 
-                    var url=window.location.href;//获取URL地址
-                    if(url.indexOf("#")!=-1){
-                    var str = url.substr(url.indexOf("#")+1);
-                    $("input#searchstr").val(str);
-                    highlight(str);
-                    }
+                      var url = window.location.href; //获取URL地址
+                      if (url.indexOf("#") != -1) {
+                        var str = url.substr(url.indexOf("#") + 1);
+                        $("input#searchstr").val(str);
+                        highlight(str);
+                      }
                     });
 
                     /**
-                    *生成左部 api 目录
-                    *添加click 方法
-                    */
+                     *生成左部 api 目录
+                     *添加click 方法
+                     */
 
                     function left_nav_group_apis(groups) {
-                    $("div#groups ul").empty();
-                    $.each(groups, function(n, value) {
-                    $("div#groups ul").append("<li>"+value+"</li>");
-                    $("div#groups ul li:last").click(function() {
-                    show_curr_group_apis($(this).text());
-                    li_visited_class(this);
-                    });
-                    });
+                      $("div#groups ul").empty();
+                      $.each(groups, function(n, value) {
+                        $("div#groups ul").append("<li>" + value + "</li>");
+                        $("div#groups ul li:last").click(function() {
+                          show_curr_group_apis($(this).text());
+                          li_visited_class(this);
+                        });
+                      });
 
-                    var first_group = $("div#groups ul li:first").text();
-                    $("div#groups ul li:first").click();
+                      var first_group = $("div#groups ul li:first").text();
+                      $("div#groups ul li:first").click();
                     }
 
 
                     /**
-                    *隐藏其他groups
-                    *保留当前group的apis可见
-                    */
+                     *隐藏其他groups
+                     *保留当前group的apis可见
+                     */
                     function show_curr_group_apis(group_name) {
-                    $("div.api").hide();
-                    $("div [id='other_apis']").empty();
-                    $("div [id='internal_apis']").empty();
-                    $("div [id='integrated_apis']").empty();
-                    $("div [id='none_apis']").empty();
-                    $("div [id='registereddevice_apis']").empty();
-                    $("div [id='userlogin_apis']").empty();
-                    $("div [id='doc_apis']").empty();
+                      $("div.api").hide();
+                      $("div [id='other_apis']").empty();
+                      $("div [id='internal_apis']").empty();
+                      $("div [id='integrated_apis']").empty();
+                      $("div [id='none_apis']").empty();
+                      $("div [id='registereddevice_apis']").empty();
+                      $("div [id='userlogin_apis']").empty();
+                      $("div [id='doc_apis']").empty();
 
 
-                    $("div [id='none_apis']").append("<span class='state_title'>NONE</span>");
-                    $("div [id='registereddevice_apis']").append("<span class='state_title'>REGISTERED_DEVICE</span>");
-                    $("div [id='userlogin_apis']").append("<span class='state_title'>USER_LOGIN</span>");
-                    $("div [id='internal_apis']").append("<span class='state_title'>INTERNAL</span>");
-                    $("div [id='integrated_apis']").append("<span class='state_title'>INTEGRATED</span>");
-                    $("div [id='other_apis']").append("<span class='state_title'>OTHER</span>");
-                    $("div [id='doc_apis']").append("<span class='state_title'>DOCUMENT</span>");
+                      $("div [id='none_apis']").append("<span class='state_title'>NONE</span>");
+                      $("div [id='registereddevice_apis']").append("<span class='state_title'>REGISTERED_DEVICE</span>");
+                      $("div [id='userlogin_apis']").append("<span class='state_title'>USER_LOGIN</span>");
+                      $("div [id='internal_apis']").append("<span class='state_title'>INTERNAL</span>");
+                      $("div [id='integrated_apis']").append("<span class='state_title'>INTEGRATED</span>");
+                      $("div [id='other_apis']").append("<span class='state_title'>OTHER</span>");
+                      $("div [id='doc_apis']").append("<span class='state_title'>DOCUMENT</span>");
 
 
-                    $("div [groupname='"+group_name+"']").each(function(index){
+                      $("div [groupname='" + group_name + "']").each(function(index) {
                         if ("Internal" == $(this).find("div[id='api_securityLevel'] span").text()) {
-                            $("div [id='internal_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='internal_apis'] div.api:last").append($(this).html());
+                          $("div [id='internal_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='internal_apis'] div.api:last").append($(this).html());
                         } else if ("Integrated" == $(this).find("div[id='api_securityLevel'] span").text()) {
-                            $("div [id='integrated_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='integrated_apis'] div.api:last").append($(this).html());
+                          $("div [id='integrated_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='integrated_apis'] div.api:last").append($(this).html());
                         } else if ("None" == $(this).find("div[id='api_securityLevel'] span").text()) {
-                            $("div [id='none_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='none_apis'] div.api:last").append($(this).html());
+                          $("div [id='none_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='none_apis'] div.api:last").append($(this).html());
                         } else if ("RegisteredDevice" == $(this).find("div[id='api_securityLevel'] span").text()) {
-                            $("div [id='registereddevice_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='registereddevice_apis'] div.api:last").append($(this).html());
+                          $("div [id='registereddevice_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='registereddevice_apis'] div.api:last").append($(this).html());
                         } else if ("UserLogin" == $(this).find("div[id='api_securityLevel'] span").text()) {
-                            $("div [id='userlogin_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='userlogin_apis'] div.api:last").append($(this).html());
+                          $("div [id='userlogin_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='userlogin_apis'] div.api:last").append($(this).html());
                         } else if ("Document" == $(this).find("div[id='api_securityLevel'] span").text()) {
-                            $("div [id='doc_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='doc_apis'] div.api:last").append($(this).html());
+                          $("div [id='doc_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='doc_apis'] div.api:last").append($(this).html());
                         } else {
-                            $("div [id='other_apis']").append("<div class='api' groupname='"+group_name+"' ></div>");
-                            $("div [id='other_apis'] div.api:last").append($(this).html());
+                          $("div [id='other_apis']").append("<div class='api' groupname='" + group_name + "' ></div>");
+                          $("div [id='other_apis'] div.api:last").append($(this).html());
                         }
-                    });
-                    if($("div [id='other_apis'] div").length > 0) {
+                      });
+                      if ($("div [id='other_apis'] div").length > 0) {
                         $("div [id='other_apis']").show();
-                    }
-                    if($("div [id='internal_apis'] div").length > 0) {
+                      }
+                      if ($("div [id='internal_apis'] div").length > 0) {
                         $("div [id='internal_apis']").show();
-                    }
-                    if($("div [id='integrated_apis'] div").length > 0) {
+                      }
+                      if ($("div [id='integrated_apis'] div").length > 0) {
                         $("div [id='integrated_apis']").show();
-                    }
-                    if($("div [id='none_apis'] div").length > 0) {
+                      }
+                      if ($("div [id='none_apis'] div").length > 0) {
                         $("div [id='none_apis']").show();
-                    }
-                    if($("div [id='registereddevice_apis'] div").length > 0) {
+                      }
+                      if ($("div [id='registereddevice_apis'] div").length > 0) {
                         $("div [id='registereddevice_apis']").show();
-                    }
-                    if($("div [id='userlogin_apis'] div").length > 0) {
+                      }
+                      if ($("div [id='userlogin_apis'] div").length > 0) {
                         $("div [id='userlogin_apis']").show();
-                    }
-                    if($("div [id='doc_apis'] div").length > 0) {
+                      }
+                      if ($("div [id='doc_apis'] div").length > 0) {
                         $("div [id='doc_apis']").show();
-                    }
-                    $("div [groupname='"+group_name+"'] div.div_detail_toggle").removeClass("detail_visited");
-                    $("div [groupname='"+group_name+"'] div.detail").hide();
-                    $("div [groupname='"+group_name+"'] div.detail").removeClass("detail_visited");
+                      }
+                      $("div [groupname='" + group_name + "'] div.div_detail_toggle").removeClass("detail_visited");
+                      $("div [groupname='" + group_name + "'] div.detail").hide();
+                      $("div [groupname='" + group_name + "'] div.detail").removeClass("detail_visited");
                     }
 
                     /**
-                    *li对象 visited事件后 class变化
-                    */
+                     *li对象 visited事件后 class变化
+                     */
                     function li_visited_class(_this) {
-                    $("li").removeClass("visited");
-                    $(_this).addClass("visited");
+                      $("li").removeClass("visited");
+                      $(_this).addClass("visited");
                     }
 
                     /**
-                    * 展示api详细信息
-                    */
+                     * 展示api详细信息
+                     */
                     function method_click(name, _this) {
-                    if(!$("[id='"+name+"']").is(":visible")) {
-                    $("[id='"+name+"']").show("fast");
+                      if (!$("[id='" + name + "']").is(":visible")) {
+                        $("[id='" + name + "']").show("fast");
 
-                    $(_this).addClass("detail_visited");
-                    $("[id='"+name+"']").addClass("detail_visited");
-                    } else {
-                    $("[id='"+name+"']").hide("fast");
-                    //alert($(_this).attr("class"));
-                    $(_this).removeClass("detail_visited");
-                    //alert($(_this).attr("class"));
-                    }
+                        $(_this).addClass("detail_visited");
+                        $("[id='" + name + "']").addClass("detail_visited");
+                      } else {
+                        $("[id='" + name + "']").hide("fast");
+                        //alert($(_this).attr("class"));
+                        $(_this).removeClass("detail_visited");
+                        //alert($(_this).attr("class"));
+                      }
                     }
 
-                    function highlight(focus){
-                    clearSelection();//先清空一下上次高亮显示的内容；
-                    var flag = 0;
-                    var bStart = true;
+                    function highlight(focus) {
+                      clearSelection(); //先清空一下上次高亮显示的内容；
+                      var flag = 0;
+                      var bStart = true;
 
-                    var searchText = $('#searchstr').val().trim();//获取你输入的关键字；
-                    if(searchText==''){
-                    searchText=focus;
-                    }
-                    var _searchTop = $('#searchstr').offset().top+30;
-                    var _searchLeft = $('#searchstr').offset().left;
-                    if($.trim(searchText)=="" || $.trim(searchText)=='.'){
-                    showTips("请输入内容",_searchTop,3,_searchLeft);
-                    return;
-                    }
-                    var regExp = new RegExp(searchText, 'g');//创建正则表达式，g表示全局的，如果不用g，则查找到第一个就不会继续向下查找了；
+                      var searchText = $('#searchstr').val().trim(); //获取你输入的关键字；
+                      if (searchText == '') {
+                        searchText = focus;
+                      }
+                      var _searchTop = $('#searchstr').offset().top + 30;
+                      var _searchLeft = $('#searchstr').offset().left;
+                      if ($.trim(searchText) == "" || $.trim(searchText) == '.') {
+                        showTips("请输入内容", _searchTop, 3, _searchLeft);
+                        return;
+                      }
+                      var regExp = new RegExp(searchText, 'g'); //创建正则表达式，g表示全局的，如果不用g，则查找到第一个就不会继续向下查找了；
 
-                    var content = getSearchContent();
-                    <!-- alert(content); -->
-                    if (!regExp.test(content)) {
-                    showTips("没找到查找内容",_searchTop,3,_searchLeft);
-                    return;
-                    } else {
-                    if (sCurText != searchText) {
-                    i = 0;
-                    sCurText = searchText;
-                    }
-                    }
-                         $("span.api_name").each(function(){
-                            var html = $(this).html();
-                            var newHtml = html.replace(regExp, '<span class="highlight">'+searchText+'</span>');//将找到的关键字替换，加上highlight属性；
-                            $(this).html(newHtml);//更新
-                            if(html != newHtml){
-                                flag = 1;
-                            }
+                      var content = getSearchContent();
+                      <!-- alert(content); -->
+                      if (!regExp.test(content)) {
+                        showTips("没找到查找内容", _searchTop, 3, _searchLeft);
+                        return;
+                      } else {
+                        if (sCurText != searchText) {
+                          i = 0;
+                          sCurText = searchText;
+                        }
+                      }
+                      $("span.api_name").each(function() {
+                        var html = $(this).html();
+                        var newHtml = html.replace(regExp, '<span class="highlight">' + searchText + '</span>'); //将找到的关键字替换，加上highlight属性；
+                        $(this).html(newHtml); //更新
+                        if (html != newHtml) {
+                          flag = 1;
+                        }
 
-                         });
-                        $("td[name='code']").each(function(){
-                            var html = $(this).html();
-                            var newHtml = html.replace(regExp, '<span class="highlight">'+searchText+'</span>');//将找到的关键字替换，加上highlight属性；
-                            $(this).html(newHtml);//更新
-                            if(html != newHtml){
-                                flag = 2;
-                            }
-                         });
-                        $("td[name='name']").each(function(){
-                            var html = $(this).html();
-                            var newHtml = html.replace(regExp, '<span class="highlight">'+searchText+'</span>');//将找到的关键字替换，加上highlight属性；
-                            $(this).html(newHtml);//更新
-                            if(html != newHtml){
-                                flag = 2;
-                            }
-                         });
-                         $("td[name='desc']").each(function(){
-                            var html = $(this).html();
-                            var newHtml = html.replace(regExp, '<span class="highlight">'+searchText+'</span>');//将找到的关键字替换，加上highlight属性；
-                            $(this).html(newHtml);//更新
-                            if(html != newHtml){
-                                flag = 2;
-                            }
-                         });
+                      });
+                      $("td[name='code']").each(function() {
+                        var html = $(this).html();
+                        var newHtml = html.replace(regExp, '<span class="highlight">' + searchText + '</span>'); //将找到的关键字替换，加上highlight属性；
+                        $(this).html(newHtml); //更新
+                        if (html != newHtml) {
+                          flag = 2;
+                        }
+                      });
+                      $("td[name='name']").each(function() {
+                        var html = $(this).html();
+                        var newHtml = html.replace(regExp, '<span class="highlight">' + searchText + '</span>'); //将找到的关键字替换，加上highlight属性；
+                        $(this).html(newHtml); //更新
+                        if (html != newHtml) {
+                          flag = 2;
+                        }
+                      });
+                      $("td[name='desc']").each(function() {
+                        var html = $(this).html();
+                        var newHtml = html.replace(regExp, '<span class="highlight">' + searchText + '</span>'); //将找到的关键字替换，加上highlight属性；
+                        $(this).html(newHtml); //更新
+                        if (html != newHtml) {
+                          flag = 2;
+                        }
+                      });
 
-                    if (flag == 1 || flag == 2) {
-                    if(flag == 1) {
-                    //跳转到该GROUP所在的分页 //所在group是否可见？
-                    <!-- alert($(".highlight").eq(i).parent("span.api_name").is(":visible")); -->
-                    if(!$(".highlight").eq(i).parent("span.api_name").is(":visible")) { //不可见
-                    var apiName = $(".highlight").eq(i).parent("span.api_name").parents("div.api").attr("groupname");
-                    <!-- alert(apiName); -->
-                    //右部api内容
-                    show_curr_group_apis(apiName);
-                    //左部菜单li
-                    $("div#groups li").each(function(i){
-                    if($( this ).text() == apiName) {
-                    li_visited_class(this);
-                    }
-                    });
-                    }
-                    }
-                    if ($(".highlight").size() > 1) {
-                    var _top = $(".highlight").eq(i).offset().top+$(".highlight").eq(i).height();
-                    var _tip = $(".highlight").eq(i).parent().find("strong").text();
-                    if(_tip=="") _tip = $(".highlight").eq(i).parent().parent().find("strong").text();
-                    var _left = $(".highlight").eq(i).offset().left;
-                    var _tipWidth = $("#tip").width();
-                    if (_left > $(document).width() - _tipWidth) {
-                    _left = _left - _tipWidth;
-                    }
-                    $("#search_btn").val("查找下一个");
-                    }else{
-                    var _top = $(".highlight").offset().top+$(".highlight").height();
-                    var _tip = $(".highlight").parent().find("strong").text();
-                    var _left = $(".highlight").offset().left;
-                    }
-                    $("html, body").animate({ scrollTop: _top - 50 }, 100);
-                    i++;
-                    if (i > $(".highlight").size() - 1) {
-                    i = 0;
-                    }
-                    }
+                      if (flag == 1 || flag == 2) {
+                        if (flag == 1) {
+                          //跳转到该GROUP所在的分页 //所在group是否可见？
+                          <!-- alert($(".highlight").eq(i).parent("span.api_name").is(":visible")); -->
+                          if (!$(".highlight").eq(i).parent("span.api_name").is(":visible")) { //不可见
+                            var apiName = $(".highlight").eq(i).parent("span.api_name").parents("div.api").attr("groupname");
+                            <!-- alert(apiName); -->
+                            //右部api内容
+                            show_curr_group_apis(apiName);
+                            //左部菜单li
+                            $("div#groups li").each(function(i) {
+                              if ($(this).text() == apiName) {
+                                li_visited_class(this);
+                              }
+                            });
+                          }
+                        }
+                        if ($(".highlight").size() > 1) {
+                          var _top = $(".highlight").eq(i).offset().top + $(".highlight").eq(i).height();
+                          var _tip = $(".highlight").eq(i).parent().find("strong").text();
+                          if (_tip == "") _tip = $(".highlight").eq(i).parent().parent().find("strong").text();
+                          var _left = $(".highlight").eq(i).offset().left;
+                          var _tipWidth = $("#tip").width();
+                          if (_left > $(document).width() - _tipWidth) {
+                            _left = _left - _tipWidth;
+                          }
+                          $("#search_btn").val("查找下一个");
+                        } else {
+                          var _top = $(".highlight").offset().top + $(".highlight").height();
+                          var _tip = $(".highlight").parent().find("strong").text();
+                          var _left = $(".highlight").offset().left;
+                        }
+                        $("html, body").animate({
+                          scrollTop: _top - 50
+                        }, 100);
+                        i++;
+                        if (i > $(".highlight").size() - 1) {
+                          i = 0;
+                        }
+                      }
                     }
 
                     function getSearchContent() {
-                    var content = $("span.api_name").text()+$("#busi_err table td[name='code']").text()
-                    +$("#busi_err table td[name='name']").text()+$("#busi_err table td[name='desc']").text();
-                    return content;
+                      var content = $("span.api_name").text() + $("#busi_err table td[name='code']").text() + $("#busi_err table td[name='name']").text() +
+                        $("#busi_err table td[name='desc']").text();
+                      return content;
                     }
 
-                    function clearSelection(){
-                    $("span.api_name").each(function(){
-                    //找到所有highlight属性的元素；
-                    $(this).find('.highlight').each(function(){
-                    $(this).replaceWith($(this).html());//将他们的属性去掉；
-                    });
-                    });
-                    $("td[name='code']").each(function(){
-                    //找到所有highlight属性的元素；
-                    $(this).find('.highlight').each(function(){
-                    $(this).replaceWith($(this).html());//将他们的属性去掉；
-                    });
-                    });
-                    $("td[name='name']").each(function(){
-                    //找到所有highlight属性的元素；
-                    $(this).find('.highlight').each(function(){
-                    $(this).replaceWith($(this).html());//将他们的属性去掉；
-                    });
-                    });
-                    $("td[name='desc']").each(function(){
-                    //找到所有highlight属性的元素；
-                    $(this).find('.highlight').each(function(){
-                    $(this).replaceWith($(this).html());//将他们的属性去掉；
-                    });
-                    });
+                    function clearSelection() {
+                      $("span.api_name").each(function() {
+                        //找到所有highlight属性的元素；
+                        $(this).find('.highlight').each(function() {
+                          $(this).replaceWith($(this).html()); //将他们的属性去掉；
+                        });
+                      });
+                      $("td[name='code']").each(function() {
+                        //找到所有highlight属性的元素；
+                        $(this).find('.highlight').each(function() {
+                          $(this).replaceWith($(this).html()); //将他们的属性去掉；
+                        });
+                      });
+                      $("td[name='name']").each(function() {
+                        //找到所有highlight属性的元素；
+                        $(this).find('.highlight').each(function() {
+                          $(this).replaceWith($(this).html()); //将他们的属性去掉；
+                        });
+                      });
+                      $("td[name='desc']").each(function() {
+                        //找到所有highlight属性的元素；
+                        $(this).find('.highlight').each(function() {
+                          $(this).replaceWith($(this).html()); //将他们的属性去掉；
+                        });
+                      });
                     }
 
-                    function showTips( tips, height, time,left ){
-                    var windowWidth = document.documentElement.clientWidth;
-                    $('.tipsClass').text(tips);
-                    $( 'div.tipsClass' ).css({
-                    'top' : height + 'px',
-                    'left' :left + 'px',
-                    'position' : 'absolute',
-                    'padding' : '8px 6px',
-                    'background': '#000000',
-                    'font-size' : 14 + 'px',
-                    'font-weight': 900,
-                    'margin' : '0 auto',
-                    'text-align': 'center',
-                    'width' : 'auto',
-                    'color' : '#fff',
-                    'border-radius':'2px',
-                    'opacity' : '0.8' ,
-                    'box-shadow':'0px 0px 10px #000',
-                    '-moz-box-shadow':'0px 0px 10px #000',
-                    '-webkit-box-shadow':'0px 0px 10px #000'
-                    }).show();
-                    setTimeout( function(){$( 'div.tipsClass' ).fadeOut();}, ( time * 100 ) );
+                    function showTips(tips, height, time, left) {
+                      var windowWidth = document.documentElement.clientWidth;
+                      $('.tipsClass').text(tips);
+                      $('div.tipsClass').css({
+                        'top': height + 'px',
+                        'left': left + 'px',
+                        'position': 'absolute',
+                        'padding': '8px 6px',
+                        'background': '#000000',
+                        'font-size': 14 + 'px',
+                        'font-weight': 900,
+                        'margin': '0 auto',
+                        'text-align': 'center',
+                        'width': 'auto',
+                        'color': '#fff',
+                        'border-radius': '2px',
+                        'opacity': '0.8',
+                        'box-shadow': '0px 0px 10px #000',
+                        '-moz-box-shadow': '0px 0px 10px #000',
+                        '-webkit-box-shadow': '0px 0px 10px #000'
+                      }).show();
+                      setTimeout(function() {
+                        $('div.tipsClass').fadeOut();
+                      }, (time * 100));
                     }
 
                     /**
-                    * 固定div的效果，就是当页面往下拉滚动时，用于查找的输入框和按钮始终固定在页面的最顶部，方便继续查找
-                    */
+                     * 固定div的效果，就是当页面往下拉滚动时，用于查找的输入框和按钮始终固定在页面的最顶部，方便继续查找
+                     */
                     (function($) {
-                    $.fn.fixDiv = function(options) {
-                    var defaultVal = {
-                    top: 10
-                    };
-                    var obj = $.extend(defaultVal, options);
-                    $this = this;
-                    var _top = $this.offset().top;
-                    var _left = $this.offset().left;
-                    $(window).scroll(function() {
-                    var _currentTop = $this.offset().top;
-                    var _scrollTop = $(document).scrollTop();
-                    if (_scrollTop > _top) {
-                    $this.offset({
-                    top: _scrollTop + obj.top,
-                    left: _left
-                    });
-                    } else {
-                    $this.offset({
-                    top: _top,
-                    left: _left
-                    });
-                    }
+                      $.fn.fixDiv = function(options) {
+                        var defaultVal = {
+                          top: 10
+                        };
+                        var obj = $.extend(defaultVal, options);
+                        $this = this;
+                        var _top = $this.offset().top;
+                        var _left = $this.offset().left;
+                        $(window).scroll(function() {
+                          var _currentTop = $this.offset().top;
+                          var _scrollTop = $(document).scrollTop();
+                          if (_scrollTop > _top) {
+                            $this.offset({
+                              top: _scrollTop + obj.top,
+                              left: _left
+                            });
+                          } else {
+                            $this.offset({
+                              top: _top,
+                              left: _left
+                            });
+                          }
 
-                    });
+                        });
 
-                    return $this;
-                    };
+                        return $this;
+                      };
                     })(jQuery);
 
                     function showDetailOnWindow(_this) {
-                    var method_name = $(_this).parents("div.api").find("span.api_name").html();
-                    var content = $(_this).next("div#desc_detail").html();
-                    content = content.replace(/&gt;/g, ">");
-                    content = content.replace(/&lt;/g, "<");
-                    var newWindow =
-                    open('','_blank') ;
-                    newWindow.document.open();
-                    newWindow.document.title=method_name;
-                    newWindow.document.write(content);
-                    newWindow.document.close();
+                      var method_name = $(_this).parents("div.api").find("span.api_name").html();
+                      var content = $(_this).next("div#desc_detail").html();
+                      content = content.replace(/&gt;/g, ">");
+                      content = content.replace(/&lt;/g, "<");
+                      var newWindow =
+                        open('', '_blank');
+                      newWindow.document.open();
+                      newWindow.document.title = method_name;
+                      newWindow.document.write(content);
+                      newWindow.document.close();
                     }
-               ]]>
+                ]]>
                 </script>
             </head>
             <body>
@@ -830,7 +836,9 @@
                                                                 <xsl:value-of select="sequence"/>
                                                             </td>
                                                             <td style="text-align:left">
-                                                                <p class="i18n"><xsl:value-of select="description"/></p>
+                                                                <p class="i18n">
+                                                                    <xsl:value-of select="description"/>
+                                                                </p>
                                                                 <xsl:if test="verifyRegex != ''">
                                                                     <font color="red">
                                                                         正则校验规则:
@@ -841,7 +849,10 @@
                                                                     <xsl:value-of select="verifyRegex"/>
                                                                 </xsl:if>
                                                                 <xsl:if test="serviceInjection != ''">
-                                                                    该参数<xsl:if test="injectOnly='true'">仅</xsl:if><xsl:if test="injectOnly='false'">可</xsl:if>由服务端其他接口隐式注入, 注入参数名为<xsl:value-of select="serviceInjection"/>
+                                                                    该参数
+                                                                    <xsl:if test="injectOnly='true'">仅</xsl:if>
+                                                                    <xsl:if test="injectOnly='false'">可</xsl:if>由服务端其他接口隐式注入, 注入参数名为<xsl:value-of
+                                                                        select="serviceInjection"/>
                                                                 </xsl:if>
                                                             </td>
                                                         </tr>
