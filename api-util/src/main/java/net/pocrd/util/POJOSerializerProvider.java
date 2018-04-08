@@ -145,7 +145,7 @@ public class POJOSerializerProvider implements Opcodes {
             {
                 PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_STATIC, "<clinit>", "()V", null, null);
                 pmv.visitCode();
-                pmv.visitIntInsn(BIPUSH, list.size());
+                pmv.loadConst(list.size());
                 pmv.visitTypeInsn(ANEWARRAY, "[B");
                 pmv.visitFieldInsn(PUTSTATIC, c_name, "bs", "[[B");
                 for (int i = 0; i < list.size(); i++) {

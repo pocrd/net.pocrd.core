@@ -7,6 +7,8 @@ public enum AutowireableParameter {
     appid,
     deviceid,
     userid,
+    extUserid,
+    ssmid,
     userAgent,
     cookies,
     businessid,
