@@ -62,15 +62,9 @@ public class ApiDocumentationHelper {
                     }
                 }
                 methodInfo.securityLevel = info.securityLevel.name();
-                if (info.roleSet != null && info.roleSet.size() > 0) {
-                    StringBuilder sb = new StringBuilder();
-                    for (String role : info.roleSet) {
-                        sb.append(role).append(",");
-                    }
-                    sb.setLength(sb.length() - 1);
-                    methodInfo.roles = sb.toString();
-                }
+                // TODO: role check
                 methodInfo.groupOwner = info.groupOwner;
+                methodInfo.subSystem = info.subSystem;
                 methodInfo.methodOwner = info.owner;
                 methodInfo.encryptionOnly = info.encryptionOnly;
                 methodInfo.needVerify = info.needVerfiy;

@@ -109,6 +109,8 @@ public final class ApiManager {
             return null;
         }
         try {
+            SubSystem subSystem = clazz.getAnnotation(SubSystem.class);
+            boolean authServer = AuthenticationService.class.isAssignableFrom(clazz);
             int minCode = groupAnnotation.minCode();
             int maxCode = groupAnnotation.maxCode();
             String groupName = groupAnnotation.name();
@@ -173,20 +175,22 @@ public final class ApiManager {
                             apiInfo.exportParams.put(pei.name(), pei.dataType());
                         }
                     }
+                    if (subSystem == null) {
+                        subSystem = mInfo.getAnnotation(SubSystem.class);
+                    }
+                    if (subSystem != null) {
+                        apiInfo.subSystem = subSystem.value();
+                    }
+                    if (authServer && AuthenticationService.AuthMethodSignature
+                            .equals(mInfo.getName() + org.objectweb.asm.Type.getMethodDescriptor(mInfo))) {
+                        apiInfo.authenticationMethod = true;
+                    }
                     apiInfo.groupName = groupName;
                     apiInfo.description = api.desc();
                     apiInfo.detail = api.detail();
                     apiInfo.methodName = api.name();
                     apiInfo.owner = api.owner();
                     apiInfo.groupOwner = groupAnnotation.owner();
-                    Roles roles = mInfo.getAnnotation(Roles.class);
-                    if (roles != null && roles.value() != null) {
-                        String[] rs = roles.value();
-                        apiInfo.roleSet = new HashSet<String>();
-                        for (String role : rs) {
-                            apiInfo.roleSet.add(role);
-                        }
-                    }
                     SparseIntArray code2index = new SparseIntArray();
                     DesignedErrorCode errors = mInfo.getAnnotation(DesignedErrorCode.class);
                     if (errors != null && errors.value() != null) {
@@ -294,6 +298,23 @@ public final class ApiManager {
                     Annotation[][] parameterAnnotations = mInfo.getParameterAnnotations();
                     if (parameterTypes.length != parameterAnnotations.length) {
                         throw new RuntimeException("存在未被标记的http api参数" + clazz.getName());
+                    }
+                    // 校验授权接口注释是否符合规范
+                    if (apiInfo.authenticationMethod) {
+                        if (parameterAnnotations[0].length == 0
+                                || parameterAnnotations[0][0].getClass() != ApiAutowired.class
+                                || !AutowireableParameter.userid.equals(((ApiAutowired)parameterAnnotations[0][0]).value())) {
+                            throw new RuntimeException("authentication method must tag the first parameter as Autowired(userid).");
+                        }
+                        if (parameterAnnotations[1].length == 0
+                                || parameterAnnotations[1][0].getClass() != ApiParameter.class
+                                || ((ApiParameter)parameterAnnotations[1][0]).enumDef() == EnumNull.class) {
+                            throw new RuntimeException("authentication method must tag the second parameter as ApiParameter with a enum define.");
+                        }
+                        if (parameterAnnotations[2].length == 0
+                                || parameterAnnotations[2][0].getClass() != ApiParameter.class) {
+                            throw new RuntimeException("authentication method must tag the third parameter as ApiParameter");
+                        }
                     }
                     ApiParameterInfo[] pInfos = new ApiParameterInfo[parameterTypes.length];
                     for (int i = 0; i < parameterTypes.length; i++) {

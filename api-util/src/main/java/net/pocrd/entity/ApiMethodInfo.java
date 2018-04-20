@@ -5,7 +5,6 @@ import net.pocrd.util.SparseIntArray;
 
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * 接口信息
@@ -76,11 +75,6 @@ public class ApiMethodInfo {
     public SecurityType securityLevel = SecurityType.None;
 
     /**
-     * 可以访问该方法的权限集合
-     */
-    public Set<String> roleSet;
-
-    /**
      * 资源所属组名
      */
     public String groupName;
@@ -144,6 +138,16 @@ public class ApiMethodInfo {
      * 资源组负责人
      */
     public String groupOwner;
+
+    /**
+     * 子系统名称
+     */
+    public String subSystem;
+
+    /**
+     * 是否授权接口
+     */
+    public boolean authenticationMethod;
 
     /**
      * 本接口是否只接受加密传输

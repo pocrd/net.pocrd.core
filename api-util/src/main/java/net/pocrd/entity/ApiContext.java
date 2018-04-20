@@ -220,6 +220,11 @@ public class ApiContext {
     public byte[] jsonpCallback = null;
 
     /**
+     * 子系统授权接口调用
+     */
+    public ApiMethodCall authCall = null;
+
+    /**
      * 返回给客户端的额外消息
      */
     private Map<String, KeyValuePair> notifications = new HashMap<String, KeyValuePair>();
@@ -292,6 +297,7 @@ public class ApiContext {
         this.host = null;
         this.isSSL = false;
         this.jsonpCallback = null;
+        this.authCall = null;
         this.localException = null;
         this.location = null;
         this.notifications.clear();

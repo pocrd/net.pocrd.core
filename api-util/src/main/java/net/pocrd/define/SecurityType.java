@@ -80,7 +80,7 @@ public enum SecurityType {
      * 验证要素
      * 1. 设备签名
      * 2. 用户token
-     * 3. 用户角色
+     * 3. 子系统标识
      */
     SubSystem(0x00400000),
 

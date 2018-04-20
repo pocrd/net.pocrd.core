@@ -764,6 +764,12 @@
                                                 <xsl:value-of select="securityLevel"/>
                                             </span>
                                         </div>
+                                        <xsl:if test="string-length(subSystem)&gt;0">
+                                            <div>
+                                                <strong>所属子系统:</strong>
+                                                <xsl:value-of select="subSystem"/>
+                                            </div>
+                                        </xsl:if>
                                         <div>
                                             <strong>接口分组:</strong>
                                             <xsl:value-of select="groupName"/>

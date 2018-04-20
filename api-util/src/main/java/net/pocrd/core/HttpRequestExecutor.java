@@ -11,6 +11,7 @@ import net.pocrd.define.*;
 import net.pocrd.dubboext.NotificationManager;
 import net.pocrd.dubboext.TraceInfo;
 import net.pocrd.entity.*;
+import net.pocrd.responseEntity.AuthenticationResult;
 import net.pocrd.responseEntity.CallState;
 import net.pocrd.responseEntity.KeyValuePair;
 import net.pocrd.responseEntity.Response;
@@ -620,16 +621,6 @@ public class HttpRequestExecutor {
         }
 
         // TODO: get role/permission map from zk
-        if (api.roleSet != null) {
-            CallerInfo caller = apiContext.caller;
-            boolean hasRole = false;
-            if (caller != null && caller.subSystemRole != null) {
-                hasRole = api.roleSet.contains(caller.subSystemRole);
-            }
-            if (!hasRole) {
-                throw new ReturnCodeException(ApiReturnCode.ROLE_DENIED, "missing role for api:" + api.methodName);
-            }
-        }
         return apiManager.processRequest(name, params);
     }
 
@@ -920,10 +911,12 @@ public class HttpRequestExecutor {
             if (call.dependencies != null) {
                 for (int i = 0; i < call.parameters.length; i++) {
                     ApiParameterInfo p = call.method.parameterInfos[i];
+                    // 处理隐式参数注入
                     if (p.injectable != null) {
                         String key = p.injectable.getName();
                         String httpParam = call.parameters[i];
                         ServiceInjectable.InjectionData injectionData = null;
+                        // 当参数没有注明 autowired 的时候, 合并客户端请求的参数值和服务端隐式传入的参数
                         if (!p.isAutowired && httpParam != null && httpParam.length() > 0) {
                             try {
                                 injectionData = p.injectable.parseDataFromHttpParam(httpParam);
@@ -961,6 +954,20 @@ public class HttpRequestExecutor {
                                     call.parameters[i] = JSON.toJSONString(data);
                                 }
                                 call.message.append(injectionData.getName()).append('=').append(call.parameters[i].replace('\n', ' ')).append('&');
+                            }
+                        }
+                    } else if (p.isAutowired && AutowireableParameter.userid.equals(p.name)) {
+                        // 将授权接口的授权结果注入给当前接口
+                        CHECK_AUTHENTICATION:
+                        for (ApiMethodCall dependency : call.dependencies) {
+                            if (dependency != null && dependency == apiContext.authCall) {
+                                AuthenticationResult authResult = (AuthenticationResult)apiContext.authCall.result;
+                                for (String authApi : authResult.apis) {
+                                    if (call.method.methodName.equals(authApi)) {
+                                        call.parameters[i] = String.valueOf(authResult.authorizedUserId);
+                                        break CHECK_AUTHENTICATION;
+                                    }
+                                }
                             }
                         }
                     }
@@ -1052,6 +1059,19 @@ public class HttpRequestExecutor {
                         }
                     } else {
                         call.result = call.method.wrapper.wrap(future.get());
+                    }
+                }
+                if (call.method.authenticationMethod) {
+                    // 不支持一次http调用中包含多个子系统授权调用
+                    if (apiContext.authCall == null) {
+                        if (CompileConfig.isDebug) {
+                            AuthenticationResult ar = (AuthenticationResult)call.result;
+                            if (ar.apis == null || ar.apis.length > 10) {
+                                throw new RuntimeException("authentication api list is empty or more than 10");
+                            }
+                        }
+                        apiContext.authCall = call;
+                        call.result = null;
                     }
                 }
             }

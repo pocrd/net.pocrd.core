@@ -6,10 +6,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Created by rendong on 2017/6/8.
+ * Created by rendong on 2018/4/13.
  */
-@Target(ElementType.METHOD)
+@Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Roles {
-    String[] value();
+public @interface SubSystem {
+    String value();
 }
