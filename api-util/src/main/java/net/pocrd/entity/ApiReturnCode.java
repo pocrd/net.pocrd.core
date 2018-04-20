@@ -122,8 +122,14 @@ public class ApiReturnCode extends AbstractReturnCode {
     /**
      * security level missmatch
      */
-    public final static int                _C_SECURITY_LEVEL_MISSMATCH = -167;
-    public final static AbstractReturnCode SECURITY_LEVEL_MISSMATCH    = new ApiReturnCode(_C_SECURITY_LEVEL_MISSMATCH, ACCESS_DENIED);
+    public final static int                _C_SECURITY_LEVEL_MISMATCH = -167;
+    public final static AbstractReturnCode SECURITY_LEVEL_MISMATCH    = new ApiReturnCode(_C_SECURITY_LEVEL_MISMATCH, ACCESS_DENIED);
+
+    /**
+     * subsystem missmatch
+     */
+    public final static int                _C_SUBSYSTEM_MISMATCH = -168;
+    public final static AbstractReturnCode SUBSYSTEM_MISMATCH    = new ApiReturnCode(_C_SUBSYSTEM_MISMATCH, ACCESS_DENIED);
 
     public final static int                _C_SIGNATURE_ERROR = -180;
     public final static AbstractReturnCode SIGNATURE_ERROR    = new ApiReturnCode("签名错误", _C_SIGNATURE_ERROR);

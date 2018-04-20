@@ -66,6 +66,15 @@ public enum SecurityType {
     InternalUser(0x0400),
 
     /**
+     * 子系统用户认证. eg. 供应商系统用户
+     * 验证要素
+     * 1. 设备签名
+     * 2. 用户token
+     * 3. 子系统标识
+     */
+    SubSystemUser(0x1000),
+
+    /**
      * 第三方集成认证, 验证第三方证书签名
      */
     Integrated(0x00100000),
@@ -76,18 +85,9 @@ public enum SecurityType {
     Internal(0x00200000),
 
     /**
-     * 子系统用户认证. eg. 供应商系统用户
-     * 验证要素
-     * 1. 设备签名
-     * 2. 用户token
-     * 3. 子系统标识
-     */
-    SubSystem(0x00400000),
-
-    /**
      * 对于只需要生成文档不产生代理的接口,设置本安全级别(本安全级别无业务含义)
      */
-    Document(0x80000000);
+    Document(0xF0000000);
 
     private int code;
 
@@ -133,20 +133,20 @@ public enum SecurityType {
         return auth == 0;
     }
 
-    private static final int EXPIRABLE = OAuthVerified.code | User.code | UserLogin.code | SeceretUserToken.code;
+    private static final int EXPIRABLE = OAuthVerified.code | User.code | UserLogin.code | SeceretUserToken.code | SubSystemUser.code;
 
     /**
-     * 判断auth是否会过期, 包含 OAuthVerified, User, UserLogin, SeceretUserToken
+     * 判断auth是否会过期, 包含 OAuthVerified, User, UserLogin, SeceretUserToken, SubSystemUser
      * 其中之一的auth都可能会过期
      */
     public static boolean expirable(int auth) {
         return (auth & EXPIRABLE) != 0;
     }
 
-    private static final int TOKEN_REQUIRED = RegisteredDevice.code | OAuthVerified.code | User.code | UserLogin.code;
+    private static final int TOKEN_REQUIRED = RegisteredDevice.code | OAuthVerified.code | User.code | UserLogin.code | SubSystemUser.code;
 
     /**
-     * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserLogin
+     * 判断auth是否需要验证token, 包含 OAuthVerified, RegisteredDevice, User, UserLogin, SubSystemUser
      */
     public static boolean requireToken(int auth) {
         return (auth & TOKEN_REQUIRED) != 0;

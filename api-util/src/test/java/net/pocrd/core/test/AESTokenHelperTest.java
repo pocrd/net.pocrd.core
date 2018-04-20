@@ -20,7 +20,7 @@ public class AESTokenHelperTest {
         AESTokenHelper th = new AESTokenHelper(tokenPwd);
         CallerInfo ci = new CallerInfo();
         ci.expire = 987654321;
-        ci.subSystem = "TTT";
+        ci.subSystemId = 333;
         ci.subSystemRole = "TEST";
         ci.subSystemMainId = 123456789012345L;
         ci.key = "1111111".getBytes(ConstField.UTF8);
@@ -31,7 +31,7 @@ public class AESTokenHelperTest {
         System.out.println(token);
         CallerInfo caller = th.parseToken(token);
         assertEquals(ci.expire, caller.expire);
-        assertEquals(ci.subSystem, caller.subSystem);
+        assertEquals(ci.subSystemId, caller.subSystemId);
         assertEquals(ci.subSystemRole, caller.subSystemRole);
         assertEquals(ci.subSystemMainId, caller.subSystemMainId);
         assertTrue(Arrays.equals(ci.key, caller.key));
@@ -46,7 +46,7 @@ public class AESTokenHelperTest {
         final AESTokenHelper th = new AESTokenHelper(tokenPwd);
         final CallerInfo ci = new CallerInfo();
         ci.expire = 987654321;
-        ci.subSystem = "TTT";
+        ci.subSystemId = 333;
         ci.subSystemRole = "TEST";
         ci.subSystemMainId = 123456789012345L;
         ci.key = "1111111".getBytes(ConstField.UTF8);
@@ -62,7 +62,7 @@ public class AESTokenHelperTest {
                 String token = th.generateToken(ci);
                 CallerInfo caller = th.parseToken(token);
                 assertEquals(ci.expire, caller.expire);
-                assertEquals(ci.subSystem, caller.subSystem);
+                assertEquals(ci.subSystemId, caller.subSystemId);
                 assertEquals(ci.subSystemRole, caller.subSystemRole);
                 assertEquals(ci.subSystemMainId, caller.subSystemMainId);
                 assertTrue(Arrays.equals(ci.key, caller.key));
@@ -82,7 +82,7 @@ public class AESTokenHelperTest {
         callerInfo.deviceId = 123456789L;
         callerInfo.expire = System.currentTimeMillis() + 10000000000L;
         callerInfo.key = "demo key".getBytes(ConstField.UTF8);
-        callerInfo.subSystem = "TTT";
+        callerInfo.subSystemId = 555;
         callerInfo.subSystemRole = "TEST";
         callerInfo.subSystemMainId = 123456789012345L;
         callerInfo.securityLevel = SecurityType.RegisteredDevice.authorize(0);
@@ -91,7 +91,7 @@ public class AESTokenHelperTest {
         System.out.println("tk:" + tk);
         CallerInfo callerInfo1 = aesTokenHelper.parseToken(tk);
         assertEquals(callerInfo.uid, callerInfo1.uid);
-        assertEquals(callerInfo.subSystem, callerInfo.subSystem);
+        assertEquals(callerInfo.subSystemId, callerInfo.subSystemId);
         assertEquals(callerInfo.subSystemRole, callerInfo.subSystemRole);
         assertEquals(callerInfo.subSystemMainId, callerInfo.subSystemMainId);
         assertEquals(callerInfo.appid, callerInfo1.appid);

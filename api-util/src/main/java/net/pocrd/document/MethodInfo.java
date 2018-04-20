@@ -22,8 +22,8 @@ public class MethodInfo implements Serializable {
     public String              securityLevel;
     @Description("接口分组名")
     public String              groupName;
-    @Description("接口所属子系统")
-    public String              subSystem;
+    @Description("接口所属子系统id")
+    public int                 subSystemId;
     @Description("接口可用状态")
     public String              state;
     @Description("接口返回值类型结构描述")

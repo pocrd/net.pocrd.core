@@ -20,7 +20,7 @@ public class CallerInfo implements Serializable {
     public long   deviceId;                 // 设备编号
     public long   uid;                      // 用户编号
     public byte[] key;                      // 设备身份公钥
-    public String subSystem;                // 子系统名称(可选)
+    public int    subSystemId;                // 子系统名称(可选)
     public String subSystemRole;            // 子系统角色(可选)
     public long subSystemMainId = Long.MIN_VALUE;          // 子系统主键(可选)
 

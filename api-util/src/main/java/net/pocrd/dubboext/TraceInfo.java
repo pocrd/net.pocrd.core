@@ -26,7 +26,7 @@ public class TraceInfo {
     public String sysinfo;
 
     /**
-     * 用户信息 userid|oauthid|role|extinfo
+     * 用户信息 userid|oauthid|extinfo
      */
     public String userinfo;
 

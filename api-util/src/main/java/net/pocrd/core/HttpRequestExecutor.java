@@ -114,9 +114,9 @@ public class HttpRequestExecutor {
             MDC.clear();
             apiContext.clear();
             apiContext.startTime = current;
-            parseCommonParameter(apiContext, request, response);
-            setResponseHeader(request, response, apiContext);
-            parseResult = parseMethodInfo(apiContext, request);
+            parseCommonParameter(request, response);
+            setResponseHeader(request, response);
+            parseResult = parseMethodInfo(request);
             // 验证token是否过期
             if (parseResult == ApiReturnCode.SUCCESS && apiContext.caller != null
                     && SecurityType.expirable(apiContext.requiredSecurity)) {
@@ -157,7 +157,7 @@ public class HttpRequestExecutor {
                         executeAllApiCall(apiContext.lv3ApiCalls, request, response);
                     }
                     for (ApiMethodCall call : apiContext.apiCalls) {
-                        serializeCallResult(apiContext, call);
+                        serializeCallResult(call);
                     }
                 } finally {
                     apiContext.costTime = (int)(System.currentTimeMillis() - apiContext.startTime);
@@ -248,13 +248,12 @@ public class HttpRequestExecutor {
                     response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Bad Request");
                 } else if (parseResult != ApiReturnCode.SUCCESS) {
                     // 访问被拒绝(如签名验证失败)
-                    Exception e = output(apiContext, parseResult, EMPTY_METHOD_CALL_ARRAY, response);
+                    Exception e = output(parseResult, EMPTY_METHOD_CALL_ARRAY, response);
                     if (e != null) {
                         logger.error("output failed.", e);
                     }
                 } else {
-                    Exception e = output(apiContext, ApiReturnCode.SUCCESS,
-                            apiContext.apiCalls.toArray(new ApiMethodCall[apiContext.apiCalls.size()]), response);
+                    Exception e = output(ApiReturnCode.SUCCESS, apiContext.apiCalls.toArray(new ApiMethodCall[apiContext.apiCalls.size()]), response);
                     if (e != null) {
                         logger.error("output failed.", e);
                     }
@@ -267,7 +266,27 @@ public class HttpRequestExecutor {
         }
     }
 
+    /**
+     * 子类中可以扩展验证用户权限的方式
+     */
     protected AbstractReturnCode checkAuthorization(ApiContext context, int authTarget, HttpServletRequest request) {
+        CallerInfo caller = context.caller;
+
+        if (SecurityType.isNone(authTarget)) {// 不进行权限控制
+            return ApiReturnCode.SUCCESS;
+        }
+
+        if ((authTarget & caller.securityLevel) != authTarget) {
+            logger.error("securityLevel missmatch. expact:" + authTarget + " actual:" + caller.securityLevel);
+            return ApiReturnCode.SECURITY_LEVEL_MISMATCH;
+        }
+        return ApiReturnCode.SUCCESS;
+    }
+
+    /**
+     * 子类中可以扩展校验子系统角色是否可以访问当前请求的接口
+     */
+    protected AbstractReturnCode checkSubSystemRole(ApiContext context, int authTarget, HttpServletRequest request) {
         return ApiReturnCode.SUCCESS;
     }
 
@@ -295,17 +314,17 @@ public class HttpRequestExecutor {
             TraceInfo.setTraceInfo(
                     new TraceInfo(context.cid,
                             context.appid + "|" + context.deviceIdStr + "|" + context.versionCode + "|" + context.clientIP,
-                            context.caller == null ? null : context.caller.uid + "|" + context.caller.subSystem + "|" + context.caller.subSystemRole
+                            context.caller == null ? null : context.caller.uid + "|" + context.caller.subSystemId + "|" + context.caller.subSystemRole
                                     + "|" + context.caller.subSystemMainId)
             );
         }
     }
 
-    private AbstractReturnCode parseMethodDependency(ApiContext context, String nameString) {
+    private AbstractReturnCode parseMethodDependency(String nameString) {
         if (nameString != null && nameString.length() > 0) {
             // 解析多个由','拼接的api名. api名由3个部分组成 函数名@实例名:依赖函数名1@实例名/依赖函数名2@实例名  除了函数名以外的信息都可以缺省.
             String[] names = nameString.split(",");
-            List<ApiMethodCall> apiCallList = context.apiCalls = new ArrayList<>(names.length);
+            List<ApiMethodCall> apiCallList = apiContext.apiCalls = new ArrayList<>(names.length);
             Map<String, ApiMethodCall> apiCallMap = new HashMap<>(names.length);
             // 检测当前安全级别是否允许调用请求中的所有api
             for (int m = 0; m < names.length; m++) {
@@ -327,7 +346,7 @@ public class HttpRequestExecutor {
                         }
                     }
                     // 本接口只允许加密调用
-                    if (method.encryptionOnly && !context.isSSL) {
+                    if (method.encryptionOnly && !apiContext.isSSL) {
                         return ApiReturnCode.UNKNOW_ENCRYPTION_DENIED;
                     }
                     ApiMethodCall call = new ApiMethodCall(method);
@@ -344,10 +363,10 @@ public class HttpRequestExecutor {
                 ApiMethodCall call = apiCallList.get(m);
                 String[] dependentMethods = fullName.contains(":") ? fullName.substring(fullName.indexOf(":") + 1).split("/") : null;
                 if (dependentMethods != null) {
-                    if (context.lv2ApiCalls == null) {
-                        context.lv2ApiCalls = new LinkedList<>();
+                    if (apiContext.lv2ApiCalls == null) {
+                        apiContext.lv2ApiCalls = new LinkedList<>();
                     }
-                    context.lv2ApiCalls.add(call);
+                    apiContext.lv2ApiCalls.add(call);
                     call.dependencies = new ArrayList<>(1);
                     for (String methodName : dependentMethods) {
                         ApiMethodCall c = apiCallMap.get(methodName);
@@ -360,16 +379,16 @@ public class HttpRequestExecutor {
             }
 
             // 遍历 lv2ApiCalls, 将其中有两层依赖关系的请求加入到 lv3ApiCalls
-            if (context.lv2ApiCalls != null) {
-                for (ApiMethodCall call : context.lv2ApiCalls) {
+            if (apiContext.lv2ApiCalls != null) {
+                for (ApiMethodCall call : apiContext.lv2ApiCalls) {
                     ApiMethodCall lastLv3Call = null;
                     for (ApiMethodCall c : call.dependencies) {
                         if (c.dependencies != null) {
-                            if (context.lv3ApiCalls == null) {
-                                context.lv3ApiCalls = new LinkedList<>();
+                            if (apiContext.lv3ApiCalls == null) {
+                                apiContext.lv3ApiCalls = new LinkedList<>();
                             }
                             if (lastLv3Call != call) {
-                                context.lv3ApiCalls.add(call);
+                                apiContext.lv3ApiCalls.add(call);
                             }
                             lastLv3Call = call;
                             // 检测请求中的调用依赖层次是否超过三层
@@ -386,9 +405,9 @@ public class HttpRequestExecutor {
             }
 
             // 将 lv3ApiCalls 中的所有项从 lv2ApiCalls 中移除
-            if (context.lv3ApiCalls != null) {
-                for (ApiMethodCall call : context.lv3ApiCalls) {
-                    context.lv2ApiCalls.remove(call);
+            if (apiContext.lv3ApiCalls != null) {
+                for (ApiMethodCall call : apiContext.lv3ApiCalls) {
+                    apiContext.lv2ApiCalls.remove(call);
                 }
             }
 
@@ -397,19 +416,23 @@ public class HttpRequestExecutor {
         return ApiReturnCode.REQUEST_PARSE_ERROR;
     }
 
-    private AbstractReturnCode parseMethodInfo(ApiContext context, HttpServletRequest request) {
-        context.isSSL = CommonConfig.getInstance().getInternalPort() == request.getLocalPort();
+    private AbstractReturnCode parseMethodInfo(HttpServletRequest request) {
+        apiContext.isSSL = CommonConfig.getInstance().getInternalPort() == request.getLocalPort();
         String nameString = request.getParameter(CommonParameter.method);
-        AbstractReturnCode code = parseMethodDependency(context, nameString);
+        AbstractReturnCode code = parseMethodDependency(nameString);
         if (code != ApiReturnCode.SUCCESS) {
             return code;
         }
-        List<ApiMethodCall> apiCallList = context.apiCalls;
+        List<ApiMethodCall> apiCallList = apiContext.apiCalls;
         int length = apiCallList.size();
+        int callerSubSystemId = apiContext.caller == null ? 0 : apiContext.caller.subSystemId;
 
         for (int m = 0; m < length; m++) {
             ApiMethodCall call = apiCallList.get(m);
             ApiMethodInfo method = call.method;
+            if (method.subSystemId > 0 && method.subSystemId != callerSubSystemId) {
+                return ApiReturnCode.SUBSYSTEM_MISMATCH;
+            }
             if (length == 1) {
                 call.businessId = request.getParameter(CommonParameter.businessId);
             } else {
@@ -417,7 +440,7 @@ public class HttpRequestExecutor {
             }
             // 解析业务参数使其对应各自业务api
             String[] parameters = new String[method.parameterInfos.length];
-            context.requiredSecurity = method.securityLevel.authorize(context.requiredSecurity);
+            apiContext.requiredSecurity = method.securityLevel.authorize(apiContext.requiredSecurity);
             for (int i = 0; i < parameters.length; i++) {
                 ApiParameterInfo ap = method.parameterInfos[i];
                 if (ap.isAutowired) {
@@ -426,30 +449,42 @@ public class HttpRequestExecutor {
                     } else {
                         switch (AutowireableParameter.valueOf(ap.name)) {
                             case appid:
-                                parameters[i] = context.caller != null ? String.valueOf(context.caller.appid)
-                                        : method.securityLevel.authorize(0) == 0 ? context.appid : "-1";
+                                parameters[i] = apiContext.caller != null ? String.valueOf(apiContext.caller.appid)
+                                        : method.securityLevel.authorize(0) == 0 ? apiContext.appid : "-1";
                                 break;
                             case deviceid:
-                                parameters[i] = context.caller != null ? String.valueOf(context.caller.deviceId)
-                                        : method.securityLevel.authorize(0) == 0 ? context.deviceIdStr : "-1";
+                                parameters[i] = apiContext.caller != null ? String.valueOf(apiContext.caller.deviceId)
+                                        : method.securityLevel.authorize(0) == 0 ? apiContext.deviceIdStr : "-1";
                                 break;
                             case userid:
-                                parameters[i] = context.caller != null ? String.valueOf(context.caller.uid) : "-1";
+                                parameters[i] = apiContext.caller != null ? String.valueOf(apiContext.caller.uid) : "-1";
+                                break;
+                            case subSystemRole:
+                                parameters[i] = apiContext.caller != null ? String.valueOf(apiContext.caller.subSystemRole) : "";
+                                break;
+                            case subSystemMainId:
+                                parameters[i] = apiContext.caller != null ? String.valueOf(apiContext.caller.subSystemMainId) : "-1";
                                 break;
                             case userAgent:
-                                parameters[i] = context.agent;
+                                parameters[i] = apiContext.agent;
                                 break;
                             case cookies:
                                 Map<String, String> map = new HashMap<String, String>(ap.names.length);
                                 for (String n : ap.names) {
-                                    String v = context.getCookie(n);
+                                    // 对于要求cookie注入的参数, 首先在表单中寻找, 因为不使用cookie的客户端会在表单中传递相关数据, 且约定表单中数据优先级高
+                                    // 表单中的通用参数都为 '_' 开头
+                                    String _n = n.startsWith("_") ? n : "_" + n;
+                                    String v = request.getParameter(_n);
+                                    if (v == null) {
+                                        v = apiContext.getCookie(n);
+                                    }
                                     if (v != null) {
                                         map.put(n, v);
                                     }
                                 }
                                 parameters[i] = JSON.toJSONString(map);
                                 break;
-                            case businessid:
+                            case businessId:
                                 parameters[i] = call.businessId;
                                 break;
                             case postBody:
@@ -457,7 +492,7 @@ public class HttpRequestExecutor {
                                     String contentType = request.getHeader("Content-Type");
                                     if (contentType == null || contentType.length() == 0 || contentType
                                             .startsWith("application/x-www-form-urlencoded")) {
-                                        parameters[i] = context.recoverRequestBody();
+                                        parameters[i] = apiContext.recoverRequestBody();
                                     } else {
                                         parameters[i] = readPostBody(request);
                                     }
@@ -467,25 +502,25 @@ public class HttpRequestExecutor {
                                 parameters[i] = request.getParameter(CommonParameter.channel);
                                 break;
                             case thirdPartyId:
-                                parameters[i] = context.thirdPartyId;
+                                parameters[i] = apiContext.thirdPartyId;
                                 break;
                             case versionCode:
-                                parameters[i] = context.versionCode;
+                                parameters[i] = apiContext.versionCode;
                                 break;
                             case referer:
-                                parameters[i] = context.referer;
+                                parameters[i] = apiContext.referer;
                                 break;
                             case host:
-                                parameters[i] = context.host;
+                                parameters[i] = apiContext.host;
                                 break;
                             case token:
-                                parameters[i] = context.token;
+                                parameters[i] = apiContext.token;
                                 break;
-                            case stoken:
-                                parameters[i] = context.stoken;
+                            case secretToken:
+                                parameters[i] = apiContext.stoken;
                                 break;
                             case clientIP:
-                                parameters[i] = context.clientIP;
+                                parameters[i] = apiContext.clientIP;
                                 break;
                             case serviceInjection:
                                 // Do nothing
@@ -502,8 +537,7 @@ public class HttpRequestExecutor {
                     // 如果参数被标记为加密传输的，那么当其为必填或不为空的时候需要被解密后传送到业务端
                     if (ap.isRsaEncrypted && (ap.isRequired || parameters[i] != null)) {
                         try {
-                            parameters[i] = new String(rsaDecryptHelper.decrypt(Base64Util.decode(parameters[i])),
-                                    ConstField.UTF8);
+                            parameters[i] = new String(rsaDecryptHelper.decrypt(Base64Util.decode(parameters[i])), ConstField.UTF8);
                         } catch (Exception e) {
                             return ApiReturnCode.PARAMETER_DECRYPT_ERROR;
                         }
@@ -515,7 +549,7 @@ public class HttpRequestExecutor {
                     }
                 } else {
                     if (ap.ignoreForSecurity) {
-                        context.ignoreParameterForSecurity(ap.name);
+                        apiContext.ignoreParameterForSecurity(ap.name);
                     } else if (parameters[i] != null) {
                         call.message.append(ap.name).append('=').append(parameters[i].replace('\n', ' ')).append('&');
                     }
@@ -526,36 +560,41 @@ public class HttpRequestExecutor {
 
         // 调试环境下为带有特殊标识的访问者赋予测试者身份
         if (CompileConfig.isDebug) {
-            if ((context.agent != null && context.agent.contains(DEBUG_AGENT))) {
-                if (context.caller == null) {
-                    context.caller = CallerInfo.TESTER;
+            if ((apiContext.agent != null && apiContext.agent.contains(DEBUG_AGENT))) {
+                if (apiContext.caller == null) {
+                    apiContext.caller = CallerInfo.TESTER;
                 }
                 return ApiReturnCode.SUCCESS;
             }
         }
 
         //Integrate None Internal级别接口不具备用户身份
-        if (SecurityType.requireToken(context.requiredSecurity)) {
+        if (SecurityType.requireToken(apiContext.requiredSecurity)) {
             // 默认验证 RegisteredDevice
-            context.requiredSecurity = SecurityType.RegisteredDevice.authorize(context.requiredSecurity);
-            if (context.caller == null) {
+            apiContext.requiredSecurity = SecurityType.RegisteredDevice.authorize(apiContext.requiredSecurity);
+            if (apiContext.caller == null) {
                 return ApiReturnCode.TOKEN_ERROR;
             }
         }
 
-        if (SecurityType.Integrated.check(context.requiredSecurity)) {
-            if (context.apiCalls.size() != 1) {
+        if (SecurityType.Integrated.check(apiContext.requiredSecurity)) {
+            if (apiContext.apiCalls.size() != 1) {
                 return ApiReturnCode.ACCESS_DENIED;
             }
             // 签名验证，用于防止中间人攻击
-            if (!checkIntegratedSignature(context, request)) {
+            if (!checkIntegratedSignature(apiContext, request)) {
                 return ApiReturnCode.SIGNATURE_ERROR;
             }
-        } else if (!checkSignature(context.caller, context.requiredSecurity, request)) {
+        } else if (!checkSignature(apiContext.caller, apiContext.requiredSecurity, request)) {
             return ApiReturnCode.SIGNATURE_ERROR;
         }
 
-        return checkAuthorization(context, context.requiredSecurity, request);
+        code = checkAuthorization(apiContext, apiContext.requiredSecurity, request);
+        if (code != ApiReturnCode.SUCCESS) {
+            return code;
+        }
+
+        return checkSubSystemRole(apiContext, apiContext.requiredSecurity, request);
     }
 
     private Object processCall(String name, String[] params) {
@@ -624,7 +663,7 @@ public class HttpRequestExecutor {
         return apiManager.processRequest(name, params);
     }
 
-    private void setResponseHeader(HttpServletRequest request, HttpServletResponse response, ApiContext context) {
+    private void setResponseHeader(HttpServletRequest request, HttpServletResponse response) {
         //解决H5跨域问题
         {
             String origin = request.getHeader("Origin");
@@ -637,9 +676,9 @@ public class HttpRequestExecutor {
 
         // 设置response 的content type
         {
-            switch (context.format) {
+            switch (apiContext.format) {
                 case JSON:
-                    if (context.jsonpCallback == null) {
+                    if (apiContext.jsonpCallback == null) {
                         response.setContentType(CONTENT_TYPE_JSON);
                     } else {
                         response.setContentType(CONTENT_TYPE_JAVASCRIPT);
@@ -655,45 +694,45 @@ public class HttpRequestExecutor {
         }
 
         {
-            if (context.deviceIdStr != null && context.deviceIdStr.length() > 0) {
+            if (apiContext.deviceIdStr != null && apiContext.deviceIdStr.length() > 0) {
                 try {
-                    long did = Long.parseLong(context.deviceIdStr);
-                    context.deviceId = did;
+                    long did = Long.parseLong(apiContext.deviceIdStr);
+                    apiContext.deviceId = did;
 
                     // user token 解析失败，删除 cookie 中的 user token
-                    if (context.token != null && context.caller == null) {
-                        context.clearUserToken = true;
+                    if (apiContext.token != null && apiContext.caller == null) {
+                        apiContext.clearUserToken = true;
                     }
                 } catch (Exception e) {
-                    logger.error("deviceId error " + context.deviceIdStr, e);
-                    setDeviceIDinCookie(context, response);
+                    logger.error("deviceId error " + apiContext.deviceIdStr, e);
+                    setDeviceIDinCookie(response);
                 }
             } else {
-                setDeviceIDinCookie(context, response);
+                setDeviceIDinCookie(response);
             }
         }
     }
 
-    private void setDeviceIDinCookie(ApiContext context, HttpServletResponse response) {
-        if (context.appid == null) {
+    private void setDeviceIDinCookie(HttpServletResponse response) {
+        if (apiContext.appid == null) {
             return;
         }
-        context.deviceId = -(1_000_000_000_000_000L + ((long)(Math.random() * 9_000_000_000_000_000L)));
-        context.deviceIdStr = String.valueOf(context.deviceId);
-        MDC.put(CommonParameter.deviceId, context.deviceIdStr);
+        apiContext.deviceId = -(1_000_000_000_000_000L + ((long)(Math.random() * 9_000_000_000_000_000L)));
+        apiContext.deviceIdStr = String.valueOf(apiContext.deviceId);
+        MDC.put(CommonParameter.deviceId, apiContext.deviceIdStr);
         HashMap<String, String> map = CommonConfig.getInstance().getOriginWhiteList();
-        Cookie deviceId_cookie = new Cookie(CommonParameter.cookieDeviceId, context.deviceIdStr);
+        Cookie deviceId_cookie = new Cookie(CommonParameter.cookieDeviceId, apiContext.deviceIdStr);
         deviceId_cookie.setMaxAge(Integer.MAX_VALUE);
         deviceId_cookie.setSecure(false);
         deviceId_cookie.setPath("/");
-        if (context.host != null && map.containsKey(context.host)) {
-            deviceId_cookie.setDomain(map.get(context.host));
+        if (apiContext.host != null && map.containsKey(apiContext.host)) {
+            deviceId_cookie.setDomain(map.get(apiContext.host));
         }
         response.addCookie(deviceId_cookie);
     }
 
     @SuppressWarnings("unchecked")
-    private void serializeCallResult(ApiContext apiContext, ApiMethodCall call) throws IOException {
+    private void serializeCallResult(ApiMethodCall call) throws IOException {
         int oldSize = apiContext.outputStream.size();
         try {
             switch (apiContext.format) {
@@ -747,91 +786,79 @@ public class HttpRequestExecutor {
     /**
      * 解析参数以及cookie中的信息，这里返回任何预定义的错误信息
      */
-    private void parseCommonParameter(ApiContext context, HttpServletRequest request, HttpServletResponse response) {
+    private void parseCommonParameter(HttpServletRequest request, HttpServletResponse response) {
         // 解析通用参数
         {
-            context.agent = request.getHeader(USER_AGENT);
-            context.referer = request.getHeader(REFERER);
-            context.clientIP = MiscUtil.getClientIP(request);
-            context.cid = request.getParameter(CommonParameter.callId);
-            if (context.cid != null && context.cid.length() > 32) {
-                context.cid = context.cid.substring(0, 32);
+            apiContext.agent = request.getHeader(USER_AGENT);
+            apiContext.referer = request.getHeader(REFERER);
+            apiContext.clientIP = MiscUtil.getClientIP(request);
+            apiContext.cid = request.getParameter(CommonParameter.callId);
+            if (apiContext.cid != null && apiContext.cid.length() > 32) {
+                apiContext.cid = apiContext.cid.substring(0, 32);
             }
-            if (context.cid == null) {
-                context.cid = SERVER_ADDRESS + CommonConfig.getInstance().getServerAddress()
+            if (apiContext.cid == null) {
+                apiContext.cid = SERVER_ADDRESS + CommonConfig.getInstance().getServerAddress()
                         + SPLIT + THREADID + Thread.currentThread().getId()
-                        + SPLIT + REQ_TAG + context.startTime;
+                        + SPLIT + REQ_TAG + apiContext.startTime;
             }
-            context.host = request.getHeader("host");
-            context.versionCode = request.getParameter(CommonParameter.versionCode);
-            context.deviceIdStr = request.getParameter(CommonParameter.deviceId);
-            context.uid = request.getParameter(CommonParameter.userId);
+            apiContext.host = request.getHeader("host");
+            apiContext.versionCode = request.getParameter(CommonParameter.versionCode);
+            apiContext.deviceIdStr = request.getParameter(CommonParameter.deviceId);
+            apiContext.uid = request.getParameter(CommonParameter.userId);
             String jsonpCallback = request.getParameter(CommonParameter.jsonpCallback);
-            context.token = request.getParameter(CommonParameter.token);
+            apiContext.token = request.getParameter(CommonParameter.token);
             if (jsonpCallback != null) {
-                if (context.callbackRegex.matcher(jsonpCallback).matches()) {
-                    context.jsonpCallback = jsonpCallback.getBytes(ConstField.UTF8);
+                if (apiContext.callbackRegex.matcher(jsonpCallback).matches()) {
+                    apiContext.jsonpCallback = jsonpCallback.getBytes(ConstField.UTF8);
                 } else {
                     logger.error("unsupported callback name : " + jsonpCallback);
                 }
             }
-            MDC.put(CommonParameter.callId, context.cid);
-            MDC.put("_cip", context.clientIP);
-            if (context.deviceIdStr != null) {
-                MDC.put(CommonParameter.deviceId, context.deviceIdStr);
+            MDC.put(CommonParameter.callId, apiContext.cid);
+            MDC.put("_cip", apiContext.clientIP);
+            if (apiContext.deviceIdStr != null) {
+                MDC.put(CommonParameter.deviceId, apiContext.deviceIdStr);
             }
         }
 
         //应用编号,
         {
-            context.appid = request.getParameter(CommonParameter.applicationId);
-            MDC.put(CommonParameter.applicationId, context.appid);
+            apiContext.appid = request.getParameter(CommonParameter.applicationId);
+            MDC.put(CommonParameter.applicationId, apiContext.appid);
         }
 
         {
             // 优先使用 url 中的 userToken 和 deviceId
             Cookie[] cs = request.getCookies();
             if (cs != null) {
-                String tokenName = context.appid + CommonParameter.token;
-                String stokenName = context.appid + CommonParameter.stoken;
+                String tokenName = apiContext.appid + CommonParameter.token;
+                String stokenName = apiContext.appid + CommonParameter.stoken;
                 for (Cookie c : cs) {
                     if (tokenName.equals(c.getName())) {
                         try {
-                            if (context.token == null && c.getValue() != null && !c.getValue().isEmpty()) {
-                                context.token = URLDecoder.decode(c.getValue(), "utf-8");
+                            if (apiContext.token == null && c.getValue() != null && !c.getValue().isEmpty()) {
+                                apiContext.token = URLDecoder.decode(c.getValue(), "utf-8");
                             }
                         } catch (Exception e) {
                             logger.error("token in cookie error " + c.getValue(), e);
-                            context.clearUserToken = true;
+                            apiContext.clearUserToken = true;
                         }
                     } else if (stokenName.equals(c.getName())) {
                         try {
-                            if (context.stoken == null && c.getValue() != null && !c.getValue().isEmpty()) {
-                                context.stoken = URLDecoder.decode(c.getValue(), "utf-8");
+                            if (apiContext.stoken == null && c.getValue() != null && !c.getValue().isEmpty()) {
+                                apiContext.stoken = URLDecoder.decode(c.getValue(), "utf-8");
                             }
                         } catch (Exception e) {
                             logger.error("stoken in cookie error " + c.getValue(), e);
-                            context.clearUserToken = true;
+                            apiContext.clearUserToken = true;
                         }
                     } else if (CommonParameter.cookieDeviceId.equals(c.getName())) {
-                        if (context.deviceIdStr == null) {
-                            context.deviceIdStr = c.getValue();
-                            MDC.put(CommonParameter.deviceId, context.deviceIdStr);
+                        if (apiContext.deviceIdStr == null) {
+                            apiContext.deviceIdStr = c.getValue();
+                            MDC.put(CommonParameter.deviceId, apiContext.deviceIdStr);
                         }
                     } else {
-                        context.addCookie(c.getName(), c.getValue());
-                    }
-                }
-            }
-
-            // 优先使用url中覆写的 cookie 值 TODO:奇怪的设计,考虑干掉
-            String cookies = request.getParameter(AutowireableParameter.cookies.name());
-            if (cookies != null && cookies.length() > 0) {
-                String[] cos = cookies.split(";");
-                for (String c : cos) {
-                    int index = c.indexOf('=');
-                    if (index > 0 && index != c.length()) {
-                        context.addCookie(c.substring(0, index).trim(), c.substring(index + 1));
+                        apiContext.addCookie(c.getName(), c.getValue());
                     }
                 }
             }
@@ -839,62 +866,62 @@ public class HttpRequestExecutor {
 
         //集成第三方的编号，这个编号没有太高的安全性要求，采用明文方式传输即可
         {
-            context.thirdPartyId = request.getParameter(CommonParameter.thirdPartyId);
+            apiContext.thirdPartyId = request.getParameter(CommonParameter.thirdPartyId);
         }
 
         // 确定返回的错误提示信息语言
         {
-            context.location = request.getParameter(CommonParameter.location);
+            apiContext.location = request.getParameter(CommonParameter.location);
         }
 
         // 构造请求字符串用于日志记录
         {
-            parseRequestInfo(context, request);
+            parseRequestInfo(request);
         }
 
         // 确定返回值的序列化类型
         {
-            parseFormatType(context, request);
+            parseFormatType(request);
         }
 
         // 解析调用者身份(在验证签名正确前此身份不受信任)
         {
-            parseCallerInfo(context);
+            parseCallerInfo(apiContext);
         }
     }
 
     /**
      * 构造请求字符串用于日志记录
      */
-    private void parseRequestInfo(ApiContext context, HttpServletRequest request) {
+    private void parseRequestInfo(HttpServletRequest request) {
         Map<String, String[]> map = request.getParameterMap();
-        context.requestInfo = new HashMap<String, String>();
+        apiContext.requestInfo = new HashMap<String, String>();
         for (String key : map.keySet()) {
             String[] values = map.get(key);
             if (values.length > 1) {
                 logger.error("parameter " + key + " has " + values.length + " values " + StringUtils.join(values, "|||"));
             }
-            context.requestInfo.put(key, (values == null || values.length == 0) ? "" : values[0]);
+            apiContext.requestInfo.put(key, (values == null || values.length == 0) ? "" : values[0]);
         }
     }
 
     /**
      * 确定返回值的序列化类型
      */
-    private void parseFormatType(ApiContext context, HttpServletRequest request) {
+    private void parseFormatType(HttpServletRequest request) {
         String format = request.getParameter(CommonParameter.format);
         if (format != null && format.length() > 0) {
             if (format.equals(FORMAT_XML)) {
-                context.format = SerializeType.XML;
+                apiContext.format = SerializeType.XML;
             } else if (format.equals(FORMAT_JSON)) {
-                context.format = SerializeType.JSON;
+                apiContext.format = SerializeType.JSON;
             } else if (format.equals(FORMAT_PLAINTEXT)) {
-                context.format = SerializeType.PAILNTEXT;
+                apiContext.format = SerializeType.PAILNTEXT;
             } else {
-                context.format = SerializeType.JSON;
+                apiContext.format = SerializeType.JSON;
             }
         } else {
-            context.format = SerializeType.JSON;
+            apiContext.format = SerializeType.JSON;
         }
     }
 
@@ -1217,7 +1244,7 @@ public class HttpRequestExecutor {
     /**
      * 输出返回到调用端
      */
-    private static Exception output(ApiContext apiContext, AbstractReturnCode code, ApiMethodCall[] calls, HttpServletResponse response) {
+    private Exception output(AbstractReturnCode code, ApiMethodCall[] calls, HttpServletResponse response) {
         Exception outputException = null;
 
         try {

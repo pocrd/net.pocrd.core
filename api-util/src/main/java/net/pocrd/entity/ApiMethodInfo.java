@@ -140,9 +140,9 @@ public class ApiMethodInfo {
     public String groupOwner;
 
     /**
-     * 子系统名称
+     * 子系统id
      */
-    public String subSystem;
+    public int subSystemId;
 
     /**
      * 是否授权接口

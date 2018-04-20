@@ -61,15 +61,8 @@ public class AESTokenHelper {
             }
 
             {
-                // subSystem
-                byte len = dis.readByte();
-                if (len > 0) {
-                    byte[] bs = new byte[len];
-                    if (len != dis.read(bs)) {
-                        return null;
-                    }
-                    caller.subSystem = new String(bs, ConstField.UTF8);
-                }
+                // subSystemId
+                caller.subSystemId = dis.readInt();
             }
 
             {
@@ -126,12 +119,8 @@ public class AESTokenHelper {
                 dos.write(caller.key);
             }
 
-            // subSystem
-            byte[] subSystem = caller.subSystem == null ? null : caller.subSystem.getBytes(ConstField.UTF8);
-            dos.writeByte(subSystem == null ? 0 : subSystem.length);
-            if (subSystem != null) {
-                dos.write(subSystem);
-            }
+            // subSystemId
+            dos.writeInt(caller.subSystemId);
 
             // subSystemRole
             byte[] subSystemRole = caller.subSystemRole == null ? null : caller.subSystemRole.getBytes(ConstField.UTF8);
@@ -178,62 +167,16 @@ public class AESTokenHelper {
         return null;
     }
 
+    /**
+     * 取 security level 的低12位bit作为标识。客户端只需要关注这个标识。
+     */
     private static StringBuilder toHax3(int value) {
         StringBuilder sb = new StringBuilder(50);
-        sb.append("000");
-        for (int i = 2; i >= 0; i--) {
-            switch (value % 16) {
-                case 0:
-                    sb.setCharAt(i, '0');
-                    break;
-                case 1:
-                    sb.setCharAt(i, '1');
-                    break;
-                case 2:
-                    sb.setCharAt(i, '2');
-                    break;
-                case 3:
-                    sb.setCharAt(i, '3');
-                    break;
-                case 4:
-                    sb.setCharAt(i, '4');
-                    break;
-                case 5:
-                    sb.setCharAt(i, '5');
-                    break;
-                case 6:
-                    sb.setCharAt(i, '6');
-                    break;
-                case 7:
-                    sb.setCharAt(i, '7');
-                    break;
-                case 8:
-                    sb.setCharAt(i, '8');
-                    break;
-                case 9:
-                    sb.setCharAt(i, '9');
-                    break;
-                case 10:
-                    sb.setCharAt(i, 'A');
-                    break;
-                case 11:
-                    sb.setCharAt(i, 'B');
-                    break;
-                case 12:
-                    sb.setCharAt(i, 'C');
-                    break;
-                case 13:
-                    sb.setCharAt(i, 'D');
-                    break;
-                case 14:
-                    sb.setCharAt(i, 'E');
-                    break;
-                case 15:
-                    sb.setCharAt(i, 'F');
-                    break;
-            }
-            value = value / 16;
+        String hax = Integer.toHexString(value % 0x1000);
+        for (int i = 3 - hax.length(); i > 0; i--) {
+            sb.append('0');
         }
+        sb.append(hax);
         return sb;
     }
 }

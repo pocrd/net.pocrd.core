@@ -179,7 +179,7 @@ public final class ApiManager {
                         subSystem = mInfo.getAnnotation(SubSystem.class);
                     }
                     if (subSystem != null) {
-                        apiInfo.subSystem = subSystem.value();
+                        apiInfo.subSystemId = subSystem.value();
                     }
                     if (authServer && AuthenticationService.AuthMethodSignature
                             .equals(mInfo.getName() + org.objectweb.asm.Type.getMethodDescriptor(mInfo))) {

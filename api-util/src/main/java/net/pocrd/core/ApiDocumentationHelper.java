@@ -62,9 +62,8 @@ public class ApiDocumentationHelper {
                     }
                 }
                 methodInfo.securityLevel = info.securityLevel.name();
-                // TODO: role check
                 methodInfo.groupOwner = info.groupOwner;
-                methodInfo.subSystem = info.subSystem;
+                methodInfo.subSystemId = info.subSystemId;
                 methodInfo.methodOwner = info.owner;
                 methodInfo.encryptionOnly = info.encryptionOnly;
                 methodInfo.needVerify = info.needVerfiy;
