@@ -1,5 +1,6 @@
 package net.pocrd.util;
 
+import net.pocrd.annotation.HttpDataMixer;
 import net.pocrd.define.ConstField;
 
 import java.io.File;
@@ -50,6 +51,23 @@ public class ClassUtil {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static List<Class<?>> getAllMixerClasses(JarFile jarFile, String packageName) throws ClassNotFoundException {
+        List<Class<?>> classes = new LinkedList<Class<?>>();
+        Enumeration<JarEntry> jarEntries = jarFile.entries();
+        while (jarEntries.hasMoreElements()) {
+            JarEntry jarEntry = jarEntries.nextElement();
+            String jarEntryName = jarEntry.getName(); // 类似：sun/security/internal/interfaces/TlsMasterSecret.class
+            String className = jarEntryName.replace("/", ".");
+            if (className.startsWith(packageName) && className.endsWith(".class") && !className.contains("$")) {
+                Class<?> clazz = loadClass(className.substring(0, className.length() - 6));
+                if (clazz.getAnnotation(HttpDataMixer.class) != null) {
+                    classes.add(clazz);
+                }
+            }
+        }
+        return classes;
     }
 
     private static List<Class<?>> findClasses(File directory, String packageName) throws ClassNotFoundException {

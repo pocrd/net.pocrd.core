@@ -11,6 +11,7 @@ public enum AutowireableParameter {
     subSystemMainId,
     userAgent,
     cookies,
+    headers, // TODO 支持 header 注入
     businessId,
     postBody,
     channel,

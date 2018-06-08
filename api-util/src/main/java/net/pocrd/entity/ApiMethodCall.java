@@ -36,6 +36,11 @@ public class ApiMethodCall {
     public List<ApiMethodCall> dependencies;
 
     /**
+     * 本次调用依赖的子系统授权接口调用
+     */
+    public ApiMethodCall dependsAuthCall = null;
+
+    /**
      * 本次调用返回的隐式返回值
      */
     public Map<String, String> exportParams;

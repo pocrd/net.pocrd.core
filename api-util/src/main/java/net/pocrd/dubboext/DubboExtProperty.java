@@ -28,12 +28,11 @@ public class DubboExtProperty {
      */
     public static void setCookieToken(String token, String stoken, int stkDuration) {
         RpcContext context = RpcContext.getContext();
-        if (token != null) {
-            context.setNotification(ConstField.SET_COOKIE_TOKEN, token);
+        if (token == null || stoken == null) {
+            throw new RuntimeException("token or stoken is null.");
         }
-        if (stoken != null) {
-            context.setNotification(ConstField.SET_COOKIE_STOKEN, stoken + "|" + stkDuration);
-        }
+        context.setNotification(ConstField.SET_COOKIE_TOKEN, token);
+        context.setNotification(ConstField.SET_COOKIE_STOKEN, stoken + "|" + stkDuration);
     }
 
     /**

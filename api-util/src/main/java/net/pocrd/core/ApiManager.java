@@ -25,20 +25,21 @@ import java.util.concurrent.ConcurrentHashMap;
 public final class ApiManager {
     private static final Logger                       logger      = LoggerFactory.getLogger(ApiManager.class);
     private              Map<String, HttpApiExecutor> nameToApi   = new ConcurrentHashMap<String, HttpApiExecutor>();
+    private              Map<String, ApiMixer>        nameToMixer = new ConcurrentHashMap<String, ApiMixer>();
     private              Map<String, ApiMethodInfo>   apiInfos    = new ConcurrentHashMap<String, ApiMethodInfo>();
     private static final String                       UNDER_SCORE = "_";
 
     public ApiManager() {
     }
 
-    public void register(List<ApiMethodInfo> apis) {
-        register("", apis);
+    public void register(List<ApiMethodInfo> apis, Object serviceInstance) {
+        register("", apis, serviceInstance);
     }
 
     /**
      * jarfilename用来定位是哪个jar包出的问题
      */
-    public void register(final String jarfilename, List<ApiMethodInfo> apis) {
+    public void register(final String jarfilename, List<ApiMethodInfo> apis, Object serviceInstance) {
         if (apis == null) {
             return;
         }
@@ -52,9 +53,14 @@ public final class ApiManager {
                         apiInfos.put(api.methodName, api);
                     }
                 }
+                api.serviceInstance = serviceInstance;
                 if (api.state == ApiOpenState.OPEN || api.state == ApiOpenState.DEPRECATED) {
                     apiInfos.put(api.methodName, api);
-                    nameToApi.put(api.methodName, HttpApiProvider.getApiExecutor(api.methodName, api));
+                    switch (api.type) {
+                        case DUBBO: nameToApi.put(api.methodName, HttpApiProvider.getApiExecutor(api.methodName, api)); break;
+                        case MIXER: nameToMixer.put(api.methodName, HttpMixerProvider.getMixerExecutor(api.methodName, api)); break;
+                        default: throw new RuntimeException("Unsupported api type : " + api.type);
+                    }
                 }
             }
         } catch (Throwable t) {
@@ -92,6 +98,10 @@ public final class ApiManager {
         return apiInfos.get(name).wrapper.wrap(nameToApi.get(name).execute(parameters));
     }
 
+    public final Object processMix(String name, Object[] parameters) {
+        return apiInfos.get(name).wrapper.wrap(nameToMixer.get(name).execute(parameters));
+    }
+
     /**
      * 是否是常量
      */
@@ -103,7 +113,62 @@ public final class ApiManager {
         return false;
     }
 
-    public static List<ApiMethodInfo> parseApi(Class<?> clazz, Object serviceInstance) {
+    public static ApiMethodInfo parseMixer(Class<?> clazz) {
+        HttpDataMixer mixer = clazz.getAnnotation(HttpDataMixer.class);
+        if (mixer == null) {
+            return null;
+        }
+        Method mixMethod = null;
+        for (Method m : clazz.getDeclaredMethods()) {
+            if ("mix".equals(m.getName())) {
+                if (mixMethod == null) {
+                    mixMethod = m;
+                } else {
+                    logger.warn("More than one mix method found in " + clazz.getName());
+                    return null;
+                }
+            }
+        }
+        if (mixMethod == null) {
+            logger.warn("None mix method found in " + clazz.getName());
+            return null;
+        }
+        if (!Modifier.isPublic(mixMethod.getModifiers()) || !Modifier.isStatic(mixMethod.getModifiers())) {
+            logger.warn("Mix method should be 'public' & 'static'. found in " + clazz.getName());
+            return null;
+        }
+        if (mixMethod.getParameterCount() == 0) {
+            logger.warn("Atleast one mix parameter" + clazz.getName());
+            return null;
+        }
+        ApiMethodInfo info = new ApiMethodInfo();
+        info.type = ApiMethodInfo.Type.MIXER;
+        info.methodName = mixer.name();
+        info.description = mixer.desc();
+        info.owner = mixer.owner();
+        info.returnType = mixMethod.getReturnType();
+        info.proxyMethodInfo = mixMethod;
+
+        parseReturnType(info, mixMethod, clazz);//返回结果解析,设置apiInfo.seriliazer,apiInfo.returnType, apiInfo.actuallyGenericType
+        //递归检查返回结果类型
+        TypeCheckUtil.recursiveCheckReturnType(clazz.getName(), info.returnType, info.actuallyGenericReturnType,
+                new SerializableImplChecker(), new DescriptionAnnotationChecker(),
+                new PublicFieldChecker());
+
+        Parameter[] params = mixMethod.getParameters();
+        ApiParameterInfo[] pInfos = new ApiParameterInfo[params.length];
+        for (int i = 0; i < params.length; i++) {
+            Parameter p = params[i];
+            ApiParameterInfo pInfo = new ApiParameterInfo();
+            pInfo.type = p.getType();
+            pInfo.name = p.getName();
+            pInfos[i] = pInfo;
+        }
+        info.parameterInfos = pInfos;
+        return info;
+    }
+
+    public static List<ApiMethodInfo> parseApi(Class<?> clazz) {
         ApiGroup groupAnnotation = clazz.getAnnotation(ApiGroup.class);
         if (groupAnnotation == null) {
             return null;
@@ -137,6 +202,7 @@ public final class ApiManager {
                 HttpApi api = mInfo.getAnnotation(HttpApi.class);
                 if (api != null) {
                     ApiMethodInfo apiInfo = new ApiMethodInfo();
+                    apiInfo.type = ApiMethodInfo.Type.DUBBO;
                     if (CompileConfig.isDebug) {
                         ApiMockReturnObject aro = mInfo.getAnnotation(ApiMockReturnObject.class);
                         if (aro != null) {
@@ -280,20 +346,6 @@ public final class ApiManager {
                         apiInfo.innerCodeMap = map;
                     }
                     apiInfo.proxyMethodInfo = mInfo;
-                    if (!CompileConfig.isDebug) {
-                        if (serviceInstance == null) {
-                            if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers())) {
-                                try {
-                                    apiInfo.serviceInstance = clazz.newInstance();
-                                } catch (Exception e) {
-                                    throw new RuntimeException("服务实例化失败" + clazz.getName(), e);
-                                }
-                            } else {
-                                throw new RuntimeException("服务实例不存在" + clazz.getName());
-                            }
-                        }
-                    }
-                    apiInfo.serviceInstance = serviceInstance;
                     Class<?>[] parameterTypes = mInfo.getParameterTypes();
                     Annotation[][] parameterAnnotations = mInfo.getParameterAnnotations();
                     if (parameterTypes.length != parameterAnnotations.length) {
@@ -449,7 +501,16 @@ public final class ApiManager {
                                     throw new RuntimeException("cookie名不能为空 " + api.name() + "  " + clazz.getName());
                                 }
                                 pInfo.name = AutowireableParameter.cookies.name();
-                                pInfo.names = p.value();
+                                pInfo.extInfos = p.value();
+                                pInfo.isAutowired = true;
+                                break;
+                            } else if (n.annotationType() == ApiHeaderAutowired.class) {
+                                ApiHeaderAutowired p = (ApiHeaderAutowired)n;
+                                if (p.value() == null || p.value().length == 0) {
+                                    throw new RuntimeException("header名不能为空 " + api.name() + "  " + clazz.getName());
+                                }
+                                pInfo.name = AutowireableParameter.headers.name();
+                                pInfo.extInfos = p.value();
                                 pInfo.isAutowired = true;
                                 break;
                             }

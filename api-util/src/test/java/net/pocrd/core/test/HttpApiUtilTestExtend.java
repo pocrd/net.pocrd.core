@@ -1,10 +1,6 @@
 package net.pocrd.core.test;
 
-import net.pocrd.annotation.ApiGroup;
-import net.pocrd.annotation.ApiParameter;
-import net.pocrd.annotation.Description;
-import net.pocrd.annotation.EnumDef;
-import net.pocrd.annotation.HttpApi;
+import net.pocrd.annotation.*;
 import net.pocrd.core.ApiManager;
 import net.pocrd.core.test.HttpApiUtilTest.RC;
 import net.pocrd.define.SecurityType;
@@ -31,7 +27,7 @@ public class HttpApiUtilTestExtend {
         public  List<Enum> enumList;
         @EnumDef(Enum.class)
         @Description("stringAsEnum")
-        public  String sEnum;
+        public  String     sEnum;
         @Description("private int")
         private int        intValue;
     }
@@ -57,34 +53,35 @@ public class HttpApiUtilTestExtend {
         @Description("string1")
         public String str;
     }
+
     @HttpApi(name = "test.test1", desc = "测试1", security = SecurityType.None, owner = "guankaiqiang")
     public int test1(
             @ApiParameter(required = false, name = "str1", desc = "testtest")
-            String str1,
+                    String str1,
             @ApiParameter(required = false, name = "str2", defaultValue = "", desc = "testtest")
-            String str2,
+                    String str2,
             @ApiParameter(required = false, name = "str3", defaultValue = "a", desc = "testtest")
-            String str3,
+                    String str3,
             @ApiParameter(required = false, defaultValue = "{\"str\":\"abcde\"}", name = "test", desc = "testtest")
-            Entity entity,
+                    Entity entity,
             @ApiParameter(required = false, defaultValue = "[{\"str\":\"abcde\"}]", name = "test3", desc = "testtest")
-            Entity1[] entity3,
+                    Entity1[] entity3,
             @ApiParameter(required = false, defaultValue = "[1, 2]", name = "test4", desc = "testtest")
-            int[] intArrray,
+                    int[] intArrray,
             @ApiParameter(required = false, defaultValue = "[\"str1\", \"str2\"]", name = "test5", desc = "testtest")
-            String[] strArray,
+                    String[] strArray,
             @ApiParameter(required = false, defaultValue = "[\"A\", \"C\"]", name = "eArray", desc = "testtest", enumDef = Enum.class)
-            String[] eArray,
+                    String[] eArray,
             @ApiParameter(required = false, defaultValue = "[\"A\"]", name = "enumArray", desc = "testtest")
-            Enum[] enumArray,
+                    Enum[] enumArray,
             @ApiParameter(required = false, defaultValue = "[\"C\",\"C\"]", name = "senumList", desc = "testtest", enumDef = Enum.class)
-            List<String> senumList,
+                    List<String> senumList,
             @ApiParameter(required = false, defaultValue = "[\"A\"]", name = "enumList", desc = "testtest")
-            List<Enum> enumList,
+                    List<Enum> enumList,
             @ApiParameter(required = false, defaultValue = "A", name = "enumenum", desc = "enumenum")
-            Enum enumEnum,
+                    Enum enumEnum,
             @ApiParameter(required = false, defaultValue = "C", name = "senum", desc = "senum", enumDef = Enum.class)
-            String senum) {
+                    String senum) {
         assertNull(str1);
         assertNull(str2);
         assertEquals("a", str3);
@@ -112,7 +109,7 @@ public class HttpApiUtilTestExtend {
     @HttpApi(name = "test.test3", desc = "测试3", security = SecurityType.None, owner = "guankaiqiang")
     public int test3(
             @ApiParameter(required = true, name = "entity2", desc = "testtest")
-            Entity2 entity2) {
+                    Entity2 entity2) {
         String str = entity2.entityList.iterator().next().str;
         System.out.println(str);
         assertEquals(str, "abc");
@@ -122,9 +119,9 @@ public class HttpApiUtilTestExtend {
     @HttpApi(name = "test.test4", desc = "测试4", security = SecurityType.None, owner = "guankaiqiang")
     public int test4(
             @ApiParameter(required = true, name = "entity1", desc = "testtest")
-            List<Entity2> entity2List,
+                    List<Entity2> entity2List,
             @ApiParameter(required = true, name = "entity2", desc = "testtest")
-            Entity2[] entity2Array) {
+                    Entity2[] entity2Array) {
         String str = entity2List.get(0).entityList.iterator().next().str;
         System.out.println(str);
         assertEquals(str, "abc");
@@ -137,7 +134,7 @@ public class HttpApiUtilTestExtend {
     @HttpApi(name = "test.test5", desc = "测试5", security = SecurityType.None, owner = "guankaiqiang")
     public int test5(
             @ApiParameter(required = true, name = "entity1", desc = "testtest")
-            List<Enum> enums) {
+                    List<Enum> enums) {
         System.out.println(enums.get(0).toString());
         assertEquals(enums.get(0), Enum.A);
         return 0;
@@ -146,7 +143,7 @@ public class HttpApiUtilTestExtend {
     @Test
     public void test1Test() {
         ApiManager manager = new ApiManager();
-        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class, new HttpApiUtilTestExtend()));
+        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class), new HttpApiUtilTestExtend());
         manager.processRequest("test.test1", new String[13]);
     }
 
@@ -154,7 +151,7 @@ public class HttpApiUtilTestExtend {
     //    public void test2Test() {
     //        try {
     //            ApiManager manager = new ApiManager();
-    //            manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class, new HttpApiUtilTestExtend()), ApiOpenState.OPEN_TO_CLIENT);
+    //            manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class), new HttpApiUtilTestExtend());
     //        } catch (RuntimeException e) {
     //            assertTrue(e.getMessage().contains("only list is support when using collection"));
     //        }
@@ -163,21 +160,21 @@ public class HttpApiUtilTestExtend {
     @Test
     public void test3Test() {
         ApiManager manager = new ApiManager();
-        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class, new HttpApiUtilTestExtend()));
-        manager.processRequest("test.test3", new String[]{"{\"entityList\":[{\"str\":\"abc\"}]}"});
+        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class), new HttpApiUtilTestExtend());
+        manager.processRequest("test.test3", new String[] { "{\"entityList\":[{\"str\":\"abc\"}]}" });
     }
 
     @Test
     public void test4Test() {
         ApiManager manager = new ApiManager();
-        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class, new HttpApiUtilTestExtend()));
-        manager.processRequest("test.test4", new String[]{"[{\"entityList\":[{\"str\":\"abc\"}]}]", "[{\"entityList\":[{\"str\":\"abc\"}]}]"});
+        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class), new HttpApiUtilTestExtend());
+        manager.processRequest("test.test4", new String[] { "[{\"entityList\":[{\"str\":\"abc\"}]}]", "[{\"entityList\":[{\"str\":\"abc\"}]}]" });
     }
 
     @Test
     public void test5Test() {
         ApiManager manager = new ApiManager();
-        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class, new HttpApiUtilTestExtend()));
-        manager.processRequest("test.test5", new String[]{"[\"A\"]"});
+        manager.register(ApiManager.parseApi(HttpApiUtilTestExtend.class), new HttpApiUtilTestExtend());
+        manager.processRequest("test.test5", new String[] { "[\"A\"]" });
     }
 }

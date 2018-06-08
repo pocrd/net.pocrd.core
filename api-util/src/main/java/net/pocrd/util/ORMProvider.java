@@ -5,11 +5,7 @@ import net.pocrd.define.ConstField;
 import net.pocrd.define.ResultSetMapper;
 import net.pocrd.entity.CommonConfig;
 import net.pocrd.entity.CompileConfig;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Label;
-import org.objectweb.asm.MethodVisitor;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.Type;
+import org.objectweb.asm.*;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -17,16 +13,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import java.sql.Blob;
-import java.sql.Clob;
-import java.sql.NClob;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 public class ORMProvider implements Opcodes {
     private static final ConcurrentHashMap<String, ResultSetMapper<?>> mappers = new ConcurrentHashMap<String, ResultSetMapper<?>>();
@@ -63,7 +54,7 @@ public class ORMProvider implements Opcodes {
 
                     try {
                         cw.visit(V1_6, ACC_PUBLIC + ACC_SUPER, c_name, "Ljava/lang/Object;Lnet/pocrd/define/ResultSetMapper<" + p_desc + ">;",
-                                 "java/lang/Object", new String[]{m_name});
+                                "java/lang/Object", new String[] { m_name });
                         MethodVisitor mv;
                         {
                             mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
@@ -81,7 +72,7 @@ public class ORMProvider implements Opcodes {
                         }
                         {
                             PocMethodVisitor pmv = new PocMethodVisitor(cw, ACC_PUBLIC, "getData", "(Ljava/sql/ResultSet;)" + p_desc, null,
-                                                                        new String[]{"java/sql/SQLException"});
+                                    new String[] { "java/sql/SQLException" });
                             pmv.visitCode();
                             pmv.declareLocal("result", clazz);
                             pmv.visitTypeInsn(NEW, p_name);
@@ -127,7 +118,7 @@ public class ORMProvider implements Opcodes {
                         }
                         {
                             mv = cw.visitMethod(ACC_PUBLIC + ACC_BRIDGE + ACC_SYNTHETIC, "getData", "(Ljava/sql/ResultSet;)Ljava/lang/Object;", null,
-                                                new String[]{"java/sql/SQLException"});
+                                    new String[] { "java/sql/SQLException" });
                             mv.visitCode();
                             Label l0 = new Label();
                             mv.visitLabel(l0);
@@ -148,8 +139,8 @@ public class ORMProvider implements Opcodes {
                                     folder.mkdirs();
                                 }
                                 fos = new FileOutputStream(
-                                        CommonConfig.getInstance().getAutogenPath() + File.separator + "ORM" + File.separator + className.substring(
-                                                18) + ".class");
+                                        CommonConfig.getInstance().getAutogenPath() + File.separator + "ORM" + File.separator
+                                                + className.substring(18) + ".class");
                                 fos.write(cw.toByteArray());
                             } finally {
                                 if (fos != null) {
@@ -157,8 +148,8 @@ public class ORMProvider implements Opcodes {
                                 }
                             }
                         }
-                        mapper = (ResultSetMapper<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className.replace('/', '.'),
-                                                                                                                        cw.toByteArray()).newInstance();
+                        mapper = (ResultSetMapper<T>)new PocClassLoader(Thread.currentThread().getContextClassLoader())
+                                .defineClass(className.replace('/', '.'), cw.toByteArray()).newInstance();
                     } catch (Exception e) {
                         throw new RuntimeException(className, e);
                     }

@@ -594,9 +594,9 @@ typedef enum {
                 if (dict<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![dict isKindOfClass:[NSNull class]]) {
                     ${prefix}<xsl:value-of select="type" /> *e = [${prefix}<xsl:value-of select="type" /> deserialize:dict];
                     [result.<xsl:value-of select="$objcName" /> addObject:e];
-                    <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ([@"<xsl:value-of select="key"></xsl:value-of>" isEqualToString:e.typeName]) {
-                        e.entity = [${prefix}<xsl:value-of select="value" /> deserialize:[dict objectForKey:@"entity"]];
-                    }</xsl:for-each>
+                <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ([@"<xsl:value-of select="key"></xsl:value-of>" isEqualToString:e.typeName]) {
+                    e.entity = [${prefix}<xsl:value-of select="value" /> deserialize:[dict objectForKey:@"entity"]];
+                }</xsl:for-each>
                 }</xsl:when>
           <xsl:otherwise>    NSDictionary *dict = [<xsl:value-of select="$objcName" />Array objectAtIndex:i];
                 if (dict<xsl:text disable-output-escaping="yes"><![CDATA[ && ]]></xsl:text>![dict isKindOfClass:[NSNull class]]) {

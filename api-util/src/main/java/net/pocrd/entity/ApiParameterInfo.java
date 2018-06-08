@@ -50,9 +50,9 @@ public class ApiParameterInfo {
     public String name;
 
     /**
-     * 名字列表
+     * 参数扩展信息, 例如在描述由 cookie 或 header 注入的参数时指定cookie/header 名称
      */
-    public String[] names;
+    public String[] extInfos;
 
     /**
      * 参数描述

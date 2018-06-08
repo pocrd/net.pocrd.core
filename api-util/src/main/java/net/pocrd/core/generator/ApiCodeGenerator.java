@@ -6,6 +6,7 @@ import net.pocrd.define.SecurityType;
 import net.pocrd.define.Serializer;
 import net.pocrd.document.Document;
 import net.pocrd.entity.ApiMethodInfo;
+import net.pocrd.util.ClassUtil;
 import net.pocrd.util.POJOSerializerProvider;
 import net.pocrd.util.WebRequestUtil;
 import org.slf4j.Logger;
@@ -179,7 +180,8 @@ public abstract class ApiCodeGenerator {
                     getClass().getClassLoader()
             );
             Thread.currentThread().setContextClassLoader(loader);
-            if ("dubbo".equals(jf.getManifest().getMainAttributes().getValue("Api-Dependency-Type"))) {
+            String type = jf.getManifest().getMainAttributes().getValue("Api-Dependency-Type");
+            if ("dubbo".equals(type)) {
                 String ns = jf.getManifest().getMainAttributes().getValue("Api-Export");
                 String[] names = ns.split(" ");
                 for (String name : names) {
@@ -187,8 +189,17 @@ public abstract class ApiCodeGenerator {
                         name = name.trim();
                         if (name.length() > 0) {
                             Class<?> clazz = Class.forName(name, true, loader);
-                            infoList.addAll(ApiManager.parseApi(clazz, new Object()));
+                            infoList.addAll(ApiManager.parseApi(clazz));
                         }
+                    }
+                }
+            } else if ("mixer".equals(type)) {
+                String packageName = jf.getManifest().getMainAttributes().getValue("Api-Mixer-Namespace");
+                if (packageName != null) {
+                    packageName = packageName.trim();
+                    if (packageName.length() > 0) {
+                        List<Class<?>> classes = ClassUtil.getAllMixerClasses(jf, packageName);
+
                     }
                 }
             }

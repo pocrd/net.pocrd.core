@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 为无状态逻辑类的指定函数产生一个代理，代理接口接受字符串数组，转换后调用原函数
@@ -24,7 +25,27 @@ public class HttpApiProvider implements Opcodes {
     private static final String REGEX_PREFIX = "regex_";
     private static final String CONST_PREFIX = "const_";
 
-    public synchronized static HttpApiExecutor getApiExecutor(String name, ApiMethodInfo method) {
+    private static final ConcurrentHashMap<String, HttpApiExecutor> cache = new ConcurrentHashMap<String, HttpApiExecutor>();
+
+    public static HttpApiExecutor getApiExecutor(String name, ApiMethodInfo method) {
+        String key = name;
+        HttpApiExecutor executor = cache.get(key);
+        if (executor == null) {
+            synchronized (cache) {
+                executor = cache.get(key);
+                if (executor == null) {
+                    executor = createApiExecutor(name, method);
+                    cache.put(key, executor);
+                }
+            }
+        }
+        return executor;
+    }
+
+    /**
+     * 由于jdk 1.8 改用 Metaspace 后重复调用 defineClass 可能导致内存泄漏, 要求所有直接产生字节码的工具类进行本地缓存。
+     */
+    private synchronized static HttpApiExecutor createApiExecutor(String name, ApiMethodInfo method) {
         try {
             Class<?> clazz = method.proxyMethodInfo.getDeclaringClass();
             ApiParameterInfo[] parameterInfos = method.parameterInfos;
@@ -249,7 +270,9 @@ public class HttpApiProvider implements Opcodes {
                         } else if (parameterType.isEnum()) {
                             pmv.visitMethodInsn(INVOKESTATIC, parameterType.getName().replace('.', '/'), "valueOf",
                                     "(Ljava/lang/String;)" + Type.getDescriptor(parameterType));
-                        } else if (parameterType == Map.class && AutowireableParameter.cookies.name().equals(parameterInfo.name)) {
+                        } else if (parameterType == Map.class &&
+                                (AutowireableParameter.cookies.name().equals(parameterInfo.name)
+                                        || AutowireableParameter.headers.name().equals(parameterInfo.name))) {
                             pmv.visitLdcInsn(Type.getType(parameterType));
                             pmv.visitMethodInsn(INVOKESTATIC, "com/alibaba/fastjson/JSON", "parseObject",
                                     "(Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;");
@@ -396,8 +419,7 @@ public class HttpApiProvider implements Opcodes {
                 }
             }
             HttpApiExecutor e = (HttpApiExecutor)new PocClassLoader(Thread.currentThread().getContextClassLoader())
-                    .defineClass(className.replace('/', '.'),
-                            cw.toByteArray()).newInstance();
+                    .defineClass(className.replace('/', '.'), cw.toByteArray()).newInstance();
             e.setInstance(method.serviceInstance);
             return e;
         } catch (Throwable t) {

@@ -8,6 +8,11 @@ import java.util.HashMap;
  * @author rendong
  */
 public class ExtensionCallerInfo {
-    private HashMap<String, String> info;
+    public long userid; //用户编号
+    public int  subSystem; //子系统编号
+    public long expired; // 过期时间
+    public long deviceId; // 设备号
+
+    public HashMap<String, String> info; // 扩展信息
 
 }

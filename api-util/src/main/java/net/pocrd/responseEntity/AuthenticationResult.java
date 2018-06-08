@@ -5,7 +5,7 @@ import net.pocrd.annotation.Description;
 /**
  * Created by rendong on 2018/4/10.
  */
-@Description("授权结果")
+@Description("认证结果")
 public final class AuthenticationResult {
 
     @Description("授权访问的用户id")

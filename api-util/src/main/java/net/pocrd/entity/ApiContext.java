@@ -3,6 +3,7 @@ package net.pocrd.entity;
 import com.alibaba.dubbo.rpc.protocol.thrift.io.RandomAccessByteArrayOutputStream;
 import net.pocrd.core.LocalException;
 import net.pocrd.define.SerializeType;
+import net.pocrd.responseEntity.AuthenticationResult;
 import net.pocrd.responseEntity.KeyValuePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -200,6 +201,11 @@ public class ApiContext {
     public CallerInfo caller;
 
     /**
+     * 扩展的调用者信息, 一般由 SubSystem 自行签发
+     */
+    public ExtensionCallerInfo extCaller;
+
+    /**
      * 已进行序列化的method call计数, 用于接口合并调用时分段下发返回值
      */
     public int serializeCount;
@@ -223,6 +229,11 @@ public class ApiContext {
      * 子系统授权接口调用
      */
     public ApiMethodCall authCall = null;
+
+    /**
+     * 子系统授权结果
+     */
+    public AuthenticationResult authResult = null;
 
     /**
      * 返回给客户端的额外消息
@@ -284,6 +295,7 @@ public class ApiContext {
         this.lv3ApiCalls = null;
         this.appid = null;
         this.caller = null;
+        this.extCaller = null;
         this.cid = null;
         this.clearUserToken = false;
         this.clearExpiredUserToken = false;
@@ -298,6 +310,7 @@ public class ApiContext {
         this.isSSL = false;
         this.jsonpCallback = null;
         this.authCall = null;
+        this.authResult = null;
         this.localException = null;
         this.location = null;
         this.notifications.clear();

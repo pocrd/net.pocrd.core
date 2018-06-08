@@ -367,13 +367,20 @@ public class HttpRequestExecutor {
                         apiContext.lv2ApiCalls = new LinkedList<>();
                     }
                     apiContext.lv2ApiCalls.add(call);
-                    call.dependencies = new ArrayList<>(1);
+                    call.dependencies = new ArrayList<>(3);
                     for (String methodName : dependentMethods) {
                         ApiMethodCall c = apiCallMap.get(methodName);
                         if (c == null) {
                             return ApiReturnCode.UNKNOWN_DEPENDENT_METHOD;
                         }
                         call.dependencies.add(c);
+                        if (c.method.authenticationMethod) {
+                            if (call.dependsAuthCall == null) {
+                                call.dependsAuthCall = c;
+                            } else {
+                                throw new RuntimeException("duplicate auth dependency: " + fullName + " in " + nameString);
+                            }
+                        }
                     }
                 }
             }
@@ -430,7 +437,10 @@ public class HttpRequestExecutor {
         for (int m = 0; m < length; m++) {
             ApiMethodCall call = apiCallList.get(m);
             ApiMethodInfo method = call.method;
-            if (method.subSystemId > 0 && method.subSystemId != callerSubSystemId) {
+            // 验证当前调用的接口与调用者身份中的子系统标识是否一致(子系统标识为0的接口可被所有用户访问)
+            // 如果当前调用依赖于一个授权接口, 则不验证子系统匹配, 转而在后面验证认证结果中是否包含对该接口的授权
+            // TODO 加入zk权限树检测 不再简单使用接口上的标记来做这个判断
+            if (method.subSystemId > 0 && method.subSystemId != callerSubSystemId && call.dependsAuthCall == null) {
                 return ApiReturnCode.SUBSYSTEM_MISMATCH;
             }
             if (length == 1) {
@@ -469,20 +479,34 @@ public class HttpRequestExecutor {
                                 parameters[i] = apiContext.agent;
                                 break;
                             case cookies:
-                                Map<String, String> map = new HashMap<String, String>(ap.names.length);
-                                for (String n : ap.names) {
-                                    // 对于要求cookie注入的参数, 首先在表单中寻找, 因为不使用cookie的客户端会在表单中传递相关数据, 且约定表单中数据优先级高
-                                    // 表单中的通用参数都为 '_' 开头
-                                    String _n = n.startsWith("_") ? n : "_" + n;
-                                    String v = request.getParameter(_n);
-                                    if (v == null) {
-                                        v = apiContext.getCookie(n);
+                                if (ap.extInfos != null) {
+                                    Map<String, String> map = new HashMap<String, String>(ap.extInfos.length);
+                                    for (String n : ap.extInfos) {
+                                        // 对于要求cookie注入的参数, 首先在表单中寻找, 因为不使用cookie的客户端会在表单中传递相关数据, 且约定表单中数据优先级高
+                                        // 表单中的通用参数都为 '_' 开头
+                                        String _n = n.startsWith("_") ? n : "_" + n;
+                                        String v = request.getParameter(_n);
+                                        if (v == null) {
+                                            v = apiContext.getCookie(n);
+                                        }
+                                        if (v != null) {
+                                            map.put(n, v);
+                                        }
                                     }
-                                    if (v != null) {
-                                        map.put(n, v);
-                                    }
+                                    parameters[i] = JSON.toJSONString(map);
                                 }
-                                parameters[i] = JSON.toJSONString(map);
+                                break;
+                            case headers:
+                                if (ap.extInfos != null) {
+                                    Map<String, String> map = new HashMap<String, String>(ap.extInfos.length);
+                                    for (String n : ap.extInfos) {
+                                        String v = request.getHeader(n);
+                                        if (v != null) {
+                                            map.put(n, v);
+                                        }
+                                    }
+                                    parameters[i] = JSON.toJSONString(map);
+                                }
                                 break;
                             case businessId:
                                 parameters[i] = call.businessId;
@@ -597,8 +621,7 @@ public class HttpRequestExecutor {
         return checkSubSystemRole(apiContext, apiContext.requiredSecurity, request);
     }
 
-    private Object processCall(String name, String[] params) {
-        ApiMethodInfo api = apiManager.getApiMethodInfo(name);
+    private Object processCall(ApiMethodCall call, String[] params) {
         if (CompileConfig.isDebug) {
             String targetDubboVersion = null;
             String targetDubboURL = null;
@@ -635,7 +658,7 @@ public class HttpRequestExecutor {
                     }
                     reference.setRegistries(registryConfigList);// 多个注册中心可以用setRegistries()
                 }
-                reference.setInterface(api.dubboInterface);
+                reference.setInterface(call.method.dubboInterface);
                 reference.setRetries(0);
                 reference.setAsync(CommonConfig.getInstance().getDubboAsync());
                 reference.setVersion(targetDubboVersion);
@@ -645,22 +668,22 @@ public class HttpRequestExecutor {
                 } catch (Exception e) {
                     logger.error("get service failed.", e);
                 }
-                HttpApiExecutor executor = HttpApiProvider.getApiExecutor(name, api);
+                HttpApiExecutor executor = HttpApiProvider.getApiExecutor(call.method.methodName, call.method);
                 executor.setInstance(service);// 重设服务实例
 
                 // 当接口为 mock 实现时, 将指向客户端指定位置的 dubbo service 注入给 mock 实现
-                if (api.mocked) {
+                if (call.method.mocked) {
                     if (service != null) {
-                        ((MockApiImplementation)api.serviceInstance).$setProxy(service);
+                        ((MockApiImplementation)call.method.serviceInstance).$setProxy(service);
                     }
                 } else {
-                    return api.wrapper.wrap(executor.execute(params));
+                    return call.method.wrapper.wrap(executor.execute(params));
                 }
             }
         }
 
         // TODO: get role/permission map from zk
-        return apiManager.processRequest(name, params);
+        return apiManager.processRequest(call.method.methodName, params);
     }
 
     private void setResponseHeader(HttpServletRequest request, HttpServletResponse response) {
@@ -985,15 +1008,11 @@ public class HttpRequestExecutor {
                         }
                     } else if (p.isAutowired && AutowireableParameter.userid.equals(p.name)) {
                         // 将授权接口的授权结果注入给当前接口
-                        CHECK_AUTHENTICATION:
-                        for (ApiMethodCall dependency : call.dependencies) {
-                            if (dependency != null && dependency == apiContext.authCall) {
-                                AuthenticationResult authResult = (AuthenticationResult)apiContext.authCall.result;
-                                for (String authApi : authResult.apis) {
-                                    if (call.method.methodName.equals(authApi)) {
-                                        call.parameters[i] = String.valueOf(authResult.authorizedUserId);
-                                        break CHECK_AUTHENTICATION;
-                                    }
+                        if (call.dependsAuthCall != null && call.dependsAuthCall == apiContext.authCall) {
+                            AuthenticationResult authResult = (AuthenticationResult)apiContext.authCall.result;
+                            for (String authApi : authResult.apis) {
+                                if (call.method.methodName.equals(authApi)) {
+                                    call.parameters[i] = String.valueOf(authResult.authorizedUserId);
                                 }
                             }
                         }
@@ -1002,22 +1021,29 @@ public class HttpRequestExecutor {
             }
             // dubbo 在调用结束后不会清除 Future 为了避免拿到之前接口对应的 Future 在这里统一清除
             rpcContext.setFuture(null);
-            executeApiCall(rpcContext, call, request, response, null);
-            // 接口可能被 mock 或被短路
-            if (config.getDubboAsync()) {
-                // 如果配置为异步执行时，该接口恰好短路结果或mock返回为空, 此处获得的future为null
-                futures[count] = rpcContext.getFuture();
-            } else {
+            // 当前接口依赖的授权调用如果失败则将当前接口标记为调用失败
+            if (call.dependsAuthCall != null && (call.dependsAuthCall != apiContext.authCall || apiContext.authResult == null)) {
+                call.setReturnCode(ApiReturnCode.SUBSYSTEM_AUTHENTICATION_FAILED);
                 call.costTime = (int)(System.currentTimeMillis() - call.startTime);
+            } else {
+                executeApiCall(rpcContext, call, request, response, null);
+                // 即使打开异步, 该接口还可能被 mock 或被短路
+                if (config.getDubboAsync()) {
+                    // 如果配置为异步执行时，该接口恰好短路结果或mock, 此处获得的future为null
+                    futures[count] = rpcContext.getFuture();
+                } else {
+                    call.costTime = (int)(System.currentTimeMillis() - call.startTime);
+                }
             }
         }
         for (int count = 0; count < futures.length; count++) {
             ApiMethodCall call = calls.get(count);
             ApiMethodInfo info = call.method;
             MDC.put(CommonParameter.method, info.methodName);
-            // 接口可能被 mock 或被短路
+            // 等待异步执行返回
             if (futures[count] != null) {
                 executeApiCall(rpcContext, call, request, response, futures[count]);
+                // TODO: 通过 future 回调来设置costtime
                 call.costTime = (int)(System.currentTimeMillis() - call.startTime);
             }
             int display = call.getReturnCode();
@@ -1043,67 +1069,76 @@ public class HttpRequestExecutor {
     /**
      * 执行具体的api接口调用, 本接口可能被执行两次，不要在其中加入任何状态相关的操作
      */
-
     private void executeApiCall(RpcContext context, ApiMethodCall call, HttpServletRequest request, HttpServletResponse response, Future future) {
         try {
+            ApiMethodInfo method = call.method;
             // 当接口声明了静态 mock 返回值或被标记为短路时
-            if (call.method.staticMockValue != null) {
-                call.result = call.method.staticMockValue;
+            if (method.staticMockValue != null) {
+                call.result = method.staticMockValue;
             } else {
                 if (future != null) {
                     FutureAdapter<?> fa = (FutureAdapter<?>)future;
                     final ResponseCallback callback = fa.getFuture().getCallback();
                     // 异步调用会导致dubbo filter处理返回值的部分失效(因为异步返回并触发filter的时候并没有返回任何值),
                     // 因此在这里进行补偿操作。
+                    // TODO: 回滚对 dubbo future callback 的修改
                     fa.getFuture().setCallback(new NotificationManager(callback));
                     if (fa.getFuture().isDone()) {
                         NotificationManager.saveNotifications(fa.getFuture().get());
                     }
-                }
-                // 根据客户端在Header中设定的目标dubbo服务的版本号或者url，绕过注册中心调用对应的dubbo服务，仅在DEBUG模式下允许使用
-                if (CompileConfig.isDebug) {
-                    String[] parameters = new String[call.parameters == null ? 2 : call.parameters.length + 2];
-                    if (call.parameters != null) {
-                        for (int i = 0; i < call.parameters.length; i++) {
-                            parameters[i] = call.parameters[i];
-                        }
-                    }
-                    parameters[call.parameters.length] = request.getHeader(DEBUG_DUBBOVERSION);
-                    parameters[call.parameters.length + 1] = request.getHeader(DEBUG_DUBBOSERVICE_URL);
-                    if (future == null) {
-                        call.result = processCall(call.method.methodName, parameters);
-                        if (context.getFuture() != null) {
-                            return;
-                        }
-                    } else {
-                        call.result = call.method.wrapper.wrap(future.get());
-                    }
+                    call.result = method.wrapper.wrap(future.get());
                 } else {
-                    if (future == null) {
-                        call.result = processCall(call.method.methodName, call.parameters);
-                        if (context.getFuture() != null) {
-                            return;
+                    String[] parameters = call.parameters;
+                    // 根据客户端在Header中设定的目标dubbo服务的版本号或者url，绕过注册中心调用对应的dubbo服务，仅在DEBUG模式下允许使用
+                    if (CompileConfig.isDebug) {
+                        parameters = new String[call.parameters == null ? 2 : call.parameters.length + 2];
+                        if (call.parameters != null) {
+                            for (int i = 0; i < call.parameters.length; i++) {
+                                parameters[i] = call.parameters[i];
+                            }
                         }
+                        parameters[call.parameters.length] = request.getHeader(DEBUG_DUBBOVERSION);
+                        parameters[call.parameters.length + 1] = request.getHeader(DEBUG_DUBBOSERVICE_URL);
+                    }
+                    if (method.type == ApiMethodInfo.Type.DUBBO) {
+                        call.result = processCall(call, parameters);
                     } else {
-                        call.result = call.method.wrapper.wrap(future.get());
+                        Object[] objs = new Object[method.parameterInfos.length];
+                        int i = 0;
+                        for (ApiMethodCall c : call.dependencies) {
+                            objs[i] = c.result;
+                            i++;
+                        }
+                        call.result = method.wrapper.wrap(apiManager.processMix(method.methodName, objs));
+                        return;
+                    }
+
+                    // 若当前是异步调用 则直接返回
+                    if (context.getFuture() != null) {
+                        return;
                     }
                 }
-                if (call.method.authenticationMethod) {
-                    // 不支持一次http调用中包含多个子系统授权调用
+
+                if (method.authenticationMethod) {
                     if (apiContext.authCall == null) {
+                        // 组合接口数不能超过16
                         if (CompileConfig.isDebug) {
                             AuthenticationResult ar = (AuthenticationResult)call.result;
-                            if (ar.apis == null || ar.apis.length > 10) {
+                            if (ar.apis == null || ar.apis.length > 16) {
                                 throw new RuntimeException("authentication api list is empty or more than 10");
                             }
                         }
                         apiContext.authCall = call;
+                        apiContext.authResult = (AuthenticationResult)call.result;
                         call.result = null;
+                    } else {
+                        // 不支持一次http调用中包含多个子系统授权调用
                     }
                 }
             }
             //dubbo接口能够获取到RpcContext中的notification,非dubbo的接口errorCode不是通过RpcContext传递的。
             Map<String, String> notifications = NotificationManager.getNotifications();
+            NotificationManager.clear();
             if (notifications != null && notifications.size() > 0) {
                 for (Map.Entry<String, String> entry : notifications.entrySet()) {
                     String value = entry.getValue();

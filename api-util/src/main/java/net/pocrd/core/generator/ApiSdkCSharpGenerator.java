@@ -21,7 +21,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import java.io.*;
-import java.util.List;
 
 /**
  * Created by guankaiqiang521 on 2014/9/25.
@@ -109,9 +108,8 @@ public class ApiSdkCSharpGenerator extends ApiCodeGenerator {
                     getXsltSource(xslt, new StreamSource(customizeXslt(defaultXslt))));
             trans.setOutputProperty("omit-xml-declaration", "yes");
             Document document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(inputStream);
-            generateJavaEntity(trans, document);
-            generateJavaRequest(trans, document);
-            // generateJavaFramework();
+            generateEntity(trans, document);
+            generateRequest(trans, document);
         } catch (Exception e) {
             logger.error("generate failed!", e);
             throw new RuntimeException("generate failed!", e);
@@ -130,7 +128,7 @@ public class ApiSdkCSharpGenerator extends ApiCodeGenerator {
         }
     }
 
-    private void generateJavaEntity(Transformer trans, Document doc) {
+    private void generateEntity(Transformer trans, Document doc) {
         try {
 
             XPath path = XPathFactory.newInstance().newXPath();
@@ -186,7 +184,7 @@ public class ApiSdkCSharpGenerator extends ApiCodeGenerator {
         }
     }
 
-    private void generateJavaRequest(Transformer trans, Document doc) {
+    private void generateRequest(Transformer trans, Document doc) {
         try {
             XPath path = XPathFactory.newInstance().newXPath();
             NodeList nl = (NodeList)path.evaluate(getApiEvaluate(), doc, XPathConstants.NODESET);
@@ -212,53 +210,6 @@ public class ApiSdkCSharpGenerator extends ApiCodeGenerator {
         } catch (Exception e) {
             logger.error("generate api csharp client failed", e);
             throw new RuntimeException("generate api csharp client failed", e);
-        }
-    }
-
-    //TODO 找到一个更好的方式去处理非request resp的csharp类
-    private void generateJavaFramework() {
-        String url = ApiSdkCSharpGenerator.class.getResource("/template/csharp").getFile();
-        List<File> dirList = FileUtil.listDirInpath(url);
-        String outputPath = output;
-        if (dirList != null) {
-            for (File file : dirList) {
-                FileUtil.recreateDir(outputPath + file.toURI().getPath().replace(url, ""));
-            }
-            List<File> fileList = FileUtil.listFileInpath(url, "csharp");
-            if (fileList != null) {
-                for (File file : fileList) {
-                    String fileName = outputPath + file.toURI().getPath().replace(url, "");
-                    File target = new File(fileName);
-                    if (!target.exists()) {
-                        InputStream stream = null;
-                        OutputStream fileOutputStream = null;
-                        try {
-                            byte[] buffer = new byte[4096];
-                            int len;
-                            fileOutputStream = new FileOutputStream(new File(fileName));
-                            stream = customizeXslt(new FileInputStream(file));
-                            while ((len = stream.read(buffer)) != -1) {
-                                fileOutputStream.write(buffer, 0, len);
-                            }
-                        } catch (Exception e) {
-                            logger.error(String.format("transform file:%s failed!", fileName), e);
-                            throw new RuntimeException(String.format("transform file:%s failed!", fileName), e);
-                        } finally {
-                            try {
-                                if (stream != null) {
-                                    stream.close();
-                                }
-                                if (fileOutputStream != null) {
-                                    fileOutputStream.close();
-                                }
-                            } catch (IOException e) {
-                                logger.error(String.format("transform file:%s failed!", fileName), e);
-                                throw new RuntimeException("close stream failed!", e);
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 

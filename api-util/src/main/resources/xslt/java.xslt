@@ -661,9 +661,9 @@ public class <xsl:value-of select="name" /> implements JsonSerializable {
                         Api_DynamicEntity de = <xsl:value-of select="type" />.deserialize(jo);
                         JsonElement e = jo.getAsJsonObject().get("entity");
                         if (e != null <xsl:text disable-output-escaping="yes"><![CDATA[&&]]></xsl:text> !e.isJsonNull()) {
-                            <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ("<xsl:value-of select="key"></xsl:value-of>".equals(de.typeName)) {
-                                de.entity = <xsl:value-of select="value"></xsl:value-of>.deserialize(e.getAsJsonObject());
-                            }</xsl:for-each>
+                        <xsl:for-each select="extInfo/keyValue/item"><xsl:if test="position() != 1"> else </xsl:if>if ("<xsl:value-of select="key"></xsl:value-of>".equals(de.typeName)) {
+                            de.entity = <xsl:value-of select="value"></xsl:value-of>.deserialize(e.getAsJsonObject());
+                        }</xsl:for-each>
                             result.<xsl:value-of select="name" />.add(de);
                         }
                     }</xsl:when>

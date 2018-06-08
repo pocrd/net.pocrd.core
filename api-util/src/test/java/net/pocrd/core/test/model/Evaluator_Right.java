@@ -2,7 +2,7 @@ package net.pocrd.core.test.model;
 
 import net.pocrd.entity.CallerInfo;
 
-public class Evaluater_Right {
+public class Evaluator_Right {
     public  String     name;
     public  int        age;
     public  long       expire;

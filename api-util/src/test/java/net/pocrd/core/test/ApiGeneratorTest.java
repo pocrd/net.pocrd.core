@@ -46,7 +46,7 @@ public class ApiGeneratorTest {
 
     @Test
     public void testHtmlDocGenertor() {
-        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
+        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class);
         new HtmlApiDocGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/html")
                 .setXsltPath("http://www.pocrd.net/xslt/java.xslt").build()
                 .generateViaApiMethodInfo(infoList);
@@ -54,7 +54,7 @@ public class ApiGeneratorTest {
 
     @Test
     public void testJavaGenertor() throws ParserConfigurationException, IOException, SAXException {
-        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
+        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class);
         new ApiSdkJavaGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/java").build()
                 .generateViaApiMethodInfo(infoList);
     }
@@ -67,7 +67,7 @@ public class ApiGeneratorTest {
 
     @Test
     public void testObjcGenertor() throws ParserConfigurationException, IOException, SAXException {
-        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
+        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class);
         new ApiSdkObjectiveCGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/objectivec").setClassPrefix("PoC")
                 .build()
                 .generateViaApiMethodInfo(infoList);
@@ -84,7 +84,7 @@ public class ApiGeneratorTest {
 
     @Test
     public void testJsGenertor() throws ParserConfigurationException, IOException, SAXException {
-        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class, new Object());
+        List<ApiMethodInfo> infoList = ApiManager.parseApi(ApiFunctionTestService.class);
         new ApiSdkJavaScriptGenerator.Builder().setOutputPath(CommonConfig.getInstance().getAutogenPath() + "/js")
                 .build().generateViaApiMethodInfo(infoList);
     }

@@ -10,6 +10,12 @@ import java.util.Map;
  * 接口信息
  */
 public class ApiMethodInfo {
+
+    public enum Type {
+        DUBBO,
+        MIXER
+    }
+
     /**
      * 未知资源
      */
@@ -23,6 +29,11 @@ public class ApiMethodInfo {
         UnknownMethod.proxyMethodInfo = null;
         UnknownMethod.securityLevel = SecurityType.None;
     }
+
+    /**
+     * 接口类型
+     */
+    public Type type;
 
     /**
      * 返回值类型

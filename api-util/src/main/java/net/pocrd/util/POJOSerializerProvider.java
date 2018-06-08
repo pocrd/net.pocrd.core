@@ -179,8 +179,8 @@ public class POJOSerializerProvider implements Opcodes {
                 }
             }
 
-            return (Serializer)new PocClassLoader(Thread.currentThread().getContextClassLoader()).defineClass(className,
-                    cw.toByteArray()).newInstance();
+            return (Serializer)new PocClassLoader(Thread.currentThread().getContextClassLoader()).
+                    defineClass(className, cw.toByteArray()).newInstance();
         } catch (Exception e) {
             throw new RuntimeException(c_name, e);
         }
