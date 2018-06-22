@@ -1100,17 +1100,20 @@ public class HttpRequestExecutor {
                         parameters[call.parameters.length] = request.getHeader(DEBUG_DUBBOVERSION);
                         parameters[call.parameters.length + 1] = request.getHeader(DEBUG_DUBBOSERVICE_URL);
                     }
-                    if (method.type == ApiMethodInfo.Type.DUBBO) {
-                        call.result = processCall(call, parameters);
-                    } else {
-                        Object[] objs = new Object[method.parameterInfos.length];
-                        int i = 0;
-                        for (ApiMethodCall c : call.dependencies) {
-                            objs[i] = c.result;
-                            i++;
-                        }
-                        call.result = method.wrapper.wrap(apiManager.processMix(method.methodName, objs));
-                        return;
+                    switch (method.type) {
+                        case DUBBO:
+                            call.result = processCall(call, parameters); break;
+                        case MIXER:
+                            Object[] objs = new Object[method.parameterInfos.length];
+                            int i = 0;
+                            for (ApiMethodCall c : call.dependencies) {
+                                objs[i] = c.result;
+                                i++;
+                            }
+                            call.result = method.wrapper.wrap(apiManager.processMix(method.methodName, objs));
+                            call.setReturnCode(ApiReturnCode.SUCCESS);
+                            return;
+                        default: throw new RuntimeException("UNKNOWN method type " + method.type);
                     }
 
                     // 若当前是异步调用 则直接返回
